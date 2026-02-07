@@ -1,115 +1,98 @@
 const express = require("express");
-const app = express();
+const path = require("path");
 
+const app = express();
 app.use(express.json());
 
-// ===== Memoria simple (FREE) =====
-// guardamos “colas” de comandos por sessionCode
-const queues = new Map(); // session -> [{t, cmd, data}, ...]
+// ==============================
+// CONFIG
+// ==============================
+const PORT = process.env.PORT || 8080;
 
-function getQueue(session) {
-  if (!queues.has(session)) queues.set(session, []);
-  return queues.get(session);
+// Mapa: code -> { p1: [cmd], p2: [cmd] }
+const sessions = new Map();
+
+function normCode(code) {
+  return String(code || "").trim().toUpperCase();
 }
 
-// ===== UI del teléfono (la página principal) =====
+function ensureSession(code) {
+  if (!sessions.has(code)) {
+    sessions.set(code, { p1: [], p2: [], createdAt: Date.now() });
+  }
+  return sessions.get(code);
+}
+
+// Limpieza simple (evita crecer infinito en free tier)
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, s] of sessions.entries()) {
+    const idleMs = now - (s.lastUsedAt || s.createdAt);
+    // borra sesiones sin uso por 6 horas
+    if (idleMs > 6 * 60 * 60 * 1000) sessions.delete(code);
+  }
+}, 30 * 60 * 1000);
+
+// ==============================
+// SERVIR UI WEB
+// ==============================
+app.use(express.static(path.join(__dirname, "public")));
+
+// Si entran a "/" y no existiera index por alguna razón, lo forzamos:
 app.get("/", (req, res) => {
-  // puedes cambiar el HTML por tu UI real
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.end(`<!doctype html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Angry Remote</title>
-  <style>
-    body{font-family:sans-serif;background:#111;color:#fff;margin:0;padding:16px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-    button{padding:14px 16px;font-size:16px;border-radius:12px;border:0;cursor:pointer}
-    .big{width:100%}
-    .ok{background:#7c3aed;color:#fff}
-    .g{background:#222;color:#fff}
-    input{padding:12px;border-radius:10px;border:1px solid #444;background:#000;color:#fff;width:160px}
-  </style>
-</head>
-<body>
-  <h2>Angry Remote</h2>
-  <div class="row">
-    <div>Session:</div>
-    <input id="s" placeholder="ABCD" />
-    <button class="ok" onclick="save()">Conectar</button>
-  </div>
-
-  <div class="row">
-    <button class="g" onclick="send('P1_PLAY')">P1 Play</button>
-    <button class="g" onclick="send('P1_EXIT')">P1 Exit</button>
-    <button class="g" onclick="send('P1_TRAILER')">P1 Trailer</button>
-    <button class="g" onclick="send('P1_HOME')">P1 Home</button>
-  </div>
-
-  <div class="row">
-    <button class="g" onclick="send('P2_PLAY')">P2 Play</button>
-    <button class="g" onclick="send('P2_EXIT')">P2 Exit</button>
-    <button class="g" onclick="send('P2_TRAILER')">P2 Trailer</button>
-    <button class="g" onclick="send('P2_HOME')">P2 Home</button>
-  </div>
-
-  <button class="ok big" onclick="send('TAP')">TAP (Poder / Click)</button>
-
-<script>
-  function save(){
-    const v = document.getElementById('s').value.trim().toUpperCase();
-    localStorage.setItem('session', v);
-    alert('Session guardada: '+v);
-  }
-  function session(){
-    return (document.getElementById('s').value.trim().toUpperCase()
-      || localStorage.getItem('session') || 'ABCD');
-  }
-
-  async function send(cmd){
-    const s = session();
-    await fetch('/api/send', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session: s, cmd })
-    });
-    // feedback simple
-    navigator.vibrate?.(30);
-  }
-
-  // autocompletar con localStorage
-  document.getElementById('s').value = (localStorage.getItem('session') || 'ABCD');
-</script>
-
-</body>
-</html>`);
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ===== API: enviar comando desde el teléfono =====
-app.post("/api/send", (req, res) => {
-  const { session, cmd, data } = req.body || {};
-  if (!session || !cmd) return res.status(400).json({ ok: false });
+// ==============================
+// HEALTHCHECK
+// ==============================
+app.get("/ping", (req, res) => res.type("text").send("pong"));
 
-  const q = getQueue(String(session).toUpperCase());
-  q.push({ t: Date.now(), cmd: String(cmd), data: data ?? null });
-  // limite simple para que no crezca infinito
-  if (q.length > 200) q.splice(0, q.length - 200);
+// ==============================
+// API: ENVIAR COMANDO (desde el teléfono)
+// POST /api/command
+// body: { code:"TAP", player:1|2, action:"P1_PLAY", payload?:{} }
+// ==============================
+app.post("/api/command", (req, res) => {
+  const code = normCode(req.body.code);
+  const player = Number(req.body.player) === 2 ? 2 : 1;
+  const action = String(req.body.action || "").trim();
+  const payload = req.body.payload || null;
+
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+  if (!action) return res.status(400).json({ ok: false, error: "Missing action" });
+
+  const session = ensureSession(code);
+  session.lastUsedAt = Date.now();
+
+  const cmd = { t: Date.now(), action, payload };
+
+  if (player === 1) session.p1.push(cmd);
+  else session.p2.push(cmd);
 
   res.json({ ok: true });
 });
 
-// ===== API: Unity “poll” para recibir comandos =====
+// ==============================
+// API: LEER COMANDOS (Unity hace polling)
+// GET /api/poll?code=TAP&player=1
+// Respuesta: { ok:true, commands:[...] }
+// ==============================
 app.get("/api/poll", (req, res) => {
-  const session = String(req.query.session || "").toUpperCase();
-  if (!session) return res.status(400).json({ ok: false, commands: [] });
+  const code = normCode(req.query.code);
+  const player = Number(req.query.player) === 2 ? 2 : 1;
 
-  const q = getQueue(session);
-  const commands = q.splice(0, q.length); // consume todo
-  res.json({ ok: true, commands });
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+
+  const session = ensureSession(code);
+  session.lastUsedAt = Date.now();
+
+  const list = player === 1 ? session.p1 : session.p2;
+  const out = list.splice(0, list.length); // consume todo
+
+  res.json({ ok: true, commands: out });
 });
 
-// ===== Keep-alive / health =====
-app.get("/health", (req, res) => res.send("ok"));
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log("Server listening on", PORT));
+app.listen(PORT, () => {
+  console.log(`Remote running on port ${PORT}`);
+});
