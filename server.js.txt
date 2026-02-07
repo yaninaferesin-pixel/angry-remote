@@ -22,7 +22,7 @@ function getSession(code) {
 // Healthcheck
 app.get("/ping", (req, res) => res.send("pong"));
 
-// El teléfono llama esto al tocar
+// El telefono llama esto al tocar
 app.post("/tap", (req, res) => {
   const code = (req.body?.code || "").toString().trim().toUpperCase();
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
@@ -49,3 +49,4 @@ app.get("/poll", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Listening on ${PORT}`);
 });
+
