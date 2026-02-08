@@ -6,230 +6,200 @@
   <title>Angry Remote</title>
   <style>
     :root{
-      --bg:#0b0c10;
-      --card:#12131a;
-      --muted:#8b90a5;
-      --btn:#2a2d3a;
-      --btn2:#6a4cff;
-      --danger:#ff3b30;
-      --ok:#18c36b;
-      --stroke:#24263a;
-      --txt:#f3f4ff;
+      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30; --text:#f5f6ff; --muted:#a9acc2;
+      --radius:18px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .wrap{max-width:560px;margin:0 auto;padding:14px}
-    .top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-    .pill{background:var(--card);border:1px solid var(--stroke);border-radius:999px;padding:8px 12px;font-weight:700}
-    .pill small{color:var(--muted);font-weight:600}
-    .status{margin-left:auto;display:flex;align-items:center;gap:8px}
-    .dot{width:10px;height:10px;border-radius:50%;background:#666}
-    .dot.ok{background:var(--ok)}
-    .tabs{display:flex;gap:10px;margin:10px 0}
-    .tab{flex:1;background:var(--card);border:1px solid var(--stroke);border-radius:12px;padding:12px;font-weight:800}
+    body{margin:0;background:var(--bg);color:var(--text);}
+    .wrap{max-width:720px;margin:0 auto;padding:16px;}
+    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+    .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
+    .ok{color:#41d07a;font-weight:700}
+    .tabs{display:flex;gap:10px;margin:12px 0}
+    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
     .tab.active{outline:2px solid var(--btn2)}
-    .hint{color:var(--muted);margin:6px 0 12px}
-    .stageTitle{margin:8px 0 10px;font-size:14px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    select,input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
     button{
-      border:0;border-radius:14px;padding:16px 14px;
-      font-weight:900;font-size:18px;letter-spacing:.5px;
-      background:var(--btn);color:var(--txt);
+      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
+      background:var(--btn);color:var(--text);font-size:16px;
     }
     button.primary{background:var(--btn2)}
     button.danger{background:var(--danger)}
-    button.small{padding:12px 12px;font-size:16px}
-    .hidden{display:none!important}
-    .sep{height:1px;background:var(--stroke);margin:14px 0}
+    button.ghost{background:transparent;border:1px solid #2d3146}
+    .hint{color:var(--muted);font-size:13px;margin-top:8px}
   </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="pill">CODE: <span id="codeLbl">----</span></div>
-    <div class="status">
-      <div class="dot" id="dot"></div>
-      <div class="pill"><small id="stageLbl">offline</small></div>
+  <div class="wrap">
+    <div class="top">
+      <div class="badge">
+        <div class="pill">CODE: <b id="codeLabel">----</b></div>
+        <div class="pill"><span class="ok" id="online">online</span></div>
+      </div>
+      <div class="badge">
+        <span class="pill">Etapa</span>
+        <select id="stage">
+          <option value="start">StartScene</option>
+          <option value="select">LevelSelect</option>
+          <option value="level">Level (Gameplay)</option>
+          <option value="wait">Espera (Linda)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabP1">Player 1</button>
+      <button class="tab" id="tabP2">Player 2</button>
+      <button class="tab" id="tabW">Espera</button>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <div>
+          <div class="hint">Tip: escaneá el QR, abrí esta página, elegí etapa y apretá botones.</div>
+        </div>
+        <div class="row">
+          <input id="codeInput" placeholder="CODE (ej: 62TR)" style="width:170px" />
+          <button class="ghost" id="saveCode">OK</button>
+        </div>
+      </div>
+
+      <div id="buttons" class="grid"></div>
     </div>
   </div>
-
-  <div class="tabs">
-    <button class="tab" id="tabP1">Player 1</button>
-    <button class="tab" id="tabP2">Player 2</button>
-    <button class="tab" id="tabWait">Espera</button>
-  </div>
-
-  <div class="hint">Tip: escaneá el QR, abrí esta página y apretá botones.</div>
-
-  <div class="stageTitle" id="stageTitle">Etapa: ...</div>
-
-  <!-- ===== START ===== -->
-  <div class="panel" data-stage="start">
-    <div class="grid">
-      <button class="primary" data-cmd="PLAY">PLAY</button>
-      <button data-cmd="TRAILER">TRAILER</button>
-      <button data-cmd="EXITTRAILER">EXIT TRAILER</button>
-      <button data-cmd="MUTE">MUTE</button>
-      <button data-cmd="HOME">HOME</button>
-      <button class="danger" data-cmd="EXIT">EXIT</button>
-    </div>
-  </div>
-
-  <!-- ===== LEVEL SELECT ===== -->
-  <div class="panel hidden" data-stage="levelselect">
-    <div class="grid">
-      <button class="small" data-cmd="LEFT">LEFT</button>
-      <button class="small" data-cmd="RIGHT">RIGHT</button>
-      <button class="primary" data-cmd="PLAY">PLAY</button>
-      <button data-cmd="HOME">HOME</button>
-      <button class="danger" data-cmd="EXIT">EXIT</button>
-      <div></div>
-    </div>
-  </div>
-
-  <!-- ===== LEVEL (GAME) ===== -->
-  <div class="panel hidden" data-stage="level">
-    <div class="grid">
-      <button class="primary" data-cmd="OVEJITA">OVEJITA</button>
-      <button data-cmd="OVEJITAENOJADAPODER">PODER OVEJITA</button>
-
-      <button class="primary" data-cmd="PATITO">PATITO</button>
-      <button data-cmd="PATITOENOJADOPODER">PODER PATITO</button>
-
-      <button class="primary" data-cmd="CABRITA">CABRITA</button>
-      <button data-cmd="CABRITAENOJADAPODER">PODER CABRITA</button>
-
-      <button class="primary" data-cmd="CARPINCHA">CARPINCHA</button>
-      <button data-cmd="CARPINCHAENOJADAPODER">PODER CARPINCHA</button>
-
-      <button class="primary" data-cmd="VAQUITA">VAQUITA</button>
-      <button data-cmd="VAQUITAENOJADAPODER">PODER VAQUITA</button>
-    </div>
-
-    <div class="sep"></div>
-
-    <div class="grid">
-      <button class="primary" data-cmd="PODERARGENTINO">PODER ARGENTINO</button>
-      <button data-cmd="MUTE">MUTE</button>
-      <button data-cmd="HOME">HOME</button>
-      <button class="danger" data-cmd="EXIT">EXIT</button>
-    </div>
-
-    <div class="hint" style="margin-top:10px">
-      Arrastre slingshot: lo hacemos en el próximo paso (requiere enviar drag events).
-    </div>
-  </div>
-
-  <!-- ===== WAIT (LINDA) ===== -->
-  <div class="panel hidden" data-stage="wait">
-    <div class="grid">
-      <button class="primary" data-cmd="LINDAACCION0">LINDA 0</button>
-      <button class="primary" data-cmd="LINDAACCION1">LINDA 1</button>
-      <button class="primary" data-cmd="LINDAACCION2">LINDA 2</button>
-      <button class="primary" data-cmd="LINDAACCION3">LINDA 3</button>
-    </div>
-  </div>
-
-</div>
 
 <script>
+  // ---- util ----
   const qs = new URLSearchParams(location.search);
-  const code = (qs.get("code") || "").trim();
-  document.getElementById("codeLbl").textContent = code || "----";
+  const state = {
+    code: (qs.get("code") || "").toUpperCase().trim(),
+    player: "P1",
+    stage: qs.get("stage") || "start"
+  };
 
-  const dot = document.getElementById("dot");
-  const stageLbl = document.getElementById("stageLbl");
-  const stageTitle = document.getElementById("stageTitle");
+  const codeLabel = document.getElementById("codeLabel");
+  const codeInput = document.getElementById("codeInput");
+  const stageSel  = document.getElementById("stage");
+  const buttonsEl = document.getElementById("buttons");
 
-  const tabP1 = document.getElementById("tabP1");
-  const tabP2 = document.getElementById("tabP2");
-  const tabW  = document.getElementById("tabWait");
-
-  let selectedTab = "P1"; // P1 / P2 / W
-  let currentStage = "start";
-  let autoMode = true;
-
-  function setTab(t){
-    selectedTab = t;
-    tabP1.classList.toggle("active", t==="P1");
-    tabP2.classList.toggle("active", t==="P2");
-    tabW.classList.toggle("active",  t==="W");
+  function setPlayer(p){
+    state.player = p;
+    document.getElementById("tabP1").classList.toggle("active", p==="P1");
+    document.getElementById("tabP2").classList.toggle("active", p==="P2");
+    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
+    renderButtons();
   }
 
-  tabP1.onclick = () => { autoMode = false; setTab("P1"); };
-  tabP2.onclick = () => { autoMode = false; setTab("P2"); };
-  tabW.onclick  = () => { autoMode = false; setTab("W");  };
-
-  setTab("P1");
-
-  function showStage(stage){
-    currentStage = stage;
-    stageTitle.textContent = "Etapa: " + stage;
-    document.querySelectorAll(".panel").forEach(p=>{
-      p.classList.toggle("hidden", p.dataset.stage !== stage);
-    });
+  function setStage(s){
+    state.stage = s;
+    stageSel.value = s;
+    renderButtons();
   }
 
-  function cmdPrefix(){
-    if (selectedTab === "P1") return "P1_";
-    if (selectedTab === "P2") return "P2_";
-    return ""; // espera manda sin prefijo y Unity decide qué hacer (o lo prefijamos abajo)
+  function setCode(c){
+    state.code = (c||"").toUpperCase().trim();
+    codeLabel.textContent = state.code || "----";
+    codeInput.value = state.code;
   }
 
-  async function sendCmd(raw){
-    if (!code) return;
-
-    // Espera: queremos diferenciar P1_ / P2_ también:
-    let finalCmd = raw;
-    if (currentStage === "wait"){
-      finalCmd = (selectedTab==="P2" ? "P2_" : "P1_") + raw; // default P1 si está en wait
-    } else {
-      finalCmd = cmdPrefix() + raw;
-    }
-
-    await fetch("/api/send", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ code, cmd: finalCmd })
-    });
-  }
-
-  // click handler para todos los botones
-  document.querySelectorAll("button[data-cmd]").forEach(b=>{
-    b.addEventListener("click", () => sendCmd(b.dataset.cmd));
-  });
-
-  async function pollState(){
-    if (!code) return;
+  async function send(cmd, data=null){
+    if(!state.code){ alert("Falta CODE"); return; }
     try{
-      const r = await fetch("/api/state?code="+encodeURIComponent(code), { cache:"no-store" });
-      const j = await r.json();
-
-      dot.classList.add("ok");
-      stageLbl.textContent = "online";
-
-      const st = j?.state || {};
-      const stage = st.stage || "start";
-      const ap = Number(st.activePlayer || 1);
-
-      showStage(stage);
-
-      // AUTO: si Unity dice quién está activo, el otro se va a espera
-      if (autoMode){
-        if (stage === "level" || stage === "levelselect" || stage === "start"){
-          setTab(ap === 2 ? "P2" : "P1");
-        } else if (stage === "wait"){
-          // si Unity está en wait, dejamos el tab actual
-        }
-      }
+      await fetch("/api/send",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
+      });
+      // feedback suave:
+      navigator.vibrate?.(30);
     }catch(e){
-      dot.classList.remove("ok");
-      stageLbl.textContent = "offline";
+      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
     }
   }
 
-  setInterval(pollState, 500);
-  pollState();
-  showStage("start");
+  // ---- botones por etapa ----
+  const BUTTONS = {
+    start: [
+      ["PLAY", "PLAY", "primary"],
+      ["TRAILER", "TRAILER", ""],
+      ["EXIT TRAILER", "EXITTRAILER", ""],
+      ["MUTE", "MUTE", ""],
+      ["HOME", "HOME", ""],
+      ["EXIT", "EXIT", "danger"]
+    ],
+    select: [
+      ["LEFT", "LEFT", ""],
+      ["RIGHT", "RIGHT", ""],
+      ["PLAY", "PLAY", "primary"],
+      ["HOME", "HOME", ""],
+      ["EXIT", "EXIT", "danger"]
+    ],
+    level: [
+      ["OVEJITA", "OVEJITA", "primary"],
+      ["PODER OVEJITA", "OVEJITAENOJADAPODER", ""],
+      ["PATITO", "PATITO", "primary"],
+      ["PODER PATITO", "PATITOENOJADOPODER", ""],
+      ["CABRITA", "CABRITA", "primary"],
+      ["PODER CABRITA", "CABRITAENOJADAPODER", ""],
+      ["CARPINCHA", "CARPINCHA", "primary"],
+      ["PODER CARPINCHA", "CARPINCHAENOJADAPODER", ""],
+      ["VAQUITA", "VAQUITA", "primary"],
+      ["PODER VAQUITA", "VAQUITAENOJADAPODER", ""],
+      ["PODER ARGENTINO", "PODERARGENTINO", "primary"],
+      ["RESTART", "RESTART", ""],
+      ["HOME", "HOME", ""],
+      ["EXIT", "EXIT", "danger"]
+      // El arrastre lo hacemos después (touchpad/canvas), no en botones.
+    ],
+    wait: [
+      ["LINDA 0", "LINDAACCION0", "primary"],
+      ["LINDA 1", "LINDAACCION1", "primary"],
+      ["LINDA 2", "LINDAACCION2", "primary"],
+      ["LINDA 3", "LINDAACCION3", "primary"]
+    ]
+  };
+
+  function renderButtons(){
+    const list = BUTTONS[state.stage] || [];
+    buttonsEl.innerHTML = "";
+    for(const [label, cmd, css] of list){
+      const b = document.createElement("button");
+      b.textContent = label;
+      if(css) b.classList.add(css);
+      b.onclick = () => {
+        // prefijo por jugador (P1_/P2_) salvo WAIT
+        if(state.player === "WAIT"){
+          send(`WAIT_${cmd}`);
+        }else{
+          send(`${state.player}_${cmd}`);
+        }
+      };
+      buttonsEl.appendChild(b);
+    }
+  }
+
+  // ---- init ----
+  document.getElementById("tabP1").onclick = () => setPlayer("P1");
+  document.getElementById("tabP2").onclick = () => setPlayer("P2");
+  document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
+
+  stageSel.onchange = () => setStage(stageSel.value);
+
+  document.getElementById("saveCode").onclick = () => {
+    setCode(codeInput.value);
+    const url = new URL(location.href);
+    url.searchParams.set("code", state.code);
+    url.searchParams.set("stage", state.stage);
+    history.replaceState({}, "", url.toString());
+  };
+
+  setCode(state.code);
+  setStage(state.stage);
+  renderButtons();
 </script>
 </body>
 </html>
