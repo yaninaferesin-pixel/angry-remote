@@ -1,81 +1,86 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
+import express from "express";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-// =======================
-// In-memory "mailbox" por sesión
-// =======================
-const sessions = new Map(); // code -> { lastCmd, updatedAt }
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-function getOrCreateSession(code) {
-  if (!sessions.has(code)) {
-    sessions.set(code, { lastCmd: null, updatedAt: Date.now() });
-  }
+// Rutas posibles para index.html
+const publicDir = path.join(__dirname, "public");
+const indexInPublic = path.join(publicDir, "index.html");
+const indexInRoot = path.join(__dirname, "index.html");
+
+// --- Estado simple en memoria (demo) ---
+/**
+ * sessions[code] = {
+ *   lastCmd: { cmd: string, at: number } | null
+ * }
+ */
+const sessions = new Map();
+
+function ensureSession(code) {
+  if (!sessions.has(code)) sessions.set(code, { lastCmd: null });
   return sessions.get(code);
 }
 
-// =======================
-// Static + Home
-// =======================
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// --- API ---
+app.get("/ping", (req, res) => res.type("text").send("pong"));
+
+app.post("/api/send", (req, res) => {
+  const { code, cmd } = req.body || {};
+  if (!code || !cmd) return res.status(400).json({ ok: false, error: "Missing code/cmd" });
+
+  const s = ensureSession(code);
+  s.lastCmd = { cmd: String(cmd), at: Date.now() };
+  return res.json({ ok: true });
 });
 
-// (opcional) servir assets si después agregás css/js
-app.use("/static", express.static(__dirname));
-
-app.get("/ping", (req, res) => {
-  res.type("text/plain").send("pong");
-});
-
-// =======================
-// API: enviar comando (telefono -> servidor)
-// POST /api/cmd { code, player, action, payload? }
-// =======================
-app.post("/api/cmd", (req, res) => {
-  const { code, player, action, payload } = req.body || {};
-  if (!code || !action) {
-    return res.status(400).json({ ok: false, error: "Missing code or action" });
-  }
-
-  const s = getOrCreateSession(String(code).toUpperCase());
-  s.lastCmd = {
-    code: String(code).toUpperCase(),
-    player: player ?? "unknown",
-    action: String(action),
-    payload: payload ?? null,
-    t: Date.now()
-  };
-  s.updatedAt = Date.now();
-
-  res.json({ ok: true });
-});
-
-// =======================
-// API: leer último comando (Unity -> servidor)
-// GET /api/poll?code=XXXX
-// devuelve { ok, cmd } donde cmd puede ser null
-// =======================
+// Unity hace polling para leer el último comando
 app.get("/api/poll", (req, res) => {
-  const code = String(req.query.code || "").toUpperCase();
+  const code = String(req.query.code || "");
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const s = getOrCreateSession(code);
-  const cmd = s.lastCmd;
-  // Importante: vaciamos para que sea “consumible”
-  s.lastCmd = null;
+  const s = ensureSession(code);
 
-  res.json({ ok: true, cmd });
+  const out = s.lastCmd ? { cmd: s.lastCmd.cmd, at: s.lastCmd.at } : null;
+  s.lastCmd = null; // lo consumimos
+  return res.json({ ok: true, data: out });
 });
 
-// =======================
+// --- Static + UI ---
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+}
+
+// Home: sirve index.html sí o sí (public primero, root después)
+app.get("/", (req, res) => {
+  if (fs.existsSync(indexInPublic)) return res.sendFile(indexInPublic);
+  if (fs.existsSync(indexInRoot)) return res.sendFile(indexInRoot);
+
+  res
+    .status(200)
+    .type("html")
+    .send(`
+      <html>
+        <body style="font-family: sans-serif; padding: 24px;">
+          <h2>Remote UI</h2>
+          <p>No encuentro <b>public/index.html</b> ni <b>index.html</b>.</p>
+          <p>Solución: creá la carpeta <b>public</b> y mové ahí tu <b>index.html</b>.</p>
+        </body>
+      </html>
+    `);
+});
+
+// Render usa process.env.PORT
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log("Remote running on port", PORT);
 });
+
+
 
 
