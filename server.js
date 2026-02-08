@@ -1,76 +1,106 @@
-// server.js  (ESM - compatible con "type":"module")
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
+// server.js (CommonJS)
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 
 const app = express();
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: "200kb" }));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// ---------- CONFIG ----------
+const PORT = process.env.PORT || 8080;
 
-// --- In-memory storage (simple, para demo) ---
-const queues = new Map(); // code -> { cmds: [], state: {} }
+// Cada code tiene 2 colas: P1 y P2.
+// Guardamos comandos tipo { cmd: "P1_PLAY", t: 123456789, data: {} }
+const sessions = new Map();
 
-function getRoom(code) {
-  if (!queues.has(code)) queues.set(code, { cmds: [], state: {} });
-  return queues.get(code);
+function normCode(code) {
+  return String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-// --- Health ---
+function ensureSession(code) {
+  const c = normCode(code);
+  if (!c) return null;
+  if (!sessions.has(c)) {
+    sessions.set(c, {
+      createdAt: Date.now(),
+      queues: { P1: [], P2: [], WAIT: [] } // WAIT por si querés acciones de Linda
+    });
+  }
+  return sessions.get(c);
+}
+
+// Limpieza simple para no crecer infinito (cada 6 horas)
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, s] of sessions.entries()) {
+    if (now - s.createdAt > 6 * 60 * 60 * 1000) sessions.delete(code);
+  }
+}, 30 * 60 * 1000);
+
+// ---------- HEALTH ----------
 app.get("/ping", (req, res) => res.type("text").send("pong"));
 
-// --- Serve UI (index.html en la raíz del repo) ---
+// ---------- FRONT ----------
+const indexPath = path.join(__dirname, "index.html");
+
+// Si te falta index.html en Render, esto va a dar 500 en logs => significa que NO está en el repo/deploy
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  res.sendFile(indexPath);
 });
 
-// --- API: enviar comando desde el teléfono ---
+// ---------- API ----------
+// Enviar comando desde el teléfono
+// Body: { code:"62TR", player:"P1"|"P2"|"WAIT", cmd:"P1_PLAY", data?:{} }
 app.post("/api/send", (req, res) => {
-  const code = (req.query.code || "").toString().trim().toUpperCase();
+  const code = normCode(req.body.code);
+  const player = String(req.body.player || "P1").toUpperCase();
+  const cmd = String(req.body.cmd || "").trim();
+  const data = req.body.data || null;
+
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+  if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
-  const room = getRoom(code);
-  const cmd = (req.body?.cmd || "").toString().trim();
-  const player = (req.body?.player || "").toString().trim(); // opcional
+  const s = ensureSession(code);
+  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
 
-  if (cmd) {
-    room.cmds.push({ cmd, player, t: Date.now() });
-  }
-
-  res.json({ ok: true });
+  s.queues[key].push({ cmd, t: Date.now(), data });
+  return res.json({ ok: true });
 });
 
-// --- API: Unity hace polling para leer comandos ---
-app.get("/poll", (req, res) => {
-  const code = (req.query.code || "").toString().trim().toUpperCase();
+// Polling para Unity
+// GET /api/poll?code=62TR&player=P1
+// Devuelve y vacía la cola del jugador.
+app.get("/api/poll", (req, res) => {
+  const code = normCode(req.query.code);
+  const player = String(req.query.player || "P1").toUpperCase();
+
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const room = getRoom(code);
-  const cmds = room.cmds.splice(0, room.cmds.length); // consume
-  res.json({ ok: true, cmds, drags: [] });
+  const s = ensureSession(code);
+  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
+  const out = s.queues[key];
+  s.queues[key] = [];
+
+  res.json({ ok: true, events: out });
 });
 
-// --- API: estado (para UI “por etapas”) ---
-app.get("/api/state", (req, res) => {
-  const code = (req.query.code || "").toString().trim().toUpperCase();
+// Debug: ver cuántos eventos hay sin vaciar (solo para test)
+app.get("/api/status", (req, res) => {
+  const code = normCode(req.query.code);
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  const room = getRoom(code);
-  res.json({ ok: true, state: room.state || {} });
+  const s = ensureSession(code);
+  res.json({
+    ok: true,
+    code,
+    counts: {
+      P1: s.queues.P1.length,
+      P2: s.queues.P2.length,
+      WAIT: s.queues.WAIT.length
+    }
+  });
 });
 
-app.post("/api/state", (req, res) => {
-  const code = (req.query.code || "").toString().trim().toUpperCase();
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  const room = getRoom(code);
-  room.state = { ...(room.state || {}), ...(req.body || {}) };
-  res.json({ ok: true });
-});
-
-// --- Render port ---
-const port = process.env.PORT || 10000;
-app.listen(port, () => {
-  console.log("Remote running on port", port);
+app.listen(PORT, () => {
+  console.log("Remote running on port", PORT);
 });
