@@ -1,83 +1,81 @@
-// server.js
 const express = require("express");
+const cors = require("cors");
 const path = require("path");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-// ====== DATA EN MEMORIA (por code) ======
-const queues = new Map(); // code -> [ "CMD", ... ]
-const states = new Map(); // code -> { stage, activePlayer, t }
+// =======================
+// In-memory "mailbox" por sesión
+// =======================
+const sessions = new Map(); // code -> { lastCmd, updatedAt }
 
-function getQueue(code) {
-  if (!queues.has(code)) queues.set(code, []);
-  return queues.get(code);
-}
-
-function getState(code) {
-  if (!states.has(code)) {
-    states.set(code, { stage: "start", activePlayer: 1, t: Date.now() });
+function getOrCreateSession(code) {
+  if (!sessions.has(code)) {
+    sessions.set(code, { lastCmd: null, updatedAt: Date.now() });
   }
-  return states.get(code);
+  return sessions.get(code);
 }
 
-// ====== STATIC ======
-app.use(express.static(path.join(__dirname, "public")));
-
-// ====== HEALTH ======
-app.get("/ping", (req, res) => res.send("pong"));
-
-// ====== SEND COMMAND ======
-app.post("/api/send", (req, res) => {
-  const { code, cmd } = req.body || {};
-  if (!code || !cmd) return res.status(400).json({ ok: false, error: "Missing code/cmd" });
-
-  const q = getQueue(String(code).trim());
-  q.push(String(cmd));
-  return res.json({ ok: true });
+// =======================
+// Static + Home
+// =======================
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ====== POLL (Unity) ======
+// (opcional) servir assets si después agregás css/js
+app.use("/static", express.static(__dirname));
+
+app.get("/ping", (req, res) => {
+  res.type("text/plain").send("pong");
+});
+
+// =======================
+// API: enviar comando (telefono -> servidor)
+// POST /api/cmd { code, player, action, payload? }
+// =======================
+app.post("/api/cmd", (req, res) => {
+  const { code, player, action, payload } = req.body || {};
+  if (!code || !action) {
+    return res.status(400).json({ ok: false, error: "Missing code or action" });
+  }
+
+  const s = getOrCreateSession(String(code).toUpperCase());
+  s.lastCmd = {
+    code: String(code).toUpperCase(),
+    player: player ?? "unknown",
+    action: String(action),
+    payload: payload ?? null,
+    t: Date.now()
+  };
+  s.updatedAt = Date.now();
+
+  res.json({ ok: true });
+});
+
+// =======================
+// API: leer último comando (Unity -> servidor)
+// GET /api/poll?code=XXXX
+// devuelve { ok, cmd } donde cmd puede ser null
+// =======================
 app.get("/api/poll", (req, res) => {
-  const code = String(req.query.code || "").trim();
+  const code = String(req.query.code || "").toUpperCase();
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const q = getQueue(code);
-  const cmd = q.length > 0 ? q.shift() : null;
+  const s = getOrCreateSession(code);
+  const cmd = s.lastCmd;
+  // Importante: vaciamos para que sea “consumible”
+  s.lastCmd = null;
 
-  // Formato nuevo que Unity espera
-  const cmds = cmd ? [{ cmd }] : [];
-  return res.json({ ok: true, cmds, drags: [], cmd }); // cmd se deja por compatibilidad
+  res.json({ ok: true, cmd });
 });
 
-// ====== STATE (Unity -> Web UI) ======
-app.post("/api/state", (req, res) => {
-  const { code, stage, activePlayer } = req.body || {};
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  states.set(String(code).trim(), {
-    stage: stage || "start",
-    activePlayer: Number(activePlayer) || 1,
-    t: Date.now(),
-  });
-
-  return res.json({ ok: true });
+// =======================
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log("Remote running on port", PORT);
 });
-
-app.get("/api/state", (req, res) => {
-  const code = String(req.query.code || "").trim();
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  return res.json({ ok: true, state: getState(code) });
-});
-
-// SPA fallback
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log("Remote running on port", port));
-;
 
 
