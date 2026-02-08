@@ -1,6 +1,6 @@
+// server.js  (ESM - compatible con "type":"module")
 import express from "express";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 
 const app = express();
@@ -9,78 +9,68 @@ app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Rutas posibles para index.html
-const publicDir = path.join(__dirname, "public");
-const indexInPublic = path.join(publicDir, "index.html");
-const indexInRoot = path.join(__dirname, "index.html");
+// --- In-memory storage (simple, para demo) ---
+const queues = new Map(); // code -> { cmds: [], state: {} }
 
-// --- Estado simple en memoria (demo) ---
-/**
- * sessions[code] = {
- *   lastCmd: { cmd: string, at: number } | null
- * }
- */
-const sessions = new Map();
-
-function ensureSession(code) {
-  if (!sessions.has(code)) sessions.set(code, { lastCmd: null });
-  return sessions.get(code);
+function getRoom(code) {
+  if (!queues.has(code)) queues.set(code, { cmds: [], state: {} });
+  return queues.get(code);
 }
 
-// --- API ---
+// --- Health ---
 app.get("/ping", (req, res) => res.type("text").send("pong"));
 
-app.post("/api/send", (req, res) => {
-  const { code, cmd } = req.body || {};
-  if (!code || !cmd) return res.status(400).json({ ok: false, error: "Missing code/cmd" });
-
-  const s = ensureSession(code);
-  s.lastCmd = { cmd: String(cmd), at: Date.now() };
-  return res.json({ ok: true });
+// --- Serve UI (index.html en la raíz del repo) ---
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Unity hace polling para leer el último comando
-app.get("/api/poll", (req, res) => {
-  const code = String(req.query.code || "");
+// --- API: enviar comando desde el teléfono ---
+app.post("/api/send", (req, res) => {
+  const code = (req.query.code || "").toString().trim().toUpperCase();
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const s = ensureSession(code);
+  const room = getRoom(code);
+  const cmd = (req.body?.cmd || "").toString().trim();
+  const player = (req.body?.player || "").toString().trim(); // opcional
 
-  const out = s.lastCmd ? { cmd: s.lastCmd.cmd, at: s.lastCmd.at } : null;
-  s.lastCmd = null; // lo consumimos
-  return res.json({ ok: true, data: out });
+  if (cmd) {
+    room.cmds.push({ cmd, player, t: Date.now() });
+  }
+
+  res.json({ ok: true });
 });
 
-// --- Static + UI ---
-if (fs.existsSync(publicDir)) {
-  app.use(express.static(publicDir));
-}
+// --- API: Unity hace polling para leer comandos ---
+app.get("/poll", (req, res) => {
+  const code = (req.query.code || "").toString().trim().toUpperCase();
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-// Home: sirve index.html sí o sí (public primero, root después)
-app.get("/", (req, res) => {
-  if (fs.existsSync(indexInPublic)) return res.sendFile(indexInPublic);
-  if (fs.existsSync(indexInRoot)) return res.sendFile(indexInRoot);
-
-  res
-    .status(200)
-    .type("html")
-    .send(`
-      <html>
-        <body style="font-family: sans-serif; padding: 24px;">
-          <h2>Remote UI</h2>
-          <p>No encuentro <b>public/index.html</b> ni <b>index.html</b>.</p>
-          <p>Solución: creá la carpeta <b>public</b> y mové ahí tu <b>index.html</b>.</p>
-        </body>
-      </html>
-    `);
+  const room = getRoom(code);
+  const cmds = room.cmds.splice(0, room.cmds.length); // consume
+  res.json({ ok: true, cmds, drags: [] });
 });
 
-// Render usa process.env.PORT
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log("Remote running on port", PORT);
+// --- API: estado (para UI “por etapas”) ---
+app.get("/api/state", (req, res) => {
+  const code = (req.query.code || "").toString().trim().toUpperCase();
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+
+  const room = getRoom(code);
+  res.json({ ok: true, state: room.state || {} });
 });
 
+app.post("/api/state", (req, res) => {
+  const code = (req.query.code || "").toString().trim().toUpperCase();
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
+  const room = getRoom(code);
+  room.state = { ...(room.state || {}), ...(req.body || {}) };
+  res.json({ ok: true });
+});
 
-
+// --- Render port ---
+const port = process.env.PORT || 10000;
+app.listen(port, () => {
+  console.log("Remote running on port", port);
+});
