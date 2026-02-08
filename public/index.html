@@ -1,36 +1,189 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Angry Jordi Remote</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Angry Remote</title>
   <style>
-    body {
-      background: #111;
-      color: white;
-      font-family: sans-serif;
-      text-align: center;
-      padding: 40px;
-    }
-    button {
-      font-size: 24px;
-      padding: 20px 40px;
-      margin: 20px;
-    }
+    body { font-family: system-ui, Arial; margin: 0; background:#111; color:#fff; }
+    header { padding: 12px 14px; background:#1b1b1b; position: sticky; top:0; z-index:10; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pill { padding:6px 10px; border-radius:999px; background:#2a2a2a; font-weight:600; }
+    .tabs { display:flex; gap:8px; margin-top:10px; }
+    .tab { flex:1; padding:12px; border-radius:12px; background:#2a2a2a; text-align:center; font-weight:700; border:2px solid transparent; }
+    .tab.active { border-color:#7c4dff; background:#232323; }
+    .content { padding: 14px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    button { padding:14px 12px; border-radius:14px; border:none; background:#7c4dff; color:#fff; font-weight:800; font-size:15px; }
+    button.secondary { background:#3a3a3a; }
+    button.danger { background:#ff3b30; }
+    .small { font-size:12px; opacity:.8; }
+    .ok { color:#4cd964; font-weight:700; }
+    .warn { color:#ffcc00; font-weight:700; }
   </style>
 </head>
 <body>
+<header>
+  <div class="row">
+    <div class="pill">CODE: <span id="code">----</span></div>
+    <div class="pill" id="status" class="warn">conectando…</div>
+  </div>
 
-  <h1>📱 Angry Jordi Remote</h1>
-  <p>Conectado correctamente</p>
+  <div class="tabs">
+    <div class="tab active" id="tabP1">Player 1</div>
+    <div class="tab" id="tabP2">Player 2</div>
+    <div class="tab" id="tabW">Espera</div>
+  </div>
 
-  <button onclick="send('TAP')">TAP</button>
+  <div class="small">Tip: escaneá el QR, abrí esta página y apretá botones.</div>
+</header>
 
-  <script>
-    function send(cmd) {
-      fetch('/cmd/' + cmd).catch(e => console.error(e));
+<div class="content">
+  <div id="panelP1"></div>
+  <div id="panelP2" style="display:none"></div>
+  <div id="panelW"  style="display:none"></div>
+</div>
+
+<script>
+  // --- code ---
+  const params = new URLSearchParams(location.search);
+  const CODE = (params.get("code") || "").trim();
+  document.getElementById("code").textContent = CODE || "----";
+
+  function setStatus(text, kind) {
+    const el = document.getElementById("status");
+    el.textContent = text;
+    el.className = "pill " + (kind || "");
+  }
+
+  async function ping() {
+    try {
+      const r = await fetch("/ping", { cache: "no-store" });
+      if (!r.ok) throw new Error("ping failed");
+      setStatus("online", "ok");
+    } catch {
+      setStatus("offline", "warn");
     }
-  </script>
+  }
+  ping();
+  setInterval(ping, 5000);
 
+  // --- send command ---
+  async function send(cmd) {
+    if (!CODE) { alert("Falta ?code=XXXX en la URL"); return; }
+    try {
+      const r = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ code: CODE, cmd })
+      });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || "send failed");
+      setStatus("enviado: " + cmd, "ok");
+      setTimeout(() => setStatus("online", "ok"), 700);
+    } catch (e) {
+      setStatus("error enviando", "warn");
+      console.error(e);
+    }
+  }
+
+  // --- UI builders ---
+  function makePanel(rootId, commands) {
+    const root = document.getElementById(rootId);
+    root.innerHTML = "";
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    commands.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      if (c.kind) b.classList.add(c.kind);
+      b.onclick = () => send(c.cmd);
+      grid.appendChild(b);
+    });
+    root.appendChild(grid);
+  }
+
+  // Player 1
+  makePanel("panelP1", [
+    { label:"PLAY", cmd:"P1_PLAY" },
+    { label:"TRAILER", cmd:"P1_TRAILER", kind:"secondary" },
+    { label:"EXIT TRAILER", cmd:"P1_EXITTRAILER", kind:"secondary" },
+    { label:"MUTE", cmd:"P1_MUTE", kind:"secondary" },
+    { label:"LEFT", cmd:"P1_LEFT", kind:"secondary" },
+    { label:"RIGHT", cmd:"P1_RIGHT", kind:"secondary" },
+    { label:"HOME", cmd:"P1_HOME", kind:"secondary" },
+    { label:"EXIT", cmd:"P1_EXIT", kind:"danger" },
+
+    { label:"OVEJITA", cmd:"P1_OVEJITA" },
+    { label:"PODER OVEJITA", cmd:"P1_OVEJITAENOJADAPODER", kind:"secondary" },
+    { label:"PATITO", cmd:"P1_PATITO" },
+    { label:"PODER PATITO", cmd:"P1_PATITOENOJADOPODER", kind:"secondary" },
+    { label:"CABRITA", cmd:"P1_CABRITA" },
+    { label:"PODER CABRITA", cmd:"P1_CABRITAENOJADAPODER", kind:"secondary" },
+    { label:"CARPINCHA", cmd:"P1_CARPINCHA" },
+    { label:"PODER CARPINCHA", cmd:"P1_CARPINCHAENOJADAPODER", kind:"secondary" },
+    { label:"VAQUITA", cmd:"P1_VAQUITA" },
+    { label:"PODER VAQUITA", cmd:"P1_VAQUITAENOJADAPODER", kind:"secondary" },
+
+    { label:"PODER ARGENTINO", cmd:"P1_PODERARGENTINO" },
+    // Nota: el “arrastre slingshot” lo hacemos después (más abajo te digo cómo)
+  ]);
+
+  // Player 2
+  makePanel("panelP2", [
+    { label:"PLAY", cmd:"P2_PLAY" },
+    { label:"TRAILER", cmd:"P2_TRAILER", kind:"secondary" },
+    { label:"EXIT TRAILER", cmd:"P2_EXITTRAILER", kind:"secondary" },
+    { label:"MUTE", cmd:"P2_MUTE", kind:"secondary" },
+    { label:"LEFT", cmd:"P2_LEFT", kind:"secondary" },
+    { label:"RIGHT", cmd:"P2_RIGHT", kind:"secondary" },
+    { label:"HOME", cmd:"P2_HOME", kind:"secondary" },
+    { label:"EXIT", cmd:"P2_EXIT", kind:"danger" },
+
+    { label:"OVEJITA", cmd:"P2_OVEJITA" },
+    { label:"PODER OVEJITA", cmd:"P2_OVEJITAENOJADAPODER", kind:"secondary" },
+    { label:"PATITO", cmd:"P2_PATITO" },
+    { label:"PODER PATITO", cmd:"P2_PATITOENOJADOPODER", kind:"secondary" },
+    { label:"CABRITA", cmd:"P2_CABRITA" },
+    { label:"PODER CABRITA", cmd:"P2_CABRITAENOJADAPODER", kind:"secondary" },
+    { label:"CARPINCHA", cmd:"P2_CARPINCHA" },
+    { label:"PODER CARPINCHA", cmd:"P2_CARPINCHAENOJADAPODER", kind:"secondary" },
+    { label:"VAQUITA", cmd:"P2_VAQUITA" },
+    { label:"PODER VAQUITA", cmd:"P2_VAQUITAENOJADAPODER", kind:"secondary" },
+
+    { label:"PODER ARGENTINO", cmd:"P2_PODERARGENTINO" },
+  ]);
+
+  // Espera (Linda)
+  makePanel("panelW", [
+    { label:"Linda acción 0 (P1)", cmd:"P1_LINDAACCION0" },
+    { label:"Linda acción 1 (P1)", cmd:"P1_LINDAACCION1" },
+    { label:"Linda acción 2 (P1)", cmd:"P1_LINDAACCION2" },
+    { label:"Linda acción 3 (P1)", cmd:"P1_LINDAACCION3" },
+
+    { label:"Linda acción 0 (P2)", cmd:"P2_LINDAACCION0" },
+    { label:"Linda acción 1 (P2)", cmd:"P2_LINDAACCION1" },
+    { label:"Linda acción 2 (P2)", cmd:"P2_LINDAACCION2" },
+    { label:"Linda acción 3 (P2)", cmd:"P2_LINDAACCION3" },
+  ]);
+
+  // Tabs
+  function show(which) {
+    const p1 = document.getElementById("panelP1");
+    const p2 = document.getElementById("panelP2");
+    const w  = document.getElementById("panelW");
+    p1.style.display = which==="p1" ? "" : "none";
+    p2.style.display = which==="p2" ? "" : "none";
+    w.style.display  = which==="w"  ? "" : "none";
+
+    document.getElementById("tabP1").classList.toggle("active", which==="p1");
+    document.getElementById("tabP2").classList.toggle("active", which==="p2");
+    document.getElementById("tabW").classList.toggle("active", which==="w");
+  }
+
+  document.getElementById("tabP1").onclick = () => show("p1");
+  document.getElementById("tabP2").onclick = () => show("p2");
+  document.getElementById("tabW").onclick  = () => show("w");
+</script>
 </body>
 </html>
