@@ -1,4 +1,4 @@
-// server.js (CommonJS)
+// server.js (CommonJS) - Compatible con Unity RenderRemoteCommandClient.cs
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -10,27 +10,33 @@ app.use(express.json({ limit: "200kb" }));
 // ---------- CONFIG ----------
 const PORT = process.env.PORT || 8080;
 
-// Cada code tiene 2 colas: P1 y P2.
-// Guardamos comandos tipo { cmd: "P1_PLAY", t: 123456789, data: {} }
+// Sesiones por CODE, con colas separadas
+// cmds: [{ cmd: "P1_PLAY", t: 123 }]
+// drags: [{ player:"P1", phase:"move", x:0.5, y:0.2, t:123 }]
 const sessions = new Map();
 
 function normCode(code) {
-  return String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return String(code || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }
 
 function ensureSession(code) {
   const c = normCode(code);
   if (!c) return null;
+
   if (!sessions.has(c)) {
     sessions.set(c, {
       createdAt: Date.now(),
-      queues: { P1: [], P2: [], WAIT: [] } // WAIT por si querés acciones de Linda
+      cmds: [],
+      drags: [],
     });
   }
   return sessions.get(c);
 }
 
-// Limpieza simple para no crecer infinito (cada 6 horas)
+// Limpieza simple (6 horas)
 setInterval(() => {
   const now = Date.now();
   for (const [code, s] of sessions.entries()) {
@@ -43,62 +49,106 @@ app.get("/ping", (req, res) => res.type("text").send("pong"));
 
 // ---------- FRONT ----------
 const indexPath = path.join(__dirname, "index.html");
+app.get("/", (req, res) => res.sendFile(indexPath));
 
-// Si te falta index.html en Render, esto va a dar 500 en logs => significa que NO está en el repo/deploy
-app.get("/", (req, res) => {
-  res.sendFile(indexPath);
-});
+// ---------- API (Unity expects /poll) ----------
 
-// ---------- API ----------
-// Enviar comando desde el teléfono
-// Body: { code:"62TR", player:"P1"|"P2"|"WAIT", cmd:"P1_PLAY", data?:{} }
-app.post("/api/send", (req, res) => {
+// Web -> enviar comando (botón)
+// Body: { code:"62TR", cmd:"P1_PLAY" }
+app.post("/send", (req, res) => {
   const code = normCode(req.body.code);
-  const player = String(req.body.player || "P1").toUpperCase();
-  const cmd = String(req.body.cmd || "").trim();
-  const data = req.body.data || null;
+  const cmd = String(req.body.cmd || "").trim().toUpperCase();
 
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
   const s = ensureSession(code);
-  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
-
-  s.queues[key].push({ cmd, t: Date.now(), data });
+  s.cmds.push({ cmd, t: Date.now() });
   return res.json({ ok: true });
 });
 
-// Polling para Unity
-// GET /api/poll?code=62TR&player=P1
-// Devuelve y vacía la cola del jugador.
-app.get("/api/poll", (req, res) => {
+// Unity -> polling de comandos
+// GET /poll?code=62TR
+// Devuelve el formato que Unity RenderRemoteCommandClient.cs parsea:
+// { ok:true, cmds:[{cmd:"P1_PLAY"}], drags:[{player,phase,x,y}] }
+app.get("/poll", (req, res) => {
   const code = normCode(req.query.code);
-  const player = String(req.query.player || "P1").toUpperCase();
-
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
   const s = ensureSession(code);
-  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
-  const out = s.queues[key];
-  s.queues[key] = [];
 
-  res.json({ ok: true, events: out });
+  const cmds = s.cmds.map((c) => ({ cmd: c.cmd }));
+  const drags = s.drags.map((d) => ({
+    player: d.player,
+    phase: d.phase,
+    x: d.x,
+    y: d.y,
+  }));
+
+  // vaciar colas
+  s.cmds = [];
+  s.drags = [];
+
+  res.json({ ok: true, cmds, drags });
 });
 
-// Debug: ver cuántos eventos hay sin vaciar (solo para test)
-app.get("/api/status", (req, res) => {
+// (opcional) touch/drag para slingshot (más adelante)
+// Body: { code:"62TR", player:"P1", phase:"start|move|end|cancel", x:0..1, y:0..1 }
+app.post("/drag", (req, res) => {
+  const code = normCode(req.body.code);
+  const player = String(req.body.player || "").trim().toUpperCase();
+  const phase = String(req.body.phase || "").trim().toLowerCase();
+  const x = Number(req.body.x);
+  const y = Number(req.body.y);
+
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+  if (player !== "P1" && player !== "P2")
+    return res.status(400).json({ ok: false, error: "player must be P1 or P2" });
+  if (!["start", "move", "end", "cancel"].includes(phase))
+    return res.status(400).json({ ok: false, error: "Invalid phase" });
+  if (!Number.isFinite(x) || !Number.isFinite(y))
+    return res.status(400).json({ ok: false, error: "Invalid x/y" });
+
+  const s = ensureSession(code);
+  s.drags.push({ player, phase, x, y, t: Date.now() });
+  return res.json({ ok: true });
+});
+
+// ---------- COMPAT (por si tu web vieja llama /api/...) ----------
+// Soportamos también /api/send y /api/poll, pero internamente usamos lo mismo.
+app.post("/api/send", (req, res) => {
+  // si viene { code, player, cmd } -> armamos cmd final
+  const code = normCode(req.body.code);
+  const player = String(req.body.player || "P1").trim().toUpperCase();
+  const raw = String(req.body.cmd || "").trim().toUpperCase();
+
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+  if (!raw) return res.status(400).json({ ok: false, error: "Missing cmd" });
+
+  let cmd = raw;
+  if (!raw.startsWith("P1_") && !raw.startsWith("P2_") && !raw.startsWith("WAIT_")) {
+    if (player === "P2") cmd = `P2_${raw}`;
+    else if (player === "WAIT") cmd = `WAIT_${raw}`;
+    else cmd = `P1_${raw}`;
+  }
+
+  const s = ensureSession(code);
+  s.cmds.push({ cmd, t: Date.now() });
+  return res.json({ ok: true });
+});
+
+app.get("/api/poll", (req, res) => {
+  // devolvemos mismo formato que /poll para simplificar
+  req.url = "/poll" + (req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "");
+  return app._router.handle(req, res, () => {});
+});
+
+// Debug
+app.get("/status", (req, res) => {
   const code = normCode(req.query.code);
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
   const s = ensureSession(code);
-  res.json({
-    ok: true,
-    code,
-    counts: {
-      P1: s.queues.P1.length,
-      P2: s.queues.P2.length,
-      WAIT: s.queues.WAIT.length
-    }
-  });
+  res.json({ ok: true, code, counts: { cmds: s.cmds.length, drags: s.drags.length } });
 });
 
 app.listen(PORT, () => {
