@@ -1,289 +1,226 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Angry Remote</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Angry Remote</title>
 
-  <style>
-    :root{
-      --bg:#0b0d12;
-      --panel:#131826;
-      --panel2:#0f1320;
-      --line:#232a3d;
-      --btn:#20263a;
-      --btnHi:#6b4cff;
-      --danger:#ff3b30;
-      --text:#f4f6ff;
-      --muted:#aab0c6;
-      --radius:18px;
-      --shadow: 0 10px 28px rgba(0,0,0,.35);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
+<style>
+:root{
+  --bg:#0e0f13;
+  --panel:#161823;
+  --btn:#2a2d3a;
+  --primary:#6b4cff;
+  --danger:#ff3b30;
+  --text:#ffffff;
+  --muted:#9aa0b6;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
 
-    body{margin:0;background:radial-gradient(1200px 600px at 30% 0%, #141a2b 0%, var(--bg) 55%); color:var(--text);}
-    .wrap{max-width:820px;margin:0 auto;padding:16px 14px 28px;}
-    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px;}
-    .chip{
-      background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:10px 12px;
-      display:flex;gap:10px;align-items:center;
-      box-shadow: var(--shadow);
-    }
-    .pill{
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:6px 10px;
-      color:var(--muted);
-      background:rgba(0,0,0,.10);
-    }
-    .ok{color:#41d07a;font-weight:800}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+}
 
-    .tabs{display:flex;gap:10px;margin:12px 0;}
-    .tab{
-      flex:1;
-      background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
-      border:1px solid var(--line);
-      color:var(--text);
-      padding:14px 12px;
-      border-radius:999px;
-      font-weight:800;
-      box-shadow: var(--shadow);
-    }
-    .tab.active{outline:2px solid var(--btnHi);}
+.wrap{
+  max-width:720px;
+  margin:auto;
+  padding:16px;
+}
 
-    .panel{
-      background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
-      border-radius:var(--radius);
-      padding:14px;
-      border:1px solid var(--line);
-      box-shadow: var(--shadow);
-    }
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
-    .hint{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.2}
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
 
-    select,input{
-      background:#0b0f1c;
-      color:var(--text);
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 12px;
-      outline:none;
-    }
-    input{min-width:140px}
+.badge{
+  background:var(--panel);
+  padding:10px 14px;
+  border-radius:999px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
 
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
-    button{
-      border:0;border-radius:16px;padding:16px 14px;font-weight:900;
-      background:var(--btn);color:var(--text);font-size:16px;
-      box-shadow: 0 8px 18px rgba(0,0,0,.22);
-      transition: transform .05s ease;
-    }
-    button:active{transform: scale(.99);}
-    button.primary{background:linear-gradient(180deg, #7a61ff 0%, var(--btnHi) 100%);}
-    button.danger{background:linear-gradient(180deg, #ff5b52 0%, var(--danger) 100%);}
-    button.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--muted);}
+.ok{ color:#41d07a; font-weight:700; }
 
-    .spacer{height:8px}
-  </style>
+.tabs{
+  display:flex;
+  gap:10px;
+  margin:14px 0;
+}
+
+.tab{
+  flex:1;
+  background:var(--panel);
+  border:1px solid #2d3146;
+  color:white;
+  padding:14px;
+  border-radius:999px;
+  font-weight:700;
+}
+
+.tab.active{
+  outline:2px solid var(--primary);
+}
+
+.panel{
+  background:var(--panel);
+  border-radius:18px;
+  padding:14px;
+  border:1px solid #2d3146;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:14px;
+}
+
+button{
+  border:0;
+  border-radius:16px;
+  padding:16px;
+  font-size:16px;
+  font-weight:800;
+  background:var(--btn);
+  color:white;
+}
+
+button.primary{ background:var(--primary); }
+button.danger{ background:var(--danger); }
+
+input, select{
+  background:#0f111a;
+  color:white;
+  border:1px solid #2d3146;
+  border-radius:12px;
+  padding:10px;
+}
+</style>
 </head>
 
 <body>
-  <div class="wrap">
+<div class="wrap">
 
-    <div class="top">
-      <div class="chip">
-        <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span class="ok" id="online">online</span></div>
-      </div>
-
-      <div class="chip">
-        <span class="pill">Etapa</span>
-        <select id="stage">
-          <option value="start">StartScene (Menú)</option>
-          <option value="select">LevelSelect</option>
-          <option value="level">Level (Gameplay)</option>
-          <option value="wait">Espera (Linda)</option>
-        </select>
-      </div>
+  <div class="top">
+    <div class="badge">
+      CODE: <b id="codeLabel">----</b>
+      <span class="ok">online</span>
     </div>
 
-    <div class="tabs">
-      <button class="tab active" id="tabP1">Player 1</button>
-      <button class="tab" id="tabP2">Player 2</button>
-      <button class="tab" id="tabW">Espera</button>
+    <div class="badge">
+      Etapa
+      <select id="stage">
+        <option value="start">StartScene</option>
+        <option value="select">Level Select</option>
+        <option value="level">Gameplay</option>
+      </select>
     </div>
-
-    <div class="panel">
-      <div class="row">
-        <div>
-          <div class="hint">Escaneá el QR, abrí esta página, elegí etapa y apretá botones.</div>
-          <div class="hint">Importante: la página NO manda nada automáticamente.</div>
-        </div>
-
-        <div class="row">
-          <input id="codeInput" placeholder="CODE (ej: JLYF)" />
-          <button class="ghost" id="saveCode">OK</button>
-        </div>
-      </div>
-
-      <div class="spacer"></div>
-      <div id="buttons" class="grid"></div>
-    </div>
-
   </div>
 
+  <div class="tabs">
+    <button class="tab active" id="p1">Player 1</button>
+    <button class="tab" id="p2">Player 2</button>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex; gap:10px;">
+      <input id="codeInput" placeholder="CODE (ej: JLYF)">
+      <button id="save">OK</button>
+    </div>
+
+    <div id="buttons" class="grid"></div>
+  </div>
+
+</div>
+
 <script>
-  // ---------- Estado ----------
-  const qs = new URLSearchParams(location.search);
+const state = {
+  code:"",
+  player:"P1",
+  stage:"start"   // 👈 SIEMPRE arranca en StartScene
+};
 
-  // Default: START (menú). Si viene por URL, lo usamos.
-  const state = {
-    code: (qs.get("code") || "").toUpperCase().trim(),
-    player: (qs.get("player") || "P1").toUpperCase(),
-    stage: (qs.get("stage") || "start").toLowerCase()
-  };
+const buttonsEl = document.getElementById("buttons");
+const codeLabel = document.getElementById("codeLabel");
+const stageSel  = document.getElementById("stage");
 
-  // Normalizamos valores permitidos
-  if(!["P1","P2","WAIT"].includes(state.player)) state.player = "P1";
-  if(!["start","select","level","wait"].includes(state.stage)) state.stage = "start";
+function send(cmd){
+  if(!state.code){ alert("Falta CODE"); return; }
 
-  const codeLabel = document.getElementById("codeLabel");
-  const codeInput = document.getElementById("codeInput");
-  const stageSel  = document.getElementById("stage");
-  const buttonsEl = document.getElementById("buttons");
+  fetch("/api/send",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      code:state.code,
+      player:state.player,
+      cmd: `${state.player}_${cmd}`
+    })
+  });
+}
 
-  function setPlayer(p){
-    state.player = p;
-    document.getElementById("tabP1").classList.toggle("active", p==="P1");
-    document.getElementById("tabP2").classList.toggle("active", p==="P2");
-    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
-    renderButtons();
-    updateUrl();
-  }
+const BUTTONS = {
+  start:[
+    ["PLAY","PLAY","primary"],
+    ["TRAILER","TRAILER"],
+    ["EXIT TRAILER","EXITTRAILER"],
+    ["EXIT","EXIT","danger"]
+  ],
+  select:[
+    ["LEFT","LEFT"],
+    ["RIGHT","RIGHT"],
+    ["PLAY","PLAY","primary"],
+    ["EXIT","EXIT","danger"]
+  ],
+  level:[
+    ["OVEJITA","OVEJITA","primary"],
+    ["OVEJITA PODER","OVEJITAENOJADAPODER"],
+    ["PATITO","PATITO","primary"],
+    ["PATITO PODER","PATITOENOJADOPODER"],
+    ["RESTART","RESTART"],
+    ["EXIT","EXIT","danger"]
+  ]
+};
 
-  function setStage(s){
-    state.stage = s;
-    stageSel.value = s;
-    renderButtons();
-    updateUrl();
-  }
+function render(){
+  buttonsEl.innerHTML="";
+  BUTTONS[state.stage].forEach(([label,cmd,css])=>{
+    const b=document.createElement("button");
+    b.textContent=label;
+    if(css) b.classList.add(css);
+    b.onclick=()=>send(cmd);
+    buttonsEl.appendChild(b);
+  });
+}
 
-  function setCode(c){
-    state.code = (c || "").toUpperCase().trim();
-    codeLabel.textContent = state.code || "----";
-    codeInput.value = state.code;
-    updateUrl();
-  }
+document.getElementById("save").onclick=()=>{
+  state.code = document.getElementById("codeInput").value.toUpperCase().trim();
+  codeLabel.textContent = state.code;
+};
 
-  function updateUrl(){
-    const url = new URL(location.href);
-    if(state.code) url.searchParams.set("code", state.code); else url.searchParams.delete("code");
-    url.searchParams.set("stage", state.stage);
-    url.searchParams.set("player", state.player);
-    history.replaceState({}, "", url.toString());
-  }
+document.getElementById("p1").onclick=()=>{
+  state.player="P1";
+  document.getElementById("p1").classList.add("active");
+  document.getElementById("p2").classList.remove("active");
+};
 
-  async function send(cmd, data=null){
-    if(!state.code){ alert("Falta CODE"); return; }
+document.getElementById("p2").onclick=()=>{
+  state.player="P2";
+  document.getElementById("p2").classList.add("active");
+  document.getElementById("p1").classList.remove("active");
+};
 
-    try{
-      const r = await fetch("/api/send",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
-      });
+stageSel.onchange=()=>{
+  state.stage=stageSel.value;
+  render();
+};
 
-      if(!r.ok){
-        const txt = await r.text().catch(()=> "");
-        alert("No pude enviar ("+r.status+"). " + txt);
-        return;
-      }
-
-      navigator.vibrate?.(25);
-
-    }catch(e){
-      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
-    }
-  }
-
-  // ---------- Botones por etapa (solo lo que corresponde) ----------
-  // NOTA: Los comandos se envían como:
-  //   P1_PLAY, P2_TRAILER, WAIT_LINDAACCION0, etc.
-  const BUTTONS = {
-    start: [
-      ["PLAY", "PLAY", "primary"],
-      ["TRAILER", "TRAILER", ""],
-      ["CLOSE TRAILER", "EXITTRAILER", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    select: [
-      ["LEFT", "LEFT", ""],
-      ["RIGHT", "RIGHT", ""],
-      ["PLAY", "PLAY", "primary"],
-      ["HOME", "HOME", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    level: [
-      ["OVEJITA", "OVEJITA", "primary"],
-      ["PODER OVEJITA", "OVEJITAENOJADAPODER", ""],
-      ["PATITO", "PATITO", "primary"],
-      ["PODER PATITO", "PATITOENOJADOPODER", ""],
-      ["CABRITA", "CABRITA", "primary"],
-      ["PODER CABRITA", "CABRITAENOJADAPODER", ""],
-      ["CARPINCHA", "CARPINCHA", "primary"],
-      ["PODER CARPINCHA", "CARPINCHAENOJADAPODER", ""],
-      ["VAQUITA", "VAQUITA", "primary"],
-      ["PODER VAQUITA", "VAQUITAENOJADAPODER", ""],
-      ["PODER ARGENTINO", "PODERARGENTINO", "primary"],
-      ["HOME", "HOME", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    wait: [
-      ["LINDA 0", "LINDAACCION0", "primary"],
-      ["LINDA 1", "LINDAACCION1", "primary"],
-      ["LINDA 2", "LINDAACCION2", "primary"],
-      ["LINDA 3", "LINDAACCION3", "primary"]
-    ]
-  };
-
-  function renderButtons(){
-    const list = BUTTONS[state.stage] || [];
-    buttonsEl.innerHTML = "";
-
-    for(const [label, cmd, css] of list){
-      const b = document.createElement("button");
-      b.textContent = label;
-      if(css) b.classList.add(css);
-
-      b.onclick = () => {
-        // Prefijo por jugador (P1_/P2_) salvo WAIT
-        const full = (state.player === "WAIT")
-          ? `WAIT_${cmd}`
-          : `${state.player}_${cmd}`;
-        send(full);
-      };
-
-      buttonsEl.appendChild(b);
-    }
-  }
-
-  // ---------- Events ----------
-  document.getElementById("tabP1").onclick = () => setPlayer("P1");
-  document.getElementById("tabP2").onclick = () => setPlayer("P2");
-  document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
-
-  stageSel.onchange = () => setStage(stageSel.value);
-
-  document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
-
-  // ---------- Init ----------
-  setCode(state.code);
-  setStage(state.stage);
-  setPlayer(state.player);
-  renderButtons();
+render(); // 👈 render inicial SIN mandar comandos
 </script>
 </body>
 </html>
