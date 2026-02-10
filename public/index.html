@@ -4,46 +4,105 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Angry Remote</title>
+
   <style>
     :root{
-      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30; --text:#f5f6ff; --muted:#a9acc2;
+      --bg:#0b0d12;
+      --panel:#131826;
+      --panel2:#0f1320;
+      --line:#232a3d;
+      --btn:#20263a;
+      --btnHi:#6b4cff;
+      --danger:#ff3b30;
+      --text:#f4f6ff;
+      --muted:#aab0c6;
       --radius:18px;
+      --shadow: 0 10px 28px rgba(0,0,0,.35);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    body{margin:0;background:var(--bg);color:var(--text);}
-    .wrap{max-width:720px;margin:0 auto;padding:16px;}
-    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
-    .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
-    .ok{color:#41d07a;font-weight:700}
-    .tabs{display:flex;gap:10px;margin:12px 0}
-    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
-    .tab.active{outline:2px solid var(--btn2)}
-    .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    select,input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-    button{
-      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
-      background:var(--btn);color:var(--text);font-size:16px;
+
+    body{margin:0;background:radial-gradient(1200px 600px at 30% 0%, #141a2b 0%, var(--bg) 55%); color:var(--text);}
+    .wrap{max-width:820px;margin:0 auto;padding:16px 14px 28px;}
+    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .chip{
+      background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:10px 12px;
+      display:flex;gap:10px;align-items:center;
+      box-shadow: var(--shadow);
     }
-    button.primary{background:var(--btn2)}
-    button.danger{background:var(--danger)}
-    button.ghost{background:transparent;border:1px solid #2d3146}
-    .hint{color:var(--muted);font-size:13px;margin-top:8px}
+    .pill{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      color:var(--muted);
+      background:rgba(0,0,0,.10);
+    }
+    .ok{color:#41d07a;font-weight:800}
+
+    .tabs{display:flex;gap:10px;margin:12px 0;}
+    .tab{
+      flex:1;
+      background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:14px 12px;
+      border-radius:999px;
+      font-weight:800;
+      box-shadow: var(--shadow);
+    }
+    .tab.active{outline:2px solid var(--btnHi);}
+
+    .panel{
+      background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+      border-radius:var(--radius);
+      padding:14px;
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+    .hint{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.2}
+
+    select,input{
+      background:#0b0f1c;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 12px;
+      outline:none;
+    }
+    input{min-width:140px}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+    button{
+      border:0;border-radius:16px;padding:16px 14px;font-weight:900;
+      background:var(--btn);color:var(--text);font-size:16px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.22);
+      transition: transform .05s ease;
+    }
+    button:active{transform: scale(.99);}
+    button.primary{background:linear-gradient(180deg, #7a61ff 0%, var(--btnHi) 100%);}
+    button.danger{background:linear-gradient(180deg, #ff5b52 0%, var(--danger) 100%);}
+    button.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--muted);}
+
+    .spacer{height:8px}
   </style>
 </head>
+
 <body>
   <div class="wrap">
+
     <div class="top">
-      <div class="badge">
+      <div class="chip">
         <div class="pill">CODE: <b id="codeLabel">----</b></div>
         <div class="pill"><span class="ok" id="online">online</span></div>
       </div>
-      <div class="badge">
+
+      <div class="chip">
         <span class="pill">Etapa</span>
         <select id="stage">
-          <option value="start">StartScene</option>
+          <option value="start">StartScene (Menú)</option>
           <option value="select">LevelSelect</option>
           <option value="level">Level (Gameplay)</option>
           <option value="wait">Espera (Linda)</option>
@@ -60,26 +119,36 @@
     <div class="panel">
       <div class="row">
         <div>
-          <div class="hint">Tip: escaneá el QR, abrí esta página, elegí etapa y apretá botones.</div>
+          <div class="hint">Escaneá el QR, abrí esta página, elegí etapa y apretá botones.</div>
+          <div class="hint">Importante: la página NO manda nada automáticamente.</div>
         </div>
+
         <div class="row">
-          <input id="codeInput" placeholder="CODE (ej: 62TR)" style="width:170px" />
+          <input id="codeInput" placeholder="CODE (ej: JLYF)" />
           <button class="ghost" id="saveCode">OK</button>
         </div>
       </div>
 
+      <div class="spacer"></div>
       <div id="buttons" class="grid"></div>
     </div>
+
   </div>
 
 <script>
-  // ---- util ----
+  // ---------- Estado ----------
   const qs = new URLSearchParams(location.search);
+
+  // Default: START (menú). Si viene por URL, lo usamos.
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
-    player: "P1",
-    stage: qs.get("stage") || "start"
+    player: (qs.get("player") || "P1").toUpperCase(),
+    stage: (qs.get("stage") || "start").toLowerCase()
   };
+
+  // Normalizamos valores permitidos
+  if(!["P1","P2","WAIT"].includes(state.player)) state.player = "P1";
+  if(!["start","select","level","wait"].includes(state.stage)) state.stage = "start";
 
   const codeLabel = document.getElementById("codeLabel");
   const codeInput = document.getElementById("codeInput");
@@ -92,43 +161,63 @@
     document.getElementById("tabP2").classList.toggle("active", p==="P2");
     document.getElementById("tabW").classList.toggle("active", p==="WAIT");
     renderButtons();
+    updateUrl();
   }
 
   function setStage(s){
     state.stage = s;
     stageSel.value = s;
     renderButtons();
+    updateUrl();
   }
 
   function setCode(c){
-    state.code = (c||"").toUpperCase().trim();
+    state.code = (c || "").toUpperCase().trim();
     codeLabel.textContent = state.code || "----";
     codeInput.value = state.code;
+    updateUrl();
+  }
+
+  function updateUrl(){
+    const url = new URL(location.href);
+    if(state.code) url.searchParams.set("code", state.code); else url.searchParams.delete("code");
+    url.searchParams.set("stage", state.stage);
+    url.searchParams.set("player", state.player);
+    history.replaceState({}, "", url.toString());
   }
 
   async function send(cmd, data=null){
     if(!state.code){ alert("Falta CODE"); return; }
+
     try{
-      await fetch("/api/send",{
+      const r = await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
       });
-      // feedback suave:
-      navigator.vibrate?.(30);
+
+      if(!r.ok){
+        const txt = await r.text().catch(()=> "");
+        alert("No pude enviar ("+r.status+"). " + txt);
+        return;
+      }
+
+      navigator.vibrate?.(25);
+
     }catch(e){
       alert("No pude enviar. ¿Servidor dormido? Reintentá.");
     }
   }
 
-  // ---- botones por etapa ----
+  // ---------- Botones por etapa (solo lo que corresponde) ----------
+  // NOTA: Los comandos se envían como:
+  //   P1_PLAY, P2_TRAILER, WAIT_LINDAACCION0, etc.
   const BUTTONS = {
-      start: [
+    start: [
       ["PLAY", "PLAY", "primary"],
       ["TRAILER", "TRAILER", ""],
-      ["EXIT TRAILER", "EXITTRAILER", ""],
+      ["CLOSE TRAILER", "EXITTRAILER", ""],
       ["EXIT", "EXIT", "danger"]
-      ],
     ],
     select: [
       ["LEFT", "LEFT", ""],
@@ -149,10 +238,8 @@
       ["VAQUITA", "VAQUITA", "primary"],
       ["PODER VAQUITA", "VAQUITAENOJADAPODER", ""],
       ["PODER ARGENTINO", "PODERARGENTINO", "primary"],
-      ["RESTART", "RESTART", ""],
       ["HOME", "HOME", ""],
       ["EXIT", "EXIT", "danger"]
-      // El arrastre lo hacemos después (touchpad/canvas), no en botones.
     ],
     wait: [
       ["LINDA 0", "LINDAACCION0", "primary"],
@@ -165,39 +252,37 @@
   function renderButtons(){
     const list = BUTTONS[state.stage] || [];
     buttonsEl.innerHTML = "";
+
     for(const [label, cmd, css] of list){
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
+
       b.onclick = () => {
-        // prefijo por jugador (P1_/P2_) salvo WAIT
-        if(state.player === "WAIT"){
-          send(`WAIT_${cmd}`);
-        }else{
-          send(`${state.player}_${cmd}`);
-        }
+        // Prefijo por jugador (P1_/P2_) salvo WAIT
+        const full = (state.player === "WAIT")
+          ? `WAIT_${cmd}`
+          : `${state.player}_${cmd}`;
+        send(full);
       };
+
       buttonsEl.appendChild(b);
     }
   }
 
-  // ---- init ----
+  // ---------- Events ----------
   document.getElementById("tabP1").onclick = () => setPlayer("P1");
   document.getElementById("tabP2").onclick = () => setPlayer("P2");
   document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
 
   stageSel.onchange = () => setStage(stageSel.value);
 
-  document.getElementById("saveCode").onclick = () => {
-    setCode(codeInput.value);
-    const url = new URL(location.href);
-    url.searchParams.set("code", state.code);
-    url.searchParams.set("stage", state.stage);
-    history.replaceState({}, "", url.toString());
-  };
+  document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
+  // ---------- Init ----------
   setCode(state.code);
   setStage(state.stage);
+  setPlayer(state.player);
   renderButtons();
 </script>
 </body>
