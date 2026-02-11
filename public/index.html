@@ -1,226 +1,264 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Angry Remote</title>
-
-<style>
-:root{
-  --bg:#0e0f13;
-  --panel:#161823;
-  --btn:#2a2d3a;
-  --primary:#6b4cff;
-  --danger:#ff3b30;
-  --text:#ffffff;
-  --muted:#9aa0b6;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-}
-
-.wrap{
-  max-width:720px;
-  margin:auto;
-  padding:16px;
-}
-
-.top{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.badge{
-  background:var(--panel);
-  padding:10px 14px;
-  border-radius:999px;
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-
-.ok{ color:#41d07a; font-weight:700; }
-
-.tabs{
-  display:flex;
-  gap:10px;
-  margin:14px 0;
-}
-
-.tab{
-  flex:1;
-  background:var(--panel);
-  border:1px solid #2d3146;
-  color:white;
-  padding:14px;
-  border-radius:999px;
-  font-weight:700;
-}
-
-.tab.active{
-  outline:2px solid var(--primary);
-}
-
-.panel{
-  background:var(--panel);
-  border-radius:18px;
-  padding:14px;
-  border:1px solid #2d3146;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-top:14px;
-}
-
-button{
-  border:0;
-  border-radius:16px;
-  padding:16px;
-  font-size:16px;
-  font-weight:800;
-  background:var(--btn);
-  color:white;
-}
-
-button.primary{ background:var(--primary); }
-button.danger{ background:var(--danger); }
-
-input, select{
-  background:#0f111a;
-  color:white;
-  border:1px solid #2d3146;
-  border-radius:12px;
-  padding:10px;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Angry Remote</title>
+  <style>
+    :root{
+      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30; --text:#f5f6ff; --muted:#a9acc2;
+      --radius:18px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    body{margin:0;background:var(--bg);color:var(--text);}
+    .wrap{max-width:720px;margin:0 auto;padding:16px;}
+    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+    .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
+    .ok{color:#41d07a;font-weight:700}
+    .warn{color:#ffd166;font-weight:700}
+    .tabs{display:flex;gap:10px;margin:12px 0}
+    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
+    .tab.active{outline:2px solid var(--btn2)}
+    .tab.locked{opacity:.45}
+    .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    button{
+      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
+      background:var(--btn);color:var(--text);font-size:16px;
+    }
+    button.primary{background:var(--btn2)}
+    button.danger{background:var(--danger)}
+    button.ghost{background:transparent;border:1px solid #2d3146}
+    .hint{color:var(--muted);font-size:13px;margin-top:8px}
+    .stageLabel{color:var(--muted);font-weight:700}
+  </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div class="top">
+      <div class="badge">
+        <div class="pill">CODE: <b id="codeLabel">----</b></div>
+        <div class="pill"><span id="online" class="warn">connecting…</span></div>
+      </div>
 
-  <div class="top">
-    <div class="badge">
-      CODE: <b id="codeLabel">----</b>
-      <span class="ok">online</span>
+      <div class="badge">
+        <span class="pill">Etapa</span>
+        <span class="pill stageLabel" id="stageLabel">StartScene</span>
+      </div>
     </div>
 
-    <div class="badge">
-      Etapa
-      <select id="stage">
-        <option value="start">StartScene</option>
-        <option value="select">Level Select</option>
-        <option value="level">Gameplay</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" id="p1">Player 1</button>
-    <button class="tab" id="p2">Player 2</button>
-  </div>
-
-  <div class="panel">
-    <div style="display:flex; gap:10px;">
-      <input id="codeInput" placeholder="CODE (ej: JLYF)">
-      <button id="save">OK</button>
+    <div class="tabs">
+      <button class="tab active" id="tabP1">Player 1</button>
+      <button class="tab" id="tabP2">Player 2</button>
+      <button class="tab" id="tabW">Espera</button>
     </div>
 
-    <div id="buttons" class="grid"></div>
-  </div>
+    <div class="panel">
+      <div class="row">
+        <div>
+          <div class="hint">Escaneá el QR, abrí esta página y usá los botones. La etapa cambia sola según Unity.</div>
+        </div>
+        <div class="row">
+          <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
+          <button class="ghost" id="saveCode">OK</button>
+        </div>
+      </div>
 
-</div>
+      <div id="buttons" class="grid"></div>
+    </div>
+  </div>
 
 <script>
-const state = {
-  code:"",
-  player:"P1",
-  stage:"start"   // 👈 SIEMPRE arranca en StartScene
-};
+  const qs = new URLSearchParams(location.search);
 
-const buttonsEl = document.getElementById("buttons");
-const codeLabel = document.getElementById("codeLabel");
-const stageSel  = document.getElementById("stage");
+  const state = {
+    code: (qs.get("code") || "").toUpperCase().trim(),
+    player: "P1",
+    stage: "start",       // se actualiza por presence
+    active: "P1",         // quién está activo según Unity
+    presenceOk: false
+  };
 
-function send(cmd){
-  if(!state.code){ alert("Falta CODE"); return; }
+  const codeLabel = document.getElementById("codeLabel");
+  const codeInput = document.getElementById("codeInput");
+  const buttonsEl = document.getElementById("buttons");
+  const onlineEl  = document.getElementById("online");
+  const stageLabelEl = document.getElementById("stageLabel");
 
-  fetch("/api/send",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      code:state.code,
-      player:state.player,
-      cmd: `${state.player}_${cmd}`
-    })
-  });
-}
+  function stageName(s){
+    if(s==="start") return "StartScene";
+    if(s==="select") return "LevelSelect";
+    if(s==="level") return "Level";
+    if(s==="wait") return "Espera";
+    return s;
+  }
 
-const BUTTONS = {
-  start:[
-    ["PLAY","PLAY","primary"],
-    ["TRAILER","TRAILER"],
-    ["EXIT TRAILER","EXITTRAILER"],
-    ["EXIT","EXIT","danger"]
-  ],
-  select:[
-    ["LEFT","LEFT"],
-    ["RIGHT","RIGHT"],
-    ["PLAY","PLAY","primary"],
-    ["EXIT","EXIT","danger"]
-  ],
-  level:[
-    ["OVEJITA","OVEJITA","primary"],
-    ["OVEJITA PODER","OVEJITAENOJADAPODER"],
-    ["PATITO","PATITO","primary"],
-    ["PATITO PODER","PATITOENOJADOPODER"],
-    ["RESTART","RESTART"],
-    ["EXIT","EXIT","danger"]
-  ]
-};
+  function setPlayer(p){
+    state.player = p;
+    document.getElementById("tabP1").classList.toggle("active", p==="P1");
+    document.getElementById("tabP2").classList.toggle("active", p==="P2");
+    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
+    renderButtons();
+  }
 
-function render(){
-  buttonsEl.innerHTML="";
-  BUTTONS[state.stage].forEach(([label,cmd,css])=>{
-    const b=document.createElement("button");
-    b.textContent=label;
-    if(css) b.classList.add(css);
-    b.onclick=()=>send(cmd);
-    buttonsEl.appendChild(b);
-  });
-}
+  function setCode(c){
+    state.code = (c||"").toUpperCase().trim();
+    codeLabel.textContent = state.code || "----";
+    codeInput.value = state.code;
+  }
 
-document.getElementById("save").onclick=()=>{
-  state.code = document.getElementById("codeInput").value.toUpperCase().trim();
-  codeLabel.textContent = state.code;
-};
+  async function send(cmd, data=null){
+    if(!state.code){ alert("Falta CODE"); return; }
+    try{
+      await fetch("/api/send",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
+      });
+      navigator.vibrate?.(25);
+    }catch(e){
+      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
+    }
+  }
 
-document.getElementById("p1").onclick=()=>{
-  state.player="P1";
-  document.getElementById("p1").classList.add("active");
-  document.getElementById("p2").classList.remove("active");
-};
+  // Botones por etapa (lo que aparece en el celular)
+  const BUTTONS = {
+    start: [
+      ["PLAY", "PLAY", "primary"],
+      ["TRAILER", "TRAILER", ""],
+      ["EXIT TRAILER", "EXITTRAILER", ""],
+      ["EXIT", "EXIT", "danger"]
+    ],
+    select: [
+      ["LEFT", "LEFT", ""],
+      ["RIGHT", "RIGHT", ""],
+      ["PLAY", "PLAY", "primary"],
+      ["HOME", "HOME", ""],
+      ["EXIT", "EXIT", "danger"]
+    ],
+    level: [
+      ["LEFT", "LEFT", ""],
+      ["RIGHT", "RIGHT", ""],
+      ["HOME", "HOME", ""],
+      ["EXIT", "EXIT", "danger"],
+      ["OVEJITA", "OVEJITA", "primary"],
+      ["PODER OVEJITA", "OVEJITAENOJADAPODER", ""],
+      ["PATITO", "PATITO", "primary"],
+      ["PODER PATITO", "PATITOENOJADOPODER", ""],
+      ["CABRITA", "CABRITA", "primary"],
+      ["PODER CABRITA", "CABRITAENOJADAPODER", ""],
+      ["CARPINCHA", "CARPINCHA", "primary"],
+      ["PODER CARPINCHA", "CARPINCHAENOJADOPODER", ""],
+      ["VAQUITA", "VAQUITA", "primary"],
+      ["PODER VAQUITA", "VAQUITAENOJADOPODER", ""],
+      ["PODER ARGENTINO", "PODERARGENTINO", "primary"]
+    ],
+    wait: [
+      ["LINDA 0", "LINDAACCION0", "primary"],
+      ["LINDA 1", "LINDAACCION1", "primary"],
+      ["LINDA 2", "LINDAACCION2", "primary"],
+      ["LINDA 3", "LINDAACCION3", "primary"]
+    ]
+  };
 
-document.getElementById("p2").onclick=()=>{
-  state.player="P2";
-  document.getElementById("p2").classList.add("active");
-  document.getElementById("p1").classList.remove("active");
-};
+  function renderButtons(){
+    const list = BUTTONS[state.stage] || BUTTONS.start;
+    buttonsEl.innerHTML = "";
 
-stageSel.onchange=()=>{
-  state.stage=stageSel.value;
-  render();
-};
+    for(const [label, cmd, css] of list){
+      const b = document.createElement("button");
+      b.textContent = label;
+      if(css) b.classList.add(css);
 
-render(); // 👈 render inicial SIN mandar comandos
+      b.onclick = () => {
+        if(state.player === "WAIT") send(`WAIT_${cmd}`);
+        else send(`${state.player}_${cmd}`);
+      };
+
+      buttonsEl.appendChild(b);
+    }
+  }
+
+  // ---------- AUTO PRESENCE ----------
+  function setLockedTabs(active){
+    // Si Unity dice que está activo P1, el P2 queda "Espera" (bloqueado visual)
+    // Ojo: igual te dejo que puedas tocar tabs si querés, pero lo marcamos.
+    const p1 = document.getElementById("tabP1");
+    const p2 = document.getElementById("tabP2");
+    const w  = document.getElementById("tabW");
+    p1.classList.toggle("locked", active && active!=="P1");
+    p2.classList.toggle("locked", active && active!=="P2");
+    w.classList.toggle("locked", active && active!=="WAIT");
+  }
+
+  async function pollPresence(){
+    if(!state.code){
+      onlineEl.textContent = "offline";
+      onlineEl.className = "warn";
+      return;
+    }
+    try{
+      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
+      const j = await r.json();
+      state.presenceOk = !!j.ok;
+
+      if(j.ok){
+        onlineEl.textContent = "online";
+        onlineEl.className = "ok";
+
+        if(j.presence){
+          const newStage = (j.presence.stage || "start").toLowerCase();
+          const newActive = (j.presence.active || "P1").toUpperCase();
+
+          if(newStage !== state.stage){
+            state.stage = newStage;
+            stageLabelEl.textContent = stageName(state.stage);
+            renderButtons();
+          } else {
+            stageLabelEl.textContent = stageName(state.stage);
+          }
+
+          if(newActive !== state.active){
+            state.active = newActive;
+            setLockedTabs(state.active);
+
+            // auto: si el activo es P1/P2/WAIT, cambiamos la pestaña sola
+            setPlayer(state.active === "WAIT" ? "WAIT" : state.active);
+          }
+        } else {
+          // si Unity todavía no publicó presence, asumimos StartScene
+          state.stage = "start";
+          stageLabelEl.textContent = stageName(state.stage);
+          renderButtons();
+        }
+      }
+    }catch(e){
+      onlineEl.textContent = "offline";
+      onlineEl.className = "warn";
+    }
+  }
+
+  // ---- init ----
+  document.getElementById("tabP1").onclick = () => setPlayer("P1");
+  document.getElementById("tabP2").onclick = () => setPlayer("P2");
+  document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
+
+  document.getElementById("saveCode").onclick = () => {
+    setCode(codeInput.value);
+    const url = new URL(location.href);
+    url.searchParams.set("code", state.code);
+    history.replaceState({}, "", url.toString());
+    pollPresence();
+  };
+
+  setCode(state.code);
+  stageLabelEl.textContent = stageName(state.stage);
+  renderButtons();
+  pollPresence();
+  setInterval(pollPresence, 800);
 </script>
 </body>
 </html>
