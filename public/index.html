@@ -6,8 +6,8 @@
   <title>Angry Remote</title>
   <style>
     :root{
-      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30;
-      --text:#f5f6ff; --muted:#a9acc2; --radius:18px;
+      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30; --text:#f5f6ff; --muted:#a9acc2;
+      --radius:18px;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
     body{margin:0;background:var(--bg);color:var(--text);}
@@ -15,24 +15,23 @@
     .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
     .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
     .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
-    .ok{color:#41d07a;font-weight:800}
+    .ok{color:#41d07a;font-weight:700}
     .tabs{display:flex;gap:10px;margin:12px 0}
-    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:800}
+    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
     .tab.active{outline:2px solid var(--btn2)}
-    .tab.disabled{opacity:.45}
     .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
     input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
     button{
-      border:0;border-radius:16px;padding:16px 14px;font-weight:900;
+      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
       background:var(--btn);color:var(--text);font-size:16px;
     }
     button.primary{background:var(--btn2)}
     button.danger{background:var(--danger)}
     button.ghost{background:transparent;border:1px solid #2d3146}
     .hint{color:var(--muted);font-size:13px;margin-top:8px}
-    .tiny{font-size:12px;color:var(--muted)}
+    .stageLabel{font-weight:800;color:#cfd2ff}
   </style>
 </head>
 <body>
@@ -44,7 +43,7 @@
       </div>
       <div class="badge">
         <span class="pill">Etapa</span>
-        <div class="pill"><b id="stageLabel">start</b></div>
+        <span class="stageLabel" id="stageLabel">start</span>
       </div>
     </div>
 
@@ -56,12 +55,9 @@
 
     <div class="panel">
       <div class="row">
-        <div>
-          <div class="hint">Escaneá el QR, abrí esta página y apretá botones.</div>
-          <div class="tiny" id="presenceInfo"></div>
-        </div>
+        <div class="hint">Tip: escaneá el QR, abrí esta página y apretá botones.</div>
         <div class="row">
-          <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
+          <input id="codeInput" placeholder="CODE (ej: 62TR)" style="width:170px" />
           <button class="ghost" id="saveCode">OK</button>
         </div>
       </div>
@@ -72,22 +68,45 @@
 
 <script>
   const qs = new URLSearchParams(location.search);
-
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
-    // fallback si todavía no mandás presence desde Unity:
-    stage: (qs.get("stage") || "start").toLowerCase(),
     player: "P1",
-    presence: null, // {stage, active}
+    stage: "start"
   };
 
   const codeLabel = document.getElementById("codeLabel");
   const codeInput = document.getElementById("codeInput");
-  const stageLabel = document.getElementById("stageLabel");
-  const presenceInfo = document.getElementById("presenceInfo");
   const buttonsEl = document.getElementById("buttons");
+  const stageLabel = document.getElementById("stageLabel");
 
-  // Botones por etapa
+  function setPlayer(p){
+    state.player = p;
+    document.getElementById("tabP1").classList.toggle("active", p==="P1");
+    document.getElementById("tabP2").classList.toggle("active", p==="P2");
+    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
+    renderButtons();
+  }
+
+  function setCode(c){
+    state.code = (c||"").toUpperCase().trim();
+    codeLabel.textContent = state.code || "----";
+    codeInput.value = state.code;
+  }
+
+  async function send(cmd, data=null){
+    if(!state.code){ alert("Falta CODE"); return; }
+    try{
+      await fetch("/send",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ code: state.code, cmd, data })
+      });
+      navigator.vibrate?.(30);
+    }catch(e){
+      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
+    }
+  }
+
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
@@ -103,92 +122,43 @@
       ["EXIT", "EXIT", "danger"]
     ],
     level: [
-      ["LEFT", "LEFT", ""],
-      ["RIGHT", "RIGHT", ""],
       ["HOME", "HOME", ""],
       ["EXIT", "EXIT", "danger"]
     ],
     wait: [
-      ["ESPERA", "WAIT", "primary"]
+      ["LINDA 0", "LINDAACCION0", "primary"],
+      ["LINDA 1", "LINDAACCION1", "primary"]
     ]
   };
 
-  function setCode(c){
-    state.code = (c||"").toUpperCase().trim();
-    codeLabel.textContent = state.code || "----";
-    codeInput.value = state.code;
-  }
-
-  function setPlayer(p){
-    state.player = p;
-    document.getElementById("tabP1").classList.toggle("active", p==="P1");
-    document.getElementById("tabP2").classList.toggle("active", p==="P2");
-    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
-    renderButtons();
-  }
-
-  function setStage(s){
-    state.stage = (s||"start").toLowerCase();
-    stageLabel.textContent = state.stage;
-    renderButtons();
-  }
-
-  async function send(cmd, data=null){
-    if(!state.code){ alert("Falta CODE"); return; }
-    try{
-      await fetch("/api/send",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
-      });
-      navigator.vibrate?.(30);
-    }catch(e){
-      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
-    }
-  }
-
   function renderButtons(){
     const list = BUTTONS[state.stage] || BUTTONS.start;
+    stageLabel.textContent = state.stage;
+
     buttonsEl.innerHTML = "";
-
-    // Si Presence dice que el jugador activo es otro, podés poner el otro en "Espera"
-    const p = state.presence;
-    if (p && p.active && p.active !== state.player && state.player !== "WAIT") {
-      presenceInfo.textContent = `Turno actual: ${p.active} (vos: ${state.player}).`;
-    } else {
-      presenceInfo.textContent = "";
-    }
-
-    for(const [label, rawCmd, css] of list){
+    for(const [label, cmd, css] of list){
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
 
       b.onclick = () => {
-        if(state.player === "WAIT"){
-          send(`WAIT_${rawCmd}`);
-        }else{
-          send(`${state.player}_${rawCmd}`);
-        }
+        if(state.player === "WAIT") send(`WAIT_${cmd}`);
+        else send(`${state.player}_${cmd}`);
       };
-
       buttonsEl.appendChild(b);
     }
   }
 
-  // Presence polling: si Unity manda /api/presence, la etapa cambia sola
   async function pollPresence(){
     if(!state.code) return;
     try{
-      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`);
+      const r = await fetch(`/presence?code=${encodeURIComponent(state.code)}`);
       const j = await r.json();
-      if(j && j.ok && j.presence){
-        state.presence = j.presence;
-        if(j.presence.stage) setStage(j.presence.stage);
+      if(j && j.ok && j.stage){
+        state.stage = j.stage; // start / select / level / wait
+        renderButtons();
       }
-    } catch(e) {
-      // ignore (render puede dormir)
-    }
+    }catch(e){}
   }
 
   document.getElementById("tabP1").onclick = () => setPlayer("P1");
@@ -200,14 +170,12 @@
     const url = new URL(location.href);
     url.searchParams.set("code", state.code);
     history.replaceState({}, "", url.toString());
+    renderButtons();
   };
 
-  // init
   setCode(state.code);
-  setStage(state.stage);
   renderButtons();
-  setInterval(pollPresence, 900);
-  pollPresence();
+  setInterval(pollPresence, 600);
 </script>
 </body>
 </html>
