@@ -6,8 +6,8 @@
   <title>Angry Remote</title>
   <style>
     :root{
-      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30; --text:#f5f6ff; --muted:#a9acc2;
-      --radius:18px;
+      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30;
+      --text:#f5f6ff; --muted:#a9acc2; --radius:18px;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
     body{margin:0;background:var(--bg);color:var(--text);}
@@ -31,7 +31,7 @@
     button.danger{background:var(--danger)}
     button.ghost{background:transparent;border:1px solid #2d3146}
     .hint{color:var(--muted);font-size:13px;margin-top:8px}
-    .stageLabel{color:var(--text);font-weight:800}
+    .stageLine{color:var(--muted);font-size:13px;margin-top:8px}
   </style>
 </head>
 <body>
@@ -43,7 +43,7 @@
       </div>
       <div class="badge">
         <span class="pill">Etapa</span>
-        <span class="pill stageLabel" id="stageLabel">StartScene</span>
+        <span class="pill"><b id="stageLabel">---</b></span>
       </div>
     </div>
 
@@ -56,10 +56,11 @@
     <div class="panel">
       <div class="row">
         <div>
-          <div class="hint">Abrí con el QR. El panel cambia solo según la escena.</div>
+          <div class="hint">Escaneá el QR. El panel cambia solo según la escena.</div>
+          <div class="stageLine">Stage detectado: <b id="stageLabel2">---</b></div>
         </div>
         <div class="row">
-          <input id="codeInput" placeholder="CODE (ej: 62TR)" style="width:170px" />
+          <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
           <button class="ghost" id="saveCode">OK</button>
         </div>
       </div>
@@ -70,25 +71,18 @@
 
 <script>
   const qs = new URLSearchParams(location.search);
+
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
     player: "P1",
-    stage: "start",
-    presencePollMs: 800,
+    stage: "start" // start | select | level | wait  (la setea el server)
   };
 
   const codeLabel = document.getElementById("codeLabel");
   const codeInput = document.getElementById("codeInput");
-  const buttonsEl = document.getElementById("buttons");
   const stageLabel = document.getElementById("stageLabel");
-
-  function humanStage(s){
-    if(s==="start") return "StartScene";
-    if(s==="select") return "LevelSelect";
-    if(s==="level") return "Level";
-    if(s==="wait") return "Espera";
-    return s || "StartScene";
-  }
+  const stageLabel2 = document.getElementById("stageLabel2");
+  const buttonsEl = document.getElementById("buttons");
 
   function setPlayer(p){
     state.player = p;
@@ -98,25 +92,30 @@
     renderButtons();
   }
 
-  function setStage(s){
-    state.stage = (s || "start").toLowerCase();
-    stageLabel.textContent = humanStage(state.stage);
-    renderButtons();
-  }
-
   function setCode(c){
     state.code = (c||"").toUpperCase().trim();
     codeLabel.textContent = state.code || "----";
     codeInput.value = state.code;
+    const url = new URL(location.href);
+    if (state.code) url.searchParams.set("code", state.code);
+    else url.searchParams.delete("code");
+    history.replaceState({}, "", url.toString());
   }
 
-  async function send(cmd, data=null){
+  function setStage(s){
+    state.stage = s || "start";
+    stageLabel.textContent = state.stage;
+    stageLabel2.textContent = state.stage;
+    renderButtons();
+  }
+
+  async function send(cmd){
     if(!state.code){ alert("Falta CODE"); return; }
     try{
       await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
+        body: JSON.stringify({ code: state.code, cmd })
       });
       navigator.vibrate?.(25);
     }catch(e){
@@ -139,19 +138,8 @@
       ["EXIT", "EXIT", "danger"]
     ],
     level: [
-      ["OVEJITA", "OVEJITA", "primary"],
-      ["PODER OVEJITA", "OVEJITAENOJADAPODER", ""],
-      ["PATITO", "PATITO", "primary"],
-      ["PODER PATITO", "PATITOENOJADOPODER", ""],
-      ["CABRITA", "CABRITA", "primary"],
-      ["PODER CABRITA", "CABRITAENOJADAPODER", ""],
-      ["CARPINCHA", "CARPINCHA", "primary"],
-      ["PODER CARPINCHA", "CARPINCHAENOJADAPODER", ""],
-      ["VAQUITA", "VAQUITA", "primary"],
-      ["PODER VAQUITA", "VAQUITAENOJADAPODER", ""],
-      ["PODER ARGENTINO", "PODERARGENTINO", "primary"],
-      ["RESTART", "RESTART", ""],
       ["HOME", "HOME", ""],
+      ["RESTART", "RESTART", ""],
       ["EXIT", "EXIT", "danger"]
     ],
     wait: [
@@ -165,14 +153,20 @@
   function renderButtons(){
     const list = BUTTONS[state.stage] || BUTTONS.start;
     buttonsEl.innerHTML = "";
+
     for(const [label, cmd, css] of list){
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
+
       b.onclick = () => {
-        if(state.player === "WAIT") send(`WAIT_${cmd}`);
-        else send(`${state.player}_${cmd}`);
+        if(state.player === "WAIT"){
+          send(`WAIT_${cmd}`);
+        }else{
+          send(`${state.player}_${cmd}`);
+        }
       };
+
       buttonsEl.appendChild(b);
     }
   }
@@ -180,34 +174,27 @@
   async function pollPresence(){
     if(!state.code) return;
     try{
-      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
+      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`);
       const j = await r.json();
-      if(j?.ok && j?.presence?.stage){
-        const s = String(j.presence.stage).toLowerCase();
-        if(s && s !== state.stage) setStage(s);
+      if(j && j.ok && j.stage && j.stage !== state.stage){
+        setStage(j.stage);
       }
-    }catch(e){}
+    }catch(e){
+      // silencio (render puede dormirse)
+    }
   }
 
-  // init UI
   document.getElementById("tabP1").onclick = () => setPlayer("P1");
   document.getElementById("tabP2").onclick = () => setPlayer("P2");
   document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
 
-  document.getElementById("saveCode").onclick = () => {
-    setCode(codeInput.value);
-    const url = new URL(location.href);
-    url.searchParams.set("code", state.code);
-    history.replaceState({}, "", url.toString());
-  };
+  document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
   setCode(state.code);
   setStage("start");
   renderButtons();
 
-  // presence loop
-  setInterval(pollPresence, state.presencePollMs);
-  pollPresence();
+  setInterval(pollPresence, 600);
 </script>
 </body>
 </html>
