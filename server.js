@@ -1,100 +1,116 @@
-// server.js (CommonJS)
+// server.js (CommonJS) - Render compatible
 const express = require("express");
+const cors = require("cors");
 const path = require("path");
 
 const app = express();
+app.use(cors());
 app.use(express.json({ limit: "200kb" }));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-// ----------------- memoria -----------------
-const sessions = new Map(); // code -> { queue: [], stage: "start", updatedAt: number }
+// ---- Sessions ----
+// queues por code: P1, P2, WAIT + presence (stage actual)
+const sessions = new Map();
 
 function normCode(code) {
   return String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-function getSession(code) {
+function ensureSession(code) {
   const c = normCode(code);
   if (!c) return null;
   if (!sessions.has(c)) {
-    sessions.set(c, { queue: [], stage: "start", updatedAt: Date.now() });
+    sessions.set(c, {
+      createdAt: Date.now(),
+      queues: { P1: [], P2: [], WAIT: [] },
+      presence: { stage: "start", t: Date.now() }
+    });
   }
   return sessions.get(c);
 }
 
-// Limpieza simple (6h)
+// limpieza
 setInterval(() => {
   const now = Date.now();
   for (const [code, s] of sessions.entries()) {
-    if (now - s.updatedAt > 6 * 60 * 60 * 1000) sessions.delete(code);
+    if (now - s.createdAt > 6 * 60 * 60 * 1000) sessions.delete(code);
   }
 }, 30 * 60 * 1000);
 
-// ----------------- health -----------------
+// ---- Health ----
 app.get("/ping", (req, res) => res.type("text").send("pong"));
 
-// ----------------- static -----------------
+// ---- Front (STATIC) ----
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
-// ----------------- api -----------------
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
 
-// Enviar comando desde el teléfono
-// body: { code:"CULA", cmd:"P1_PLAY" }
+// ---- API ----
+// Telefono manda comando
 app.post("/api/send", (req, res) => {
-  const code = normCode(req.body?.code);
-  const cmd = String(req.body?.cmd || "").trim();
+  const code = normCode(req.body.code);
+  const player = String(req.body.player || "P1").toUpperCase();
+  const cmd = String(req.body.cmd || "").trim();
+  const data = req.body.data || null;
 
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
-  const s = getSession(code);
-  s.queue.push(cmd);
-  s.updatedAt = Date.now();
+  const s = ensureSession(code);
+  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
 
-  res.json({ ok: true });
+  s.queues[key].push({ cmd, t: Date.now(), data });
+  return res.json({ ok: true });
 });
 
-// Poll desde Unity: devuelve 1 cmd y lo consume
+// Unity hace poll
 app.get("/api/poll", (req, res) => {
   const code = normCode(req.query.code);
+  const player = String(req.query.player || "P1").toUpperCase();
+
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const s = getSession(code);
-  const cmd = s.queue.length ? s.queue.shift() : null;
-  s.updatedAt = Date.now();
+  const s = ensureSession(code);
+  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
 
-  res.json({ ok: true, cmd });
+  const out = s.queues[key];
+  s.queues[key] = [];
+
+  res.json({ ok: true, events: out, presence: s.presence });
 });
 
-// Presence: Unity le avisa al server en qué etapa está para que el celular cambie solo
-// body: { code:"CULA", stage:"start"|"select"|"level"|"wait" }
+// Presence: Unity avisa qué “stage” está activo (para que el celular cambie SOLO)
 app.post("/api/presence", (req, res) => {
-  const code = normCode(req.body?.code);
-  const stage = String(req.body?.stage || "").trim().toLowerCase();
+  const code = normCode(req.body.code);
+  const stage = String(req.body.stage || "").trim().toLowerCase();
 
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
   if (!stage) return res.status(400).json({ ok: false, error: "Missing stage" });
 
-  const s = getSession(code);
-  s.stage = stage;
-  s.updatedAt = Date.now();
-
-  res.json({ ok: true });
+  const s = ensureSession(code);
+  s.presence = { stage, t: Date.now() };
+  return res.json({ ok: true });
 });
 
-app.get("/api/presence", (req, res) => {
+// Debug
+app.get("/api/status", (req, res) => {
   const code = normCode(req.query.code);
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  const s = getSession(code);
-  res.json({ ok: true, stage: s.stage, updatedAt: s.updatedAt });
-});
-
-// SPA fallback
-app.get("*", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
+  const s = ensureSession(code);
+  res.json({
+    ok: true,
+    code,
+    presence: s.presence,
+    counts: {
+      P1: s.queues.P1.length,
+      P2: s.queues.P2.length,
+      WAIT: s.queues.WAIT.length
+    }
+  });
 });
 
 app.listen(PORT, () => console.log("Remote running on port", PORT));
