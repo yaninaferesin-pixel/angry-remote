@@ -1,37 +1,38 @@
-// server.js (CommonJS)
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
-app.use(cors());
 app.use(express.json({ limit: "200kb" }));
 
 const PORT = process.env.PORT || 10000;
 
-// ---- sesiones ----
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ---- in-memory sessions ----
 const sessions = new Map();
-// sessions.get(code) = { createdAt, queues:{P1:[],P2:[],WAIT:[]}, presence:{ stage:"start", ts } }
 
 function normCode(code) {
-  return String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return String(code || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }
 
 function ensureSession(code) {
   const c = normCode(code);
-  if (!c) return null;
-
   if (!sessions.has(c)) {
     sessions.set(c, {
       createdAt: Date.now(),
+      presence: { stage: "start", t: Date.now() },
       queues: { P1: [], P2: [], WAIT: [] },
-      presence: { stage: "start", ts: Date.now() }
     });
   }
   return sessions.get(c);
 }
 
-// limpieza
+// cleanup
 setInterval(() => {
   const now = Date.now();
   for (const [code, s] of sessions.entries()) {
@@ -39,35 +40,34 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000);
 
-// health
+// ---- serve web ----
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/ping", (req, res) => res.type("text").send("pong"));
 
-// front
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// ---- API comandos ----
-app.post("/api/send", (req, res) => {
+// ---- send command (web -> server) ----
+app.post("/send", (req, res) => {
   const code = normCode(req.body.code);
-  const player = String(req.body.player || "P1").toUpperCase();
   const cmd = String(req.body.cmd || "").trim();
-  const data = req.body.data || null;
-
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
   const s = ensureSession(code);
-  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
-  s.queues[key].push({ cmd, t: Date.now(), data });
 
+  // detect target by prefix
+  let key = "P1";
+  if (cmd.startsWith("P2_")) key = "P2";
+  else if (cmd.startsWith("WAIT_")) key = "WAIT";
+
+  s.queues[key].push({ cmd, t: Date.now(), data: req.body.data || null });
   res.json({ ok: true });
 });
 
-app.get("/api/poll", (req, res) => {
+// ---- poll (unity -> server) ----
+// GET /poll?code=ABCD&player=P1
+app.get("/poll", (req, res) => {
   const code = normCode(req.query.code);
   const player = String(req.query.player || "P1").toUpperCase();
-
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
   const s = ensureSession(code);
@@ -75,29 +75,28 @@ app.get("/api/poll", (req, res) => {
   const out = s.queues[key];
   s.queues[key] = [];
 
-  res.json({ ok: true, events: out });
+  res.json({ ok: true, cmds: out, drags: [] });
 });
 
-// ---- Presence (para etapa automática) ----
-// Unity avisa en qué escena está
-app.post("/api/presence", (req, res) => {
+// ---- presence (unity -> server -> web) ----
+app.post("/presence", (req, res) => {
   const code = normCode(req.body.code);
   const stage = String(req.body.stage || "start").trim();
-
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
   const s = ensureSession(code);
-  s.presence = { stage, ts: Date.now() };
+  s.presence = { stage, t: Date.now() };
   res.json({ ok: true });
 });
 
-// Teléfono consulta en qué etapa está Unity
-app.get("/api/presence", (req, res) => {
+app.get("/presence", (req, res) => {
   const code = normCode(req.query.code);
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
   const s = ensureSession(code);
-  res.json({ ok: true, stage: s.presence?.stage || "start", ts: s.presence?.ts || 0 });
+  res.json({ ok: true, stage: s.presence.stage, t: s.presence.t });
 });
 
-app.listen(PORT, () => console.log("Remote running on port", PORT));
+app.listen(PORT, () => {
+  console.log("Remote running on port", PORT);
+});
