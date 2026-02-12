@@ -1,3 +1,4 @@
+// server.js (ESM)
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -7,32 +8,29 @@ app.use(express.json({ limit: "200kb" }));
 
 const PORT = process.env.PORT || 10000;
 
+// -------- paths --------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ---- in-memory sessions ----
+// -------- memory --------
 const sessions = new Map();
 
 function normCode(code) {
-  return String(code || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
+  return String(code || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
-
 function ensureSession(code) {
   const c = normCode(code);
   if (!sessions.has(c)) {
     sessions.set(c, {
       createdAt: Date.now(),
-      presence: { stage: "start", t: Date.now() },
-      queues: { P1: [], P2: [], WAIT: [] },
+      queue: [],
+      presence: { stage: "start", t: Date.now() }
     });
   }
   return sessions.get(c);
 }
 
-// cleanup
+// cleanup (6h)
 setInterval(() => {
   const now = Date.now();
   for (const [code, s] of sessions.entries()) {
@@ -40,48 +38,54 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000);
 
-// ---- serve web ----
-app.use(express.static(path.join(__dirname, "public")));
-
+// -------- health --------
 app.get("/ping", (req, res) => res.type("text").send("pong"));
 
-// ---- send command (web -> server) ----
-app.post("/send", (req, res) => {
+// -------- front --------
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// -------- api: send command --------
+app.post("/api/send", (req, res) => {
   const code = normCode(req.body.code);
-  const cmd = String(req.body.cmd || "").trim();
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+
+  let cmd = String(req.body.cmd || "").trim();
+
+  // compat: si te mandan player + cmd separado
+  const player = String(req.body.player || "").trim().toUpperCase();
+  if (!cmd && req.body.action) cmd = String(req.body.action || "").trim();
+  if (cmd && player && !cmd.startsWith("P1_") && !cmd.startsWith("P2_") && !cmd.startsWith("WAIT_")) {
+    cmd = `${player}_${cmd}`;
+  }
+
   if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
   const s = ensureSession(code);
+  s.queue.push({ cmd, t: Date.now(), data: req.body.data ?? null });
 
-  // detect target by prefix
-  let key = "P1";
-  if (cmd.startsWith("P2_")) key = "P2";
-  else if (cmd.startsWith("WAIT_")) key = "WAIT";
-
-  s.queues[key].push({ cmd, t: Date.now(), data: req.body.data || null });
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
-// ---- poll (unity -> server) ----
-// GET /poll?code=ABCD&player=P1
-app.get("/poll", (req, res) => {
+// -------- api: poll (Unity) --------
+app.get("/api/poll", (req, res) => {
   const code = normCode(req.query.code);
-  const player = String(req.query.player || "P1").toUpperCase();
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
   const s = ensureSession(code);
-  const key = player === "P2" ? "P2" : player === "WAIT" ? "WAIT" : "P1";
-  const out = s.queues[key];
-  s.queues[key] = [];
+  const events = s.queue;
+  s.queue = [];
 
-  res.json({ ok: true, cmds: out, drags: [] });
+  // devolvemos modo cola + (por compat) cmd simple si hay 1
+  const cmd = events.length === 1 ? events[0].cmd : "";
+  res.json({ ok: true, cmd, events });
 });
 
-// ---- presence (unity -> server -> web) ----
-app.post("/presence", (req, res) => {
+// -------- api: presence (Unity -> Web) --------
+app.post("/api/presence", (req, res) => {
   const code = normCode(req.body.code);
-  const stage = String(req.body.stage || "start").trim();
+  const stage = String(req.body.stage || "").trim().toLowerCase() || "start";
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
   const s = ensureSession(code);
@@ -89,7 +93,7 @@ app.post("/presence", (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/presence", (req, res) => {
+app.get("/api/presence", (req, res) => {
   const code = normCode(req.query.code);
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
