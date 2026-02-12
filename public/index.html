@@ -31,6 +31,7 @@
     button.danger{background:var(--danger)}
     button.ghost{background:transparent;border:1px solid #2d3146}
     .hint{color:var(--muted);font-size:13px;margin-top:8px}
+    .stageLabel{color:var(--text);font-weight:800}
   </style>
 </head>
 <body>
@@ -42,7 +43,7 @@
       </div>
       <div class="badge">
         <span class="pill">Etapa</span>
-        <div class="pill"><b id="stageLabel">---</b></div>
+        <span class="pill stageLabel" id="stageLabel">StartScene</span>
       </div>
     </div>
 
@@ -54,7 +55,9 @@
 
     <div class="panel">
       <div class="row">
-        <div class="hint">Tip: escaneá el QR, abrí esta página y apretá botones. La etapa cambia sola según el juego.</div>
+        <div>
+          <div class="hint">Abrí con el QR. El panel cambia solo según la escena.</div>
+        </div>
         <div class="row">
           <input id="codeInput" placeholder="CODE (ej: 62TR)" style="width:170px" />
           <button class="ghost" id="saveCode">OK</button>
@@ -70,13 +73,22 @@
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
     player: "P1",
-    stage: "start"
+    stage: "start",
+    presencePollMs: 800,
   };
 
   const codeLabel = document.getElementById("codeLabel");
   const codeInput = document.getElementById("codeInput");
-  const stageLabel = document.getElementById("stageLabel");
   const buttonsEl = document.getElementById("buttons");
+  const stageLabel = document.getElementById("stageLabel");
+
+  function humanStage(s){
+    if(s==="start") return "StartScene";
+    if(s==="select") return "LevelSelect";
+    if(s==="level") return "Level";
+    if(s==="wait") return "Espera";
+    return s || "StartScene";
+  }
 
   function setPlayer(p){
     state.player = p;
@@ -87,8 +99,8 @@
   }
 
   function setStage(s){
-    state.stage = s || "start";
-    stageLabel.textContent = state.stage;
+    state.stage = (s || "start").toLowerCase();
+    stageLabel.textContent = humanStage(state.stage);
     renderButtons();
   }
 
@@ -98,21 +110,20 @@
     codeInput.value = state.code;
   }
 
-  async function send(cmd){
+  async function send(cmd, data=null){
     if(!state.code){ alert("Falta CODE"); return; }
     try{
       await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, cmd })
+        body: JSON.stringify({ code: state.code, player: state.player, cmd, data })
       });
-      navigator.vibrate?.(30);
+      navigator.vibrate?.(25);
     }catch(e){
       alert("No pude enviar. ¿Servidor dormido? Reintentá.");
     }
   }
 
-  // Botones por etapa (lo que vos querés: aparecen cuando corresponde)
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
@@ -139,6 +150,7 @@
       ["VAQUITA", "VAQUITA", "primary"],
       ["PODER VAQUITA", "VAQUITAENOJADAPODER", ""],
       ["PODER ARGENTINO", "PODERARGENTINO", "primary"],
+      ["RESTART", "RESTART", ""],
       ["HOME", "HOME", ""],
       ["EXIT", "EXIT", "danger"]
     ],
@@ -153,20 +165,14 @@
   function renderButtons(){
     const list = BUTTONS[state.stage] || BUTTONS.start;
     buttonsEl.innerHTML = "";
-
-    for(const [label, rawCmd, css] of list){
+    for(const [label, cmd, css] of list){
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
-
       b.onclick = () => {
-        // prefijo por jugador (P1_/P2_) salvo WAIT
-        let finalCmd = rawCmd;
-        if(state.player === "WAIT") finalCmd = `WAIT_${rawCmd}`;
-        else finalCmd = `${state.player}_${rawCmd}`;
-        send(finalCmd);
+        if(state.player === "WAIT") send(`WAIT_${cmd}`);
+        else send(`${state.player}_${cmd}`);
       };
-
       buttonsEl.appendChild(b);
     }
   }
@@ -174,18 +180,16 @@
   async function pollPresence(){
     if(!state.code) return;
     try{
-      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`);
+      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
       const j = await r.json();
-      if(j && j.ok && j.stage){
-        // mapeo: si Unity manda "select" -> usamos "select"; etc.
-        setStage(j.stage);
+      if(j?.ok && j?.presence?.stage){
+        const s = String(j.presence.stage).toLowerCase();
+        if(s && s !== state.stage) setStage(s);
       }
-    }catch(e){
-      // ignore
-    }
+    }catch(e){}
   }
 
-  // init
+  // init UI
   document.getElementById("tabP1").onclick = () => setPlayer("P1");
   document.getElementById("tabP2").onclick = () => setPlayer("P2");
   document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
@@ -201,7 +205,8 @@
   setStage("start");
   renderButtons();
 
-  setInterval(pollPresence, 700);
+  // presence loop
+  setInterval(pollPresence, state.presencePollMs);
   pollPresence();
 </script>
 </body>
