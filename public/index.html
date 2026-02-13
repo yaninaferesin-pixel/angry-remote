@@ -1,200 +1,164 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Angry Remote</title>
-  <style>
-    :root{
-      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30;
-      --text:#f5f6ff; --muted:#a9acc2; --radius:18px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
-    body{margin:0;background:var(--bg);color:var(--text);}
-    .wrap{max-width:720px;margin:0 auto;padding:16px;}
-    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
-    .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
-    .ok{color:#41d07a;font-weight:700}
-    .tabs{display:flex;gap:10px;margin:12px 0}
-    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
-    .tab.active{outline:2px solid var(--btn2)}
-    .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-    button{
-      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
-      background:var(--btn);color:var(--text);font-size:16px;
-    }
-    button.primary{background:var(--btn2)}
-    button.danger{background:var(--danger)}
-    button.ghost{background:transparent;border:1px solid #2d3146}
-    .hint{color:var(--muted);font-size:13px;margin-top:8px}
-    .stageLine{color:var(--muted);font-size:13px;margin-top:8px}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Angry Remote</title>
+
+<style>
+:root{
+ --bg:#0e0f13;
+ --panel:#161823;
+ --btn:#2a2d3a;
+ --primary:#6b4cff;
+ --danger:#ff3b30;
+ --text:#f5f6ff;
+ --muted:#a9acc2;
+ font-family:system-ui,-apple-system,Segoe UI,Roboto;
+}
+body{margin:0;background:var(--bg);color:var(--text)}
+.wrap{max-width:700px;margin:auto;padding:16px}
+.badge{background:var(--panel);padding:10px 14px;border-radius:999px;display:inline-block;margin-right:8px}
+.tabs{display:flex;gap:8px;margin:12px 0}
+.tab{flex:1;padding:12px;border-radius:999px;border:1px solid #2d3146;background:var(--panel);color:white;font-weight:700}
+.tab.active{outline:2px solid var(--primary)}
+.panel{background:var(--panel);padding:16px;border-radius:18px;border:1px solid #2d3146}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+button{padding:16px;border-radius:16px;border:0;font-weight:800;background:var(--btn);color:white}
+button.primary{background:var(--primary)}
+button.danger{background:var(--danger)}
+input{padding:10px;border-radius:12px;border:1px solid #2d3146;background:#111;color:white}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="badge">
-        <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span class="ok" id="online">online</span></div>
-      </div>
-      <div class="badge">
-        <span class="pill">Etapa</span>
-        <span class="pill"><b id="stageLabel">---</b></span>
-      </div>
-    </div>
+<div class="wrap">
 
-    <div class="tabs">
-      <button class="tab active" id="tabP1">Player 1</button>
-      <button class="tab" id="tabP2">Player 2</button>
-      <button class="tab" id="tabW">Espera</button>
-    </div>
+<div>
+<span class="badge">CODE: <b id="codeLabel">----</b></span>
+<span class="badge">Stage: <b id="stageLabel">---</b></span>
+</div>
 
-    <div class="panel">
-      <div class="row">
-        <div>
-          <div class="hint">Escaneá el QR. El panel cambia solo según la escena.</div>
-          <div class="stageLine">Stage detectado: <b id="stageLabel2">---</b></div>
-        </div>
-        <div class="row">
-          <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
-          <button class="ghost" id="saveCode">OK</button>
-        </div>
-      </div>
+<div class="tabs">
+<button class="tab active" id="p1">P1</button>
+<button class="tab" id="p2">P2</button>
+<button class="tab" id="wait">WAIT</button>
+</div>
 
-      <div id="buttons" class="grid"></div>
-    </div>
-  </div>
+<div class="panel">
+<input id="codeInput" placeholder="CODE"/>
+<button onclick="saveCode()">OK</button>
+
+<div id="buttons" class="grid"></div>
+</div>
+
+</div>
 
 <script>
-  const qs = new URLSearchParams(location.search);
+const qs = new URLSearchParams(location.search);
 
-  const state = {
-    code: (qs.get("code") || "").toUpperCase().trim(),
-    player: "P1",
-    stage: "start" // start | select | level | wait  (la setea el server)
+let state = {
+ code: (qs.get("code")||"").toUpperCase(),
+ player: "P1",
+ stage: "start"
+};
+
+const codeLabel = document.getElementById("codeLabel");
+const stageLabel = document.getElementById("stageLabel");
+const buttonsEl = document.getElementById("buttons");
+
+function saveCode(){
+ state.code = document.getElementById("codeInput").value.toUpperCase();
+ codeLabel.textContent = state.code;
+}
+
+function setPlayer(p){
+ state.player = p;
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ document.getElementById(p.toLowerCase()).classList.add("active");
+ renderButtons();
+}
+
+function setStage(s){
+ if(!s) return;
+ state.stage = s;
+ stageLabel.textContent = s;
+ renderButtons();
+}
+
+async function send(cmd){
+ if(!state.code){ alert("Falta CODE"); return; }
+
+ await fetch("/api/send",{
+   method:"POST",
+   headers:{ "Content-Type":"application/json" },
+   body:JSON.stringify({ code:state.code, cmd })
+ });
+}
+
+const BUTTONS = {
+ start:[
+  ["PLAY","PLAY","primary"],
+  ["TRAILER","TRAILER",""],
+  ["EXIT","EXIT","danger"]
+ ],
+ select:[
+  ["LEFT","LEFT",""],
+  ["RIGHT","RIGHT",""],
+  ["PLAY","PLAY","primary"],
+  ["HOME","HOME",""],
+  ["EXIT","EXIT","danger"]
+ ],
+ level:[
+  ["HOME","HOME",""],
+  ["RESTART","RESTART",""],
+  ["EXIT","EXIT","danger"]
+ ],
+ wait:[
+  ["LINDA 0","LINDAACCION0","primary"],
+  ["LINDA 1","LINDAACCION1","primary"]
+ ]
+};
+
+function renderButtons(){
+ buttonsEl.innerHTML="";
+ const list = BUTTONS[state.stage] || BUTTONS.start;
+
+ for(const [label,cmd,css] of list){
+  const b=document.createElement("button");
+  b.textContent=label;
+  if(css) b.classList.add(css);
+
+  b.onclick=()=>{
+   if(state.player==="WAIT")
+    send(`WAIT_${cmd}`);
+   else
+    send(`${state.player}_${cmd}`);
   };
 
-  const codeLabel = document.getElementById("codeLabel");
-  const codeInput = document.getElementById("codeInput");
-  const stageLabel = document.getElementById("stageLabel");
-  const stageLabel2 = document.getElementById("stageLabel2");
-  const buttonsEl = document.getElementById("buttons");
+  buttonsEl.appendChild(b);
+ }
+}
 
-  function setPlayer(p){
-    state.player = p;
-    document.getElementById("tabP1").classList.toggle("active", p==="P1");
-    document.getElementById("tabP2").classList.toggle("active", p==="P2");
-    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
-    renderButtons();
-  }
+async function pollPresence(){
+ if(!state.code) return;
 
-  function setCode(c){
-    state.code = (c||"").toUpperCase().trim();
-    codeLabel.textContent = state.code || "----";
-    codeInput.value = state.code;
-    const url = new URL(location.href);
-    if (state.code) url.searchParams.set("code", state.code);
-    else url.searchParams.delete("code");
-    history.replaceState({}, "", url.toString());
-  }
+ try{
+   const r = await fetch(`/api/presence?code=${state.code}`);
+   const j = await r.json();
+   if(j && j.stage && j.stage !== state.stage){
+     setStage(j.stage);
+   }
+ }catch(e){}
+}
 
-  function setStage(s){
-    state.stage = s || "start";
-    stageLabel.textContent = state.stage;
-    stageLabel2.textContent = state.stage;
-    renderButtons();
-  }
+document.getElementById("p1").onclick=()=>setPlayer("P1");
+document.getElementById("p2").onclick=()=>setPlayer("P2");
+document.getElementById("wait").onclick=()=>setPlayer("WAIT");
 
-  async function send(cmd){
-    if(!state.code){ alert("Falta CODE"); return; }
-    try{
-      await fetch("/api/send",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, cmd })
-      });
-      navigator.vibrate?.(25);
-    }catch(e){
-      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
-    }
-  }
-
-  const BUTTONS = {
-    start: [
-      ["PLAY", "PLAY", "primary"],
-      ["TRAILER", "TRAILER", ""],
-      ["EXIT TRAILER", "EXITTRAILER", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    select: [
-      ["LEFT", "LEFT", ""],
-      ["RIGHT", "RIGHT", ""],
-      ["PLAY", "PLAY", "primary"],
-      ["HOME", "HOME", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    level: [
-      ["HOME", "HOME", ""],
-      ["RESTART", "RESTART", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    wait: [
-      ["LINDA 0", "LINDAACCION0", "primary"],
-      ["LINDA 1", "LINDAACCION1", "primary"],
-      ["LINDA 2", "LINDAACCION2", "primary"],
-      ["LINDA 3", "LINDAACCION3", "primary"]
-    ]
-  };
-
-  function renderButtons(){
-    const list = BUTTONS[state.stage] || BUTTONS.start;
-    buttonsEl.innerHTML = "";
-
-    for(const [label, cmd, css] of list){
-      const b = document.createElement("button");
-      b.textContent = label;
-      if(css) b.classList.add(css);
-
-      b.onclick = () => {
-        if(state.player === "WAIT"){
-          send(`WAIT_${cmd}`);
-        }else{
-          send(`${state.player}_${cmd}`);
-        }
-      };
-
-      buttonsEl.appendChild(b);
-    }
-  }
-
-  async function pollPresence(){
-    if(!state.code) return;
-    try{
-      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`);
-      const j = await r.json();
-      if(j && j.ok && j.stage && j.stage !== state.stage){
-        setStage(j.stage);
-      }
-    }catch(e){
-      // silencio (render puede dormirse)
-    }
-  }
-
-  document.getElementById("tabP1").onclick = () => setPlayer("P1");
-  document.getElementById("tabP2").onclick = () => setPlayer("P2");
-  document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
-
-  document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
-
-  setCode(state.code);
-  setStage("start");
-  renderButtons();
-
-  setInterval(pollPresence, 600);
+codeLabel.textContent = state.code || "----";
+renderButtons();
+setInterval(pollPresence, 600);
 </script>
 </body>
 </html>
