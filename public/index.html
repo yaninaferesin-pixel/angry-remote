@@ -16,7 +16,7 @@
     .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
     .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
     .ok{color:#41d07a;font-weight:700}
-    .warn{color:#ffcc66;font-weight:800}
+    .warn{color:#ffd60a;font-weight:800}
     .tabs{display:flex;gap:10px;margin:12px 0}
     .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
     .tab.active{outline:2px solid var(--btn2)}
@@ -40,12 +40,11 @@
     <div class="top">
       <div class="badge">
         <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span id="conn" class="warn">checking...</span></div>
+        <div class="pill"><span id="online" class="warn">checking...</span></div>
       </div>
-
       <div class="badge">
         <span class="pill">Stage: <b id="stageLabel">---</b></span>
-        <span class="pill">Activo: <b id="activeLabel">---</b></span>
+        <span class="pill">Activo: <b id="activeLabel">P1</b></span>
       </div>
     </div>
 
@@ -61,7 +60,6 @@
           <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence).</div>
           <div class="stageLine">Stage detectado: <b id="stageLabel2">---</b></div>
         </div>
-
         <div class="row">
           <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
           <button class="ghost" id="saveCode">OK</button>
@@ -77,18 +75,18 @@
 
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
-    player: "P1",           // P1 | P2 | WAIT (selección local)
-    stage: "start",         // lo trae presence
-    activePlayer: "P1"      // lo trae presence (si querés usarlo)
+    player: "P1",
+    stage: "start",
+    active: "P1"
   };
 
-  const codeLabel   = document.getElementById("codeLabel");
-  const codeInput   = document.getElementById("codeInput");
-  const stageLabel  = document.getElementById("stageLabel");
+  const codeLabel = document.getElementById("codeLabel");
+  const codeInput = document.getElementById("codeInput");
+  const stageLabel = document.getElementById("stageLabel");
   const stageLabel2 = document.getElementById("stageLabel2");
   const activeLabel = document.getElementById("activeLabel");
-  const buttonsEl   = document.getElementById("buttons");
-  const connEl      = document.getElementById("conn");
+  const onlineEl = document.getElementById("online");
+  const buttonsEl = document.getElementById("buttons");
 
   function setPlayer(p){
     state.player = p;
@@ -109,15 +107,16 @@
     history.replaceState({}, "", url.toString());
   }
 
-  function applyPresence(stage, activePlayer){
-    state.stage = stage || "start";
-    state.activePlayer = activePlayer || "P1";
-
+  function setStage(s){
+    state.stage = (s || "start").toLowerCase();
     stageLabel.textContent = state.stage;
     stageLabel2.textContent = state.stage;
-    activeLabel.textContent = state.activePlayer;
-
     renderButtons();
+  }
+
+  function setActive(a){
+    state.active = (a || "P1").toUpperCase();
+    activeLabel.textContent = state.active;
   }
 
   async function send(cmd){
@@ -126,8 +125,7 @@
       await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        // IMPORTANTE: mandamos player separado, y cmd sin prefijo
-        body: JSON.stringify({ code: state.code, player: state.player, cmd })
+        body: JSON.stringify({ code: state.code, cmd })
       });
       navigator.vibrate?.(25);
     }catch(e){
@@ -135,7 +133,6 @@
     }
   }
 
-  // Botones por stage
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
@@ -175,30 +172,38 @@
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
-      b.onclick = () => send(cmd);
+
+      b.onclick = () => {
+        if(state.player === "WAIT"){
+          send(`WAIT_${cmd}`);
+        }else{
+          send(`${state.player}_${cmd}`);
+        }
+      };
+
       buttonsEl.appendChild(b);
     }
   }
 
-  async function pollPresence(){
+  async function pollState(){
     if(!state.code) return;
     try{
-      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
+      const r = await fetch(`/api/state?code=${encodeURIComponent(state.code)}`);
       const j = await r.json();
 
-      // ✅ SERVER devuelve { ok:true, presence:{stage, activePlayer} }
-      if(j && j.ok && j.presence){
-        const stage = j.presence.stage || "start";
-        const active = j.presence.activePlayer || "P1";
-        applyPresence(stage, active);
-        connEl.textContent = "online";
-        connEl.classList.remove("warn");
-        connEl.classList.add("ok");
+      if(j && j.ok){
+        onlineEl.textContent = "online";
+        onlineEl.className = "ok";
+
+        if(j.stage && j.stage !== state.stage) setStage(j.stage);
+        if(j.active) setActive(j.active);
+      }else{
+        onlineEl.textContent = "offline";
+        onlineEl.className = "warn";
       }
     }catch(e){
-      connEl.textContent = "checking...";
-      connEl.classList.remove("ok");
-      connEl.classList.add("warn");
+      onlineEl.textContent = "offline";
+      onlineEl.className = "warn";
     }
   }
 
@@ -208,12 +213,12 @@
   document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
   setCode(state.code);
-  applyPresence("start","P1");
-  setPlayer("P1");
+  setStage("start");
+  setActive("P1");
+  renderButtons();
 
-  // Presence rápido
-  pollPresence();
-  setInterval(pollPresence, 500);
+  pollState();
+  setInterval(pollState, 600);
 </script>
 </body>
 </html>
