@@ -16,7 +16,7 @@
     .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center;border:1px solid #2d3146}
     .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
     .ok{color:#41d07a;font-weight:700}
-    .warn{color:#ffcc00;font-weight:700}
+    .warn{color:#ffd166;font-weight:700}
     .tabs{display:flex;gap:10px;margin:12px 0}
     .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
     .tab.active{outline:2px solid var(--btn2)}
@@ -42,10 +42,9 @@
         <div class="pill">CODE: <b id="codeLabel">----</b></div>
         <div class="pill"><span id="status" class="warn">checking…</span></div>
       </div>
-
       <div class="badge">
         <span class="pill">Stage: <b id="stageLabel">---</b></span>
-        <span class="pill">Activo: <b id="activeLabel">P1</b></span>
+        <span class="pill">Activo: <b id="activeLabel">---</b></span>
       </div>
     </div>
 
@@ -58,8 +57,8 @@
     <div class="panel">
       <div class="row">
         <div>
-          <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence).</div>
-          <div class="stageLine">Stage detectado: <b id="stageLabel2">---</b></div>
+          <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence/state).</div>
+          <div class="stageLine">Detectado: <b id="stageLabel2">---</b></div>
         </div>
         <div class="row">
           <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
@@ -77,20 +76,22 @@
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
     player: "P1",
-    stage: "start"
+    stage: "start",   // start | trailer | select | level | wait
+    active: "P1"
   };
 
   const codeLabel = document.getElementById("codeLabel");
   const codeInput = document.getElementById("codeInput");
   const stageLabel = document.getElementById("stageLabel");
   const stageLabel2 = document.getElementById("stageLabel2");
+  const activeLabel = document.getElementById("activeLabel");
   const buttonsEl = document.getElementById("buttons");
   const statusEl = document.getElementById("status");
-  const activeLabel = document.getElementById("activeLabel");
+
+  let failCount = 0;
 
   function setPlayer(p){
     state.player = p;
-    activeLabel.textContent = p;
     document.getElementById("tabP1").classList.toggle("active", p==="P1");
     document.getElementById("tabP2").classList.toggle("active", p==="P2");
     document.getElementById("tabW").classList.toggle("active", p==="WAIT");
@@ -115,27 +116,33 @@
     renderButtons();
   }
 
+  function setActive(a){
+    state.active = a || "---";
+    activeLabel.textContent = state.active;
+  }
+
   async function send(cmd){
     if(!state.code){ alert("Falta CODE"); return; }
     try{
-      const r = await fetch("/api/send",{
+      await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ code: state.code, cmd })
       });
-      if(!r.ok) throw new Error("send failed");
       navigator.vibrate?.(25);
     }catch(e){
-      alert("No pude enviar. ¿Servidor dormido? Reintentá.");
+      // si Render está dormido, puede fallar
     }
   }
 
-  // ✅ START incluye CLOSE TRAILER siempre (así no desaparece)
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
       ["TRAILER", "TRAILER", ""],
-      ["CLOSE TRAILER", "EXITTRAILER", ""],
+      ["EXIT", "EXIT", "danger"]
+    ],
+    trailer: [
+      ["CLOSE TRAILER", "EXITTRAILER", "primary"],
       ["EXIT", "EXIT", "danger"]
     ],
     select: [
@@ -179,25 +186,30 @@
     }
   }
 
-  async function pollPresence(){
+  async function pollState(){
     if(!state.code) return;
-    try{
-      statusEl.textContent = "checking…";
-      statusEl.className = "warn";
 
-      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`);
+    try{
+      const r = await fetch(`/api/state?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
       const j = await r.json();
 
       if(j && j.ok){
+        failCount = 0;
         statusEl.textContent = "online";
         statusEl.className = "ok";
 
-        if(j.stage && j.stage !== state.stage){
-          setStage(j.stage);
-        }
+        if(j.stage && j.stage !== state.stage) setStage(j.stage);
+        if(j.active) setActive(j.active);
+      }else{
+        failCount++;
       }
     }catch(e){
-      statusEl.textContent = "offline";
+      failCount++;
+    }
+
+    // Si falla 3 veces seguidas, recién ahí mostramos checking
+    if(failCount >= 3){
+      statusEl.textContent = "checking…";
       statusEl.className = "warn";
     }
   }
@@ -208,12 +220,11 @@
   document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
   setCode(state.code);
-  setPlayer("P1");
   setStage("start");
+  setActive("P1");
   renderButtons();
 
-  pollPresence();
-  setInterval(pollPresence, 600);
+  setInterval(pollState, 600);
 </script>
 </body>
 </html>
