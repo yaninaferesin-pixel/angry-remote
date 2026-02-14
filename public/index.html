@@ -13,10 +13,10 @@
     body{margin:0;background:var(--bg);color:var(--text);}
     .wrap{max-width:720px;margin:0 auto;padding:16px;}
     .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center;border:1px solid #2d3146}
     .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
     .ok{color:#41d07a;font-weight:700}
-    .warn{color:#ffd60a;font-weight:800}
+    .warn{color:#ffcc00;font-weight:700}
     .tabs{display:flex;gap:10px;margin:12px 0}
     .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
     .tab.active{outline:2px solid var(--btn2)}
@@ -40,8 +40,9 @@
     <div class="top">
       <div class="badge">
         <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span id="online" class="warn">checking...</span></div>
+        <div class="pill"><span id="status" class="warn">checking…</span></div>
       </div>
+
       <div class="badge">
         <span class="pill">Stage: <b id="stageLabel">---</b></span>
         <span class="pill">Activo: <b id="activeLabel">P1</b></span>
@@ -76,20 +77,20 @@
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
     player: "P1",
-    stage: "start",
-    active: "P1"
+    stage: "start"
   };
 
   const codeLabel = document.getElementById("codeLabel");
   const codeInput = document.getElementById("codeInput");
   const stageLabel = document.getElementById("stageLabel");
   const stageLabel2 = document.getElementById("stageLabel2");
-  const activeLabel = document.getElementById("activeLabel");
-  const onlineEl = document.getElementById("online");
   const buttonsEl = document.getElementById("buttons");
+  const statusEl = document.getElementById("status");
+  const activeLabel = document.getElementById("activeLabel");
 
   function setPlayer(p){
     state.player = p;
+    activeLabel.textContent = p;
     document.getElementById("tabP1").classList.toggle("active", p==="P1");
     document.getElementById("tabP2").classList.toggle("active", p==="P2");
     document.getElementById("tabW").classList.toggle("active", p==="WAIT");
@@ -108,40 +109,33 @@
   }
 
   function setStage(s){
-    state.stage = (s || "start").toLowerCase();
+    state.stage = s || "start";
     stageLabel.textContent = state.stage;
     stageLabel2.textContent = state.stage;
     renderButtons();
   }
 
-  function setActive(a){
-    state.active = (a || "P1").toUpperCase();
-    activeLabel.textContent = state.active;
-  }
-
   async function send(cmd){
     if(!state.code){ alert("Falta CODE"); return; }
     try{
-      await fetch("/api/send",{
+      const r = await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ code: state.code, cmd })
       });
+      if(!r.ok) throw new Error("send failed");
       navigator.vibrate?.(25);
     }catch(e){
       alert("No pude enviar. ¿Servidor dormido? Reintentá.");
     }
   }
 
+  // ✅ START incluye CLOSE TRAILER siempre (así no desaparece)
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
       ["TRAILER", "TRAILER", ""],
       ["CLOSE TRAILER", "EXITTRAILER", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    trailer: [
-      ["CLOSE TRAILER", "EXITTRAILER", "primary"],
       ["EXIT", "EXIT", "danger"]
     ],
     select: [
@@ -185,25 +179,26 @@
     }
   }
 
-  async function pollState(){
+  async function pollPresence(){
     if(!state.code) return;
     try{
-      const r = await fetch(`/api/state?code=${encodeURIComponent(state.code)}`);
+      statusEl.textContent = "checking…";
+      statusEl.className = "warn";
+
+      const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`);
       const j = await r.json();
 
       if(j && j.ok){
-        onlineEl.textContent = "online";
-        onlineEl.className = "ok";
+        statusEl.textContent = "online";
+        statusEl.className = "ok";
 
-        if(j.stage && j.stage !== state.stage) setStage(j.stage);
-        if(j.active) setActive(j.active);
-      }else{
-        onlineEl.textContent = "offline";
-        onlineEl.className = "warn";
+        if(j.stage && j.stage !== state.stage){
+          setStage(j.stage);
+        }
       }
     }catch(e){
-      onlineEl.textContent = "offline";
-      onlineEl.className = "warn";
+      statusEl.textContent = "offline";
+      statusEl.className = "warn";
     }
   }
 
@@ -213,12 +208,12 @@
   document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
   setCode(state.code);
+  setPlayer("P1");
   setStage("start");
-  setActive("P1");
   renderButtons();
 
-  pollState();
-  setInterval(pollState, 600);
+  pollPresence();
+  setInterval(pollPresence, 600);
 </script>
 </body>
 </html>
