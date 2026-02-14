@@ -33,7 +33,7 @@
     button.danger{background:var(--danger)}
     button.ghost{background:transparent;border:1px solid #2d3146}
     .hint{color:var(--muted);font-size:13px;margin-top:8px}
-    .stageLine{color:var(--muted);font-size:13px;margin-top:8px}
+    .line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   </style>
 </head>
 <body>
@@ -41,13 +41,11 @@
     <div class="top">
       <div class="badge">
         <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span class="warn" id="online">offline</span></div>
+        <div class="pill"><span id="online" class="warn">checking…</span></div>
       </div>
-      <div class="badge">
-        <span class="pill">Stage</span>
-        <span class="pill"><b id="stageLabel">---</b></span>
-        <span class="pill">Activo</span>
-        <span class="pill"><b id="activeLabel">---</b></span>
+      <div class="badge line">
+        <span class="pill">Stage: <b id="stageLabel">---</b></span>
+        <span class="pill">Activo: <b id="activeLabel">---</b></span>
       </div>
     </div>
 
@@ -61,7 +59,6 @@
       <div class="row">
         <div>
           <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence).</div>
-          <div class="stageLine">Tip: si el otro jugador está activo, este tab pasa a “Espera”.</div>
         </div>
         <div class="row">
           <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
@@ -75,27 +72,27 @@
 
 <script>
   const qs = new URLSearchParams(location.search);
+
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
-    player: "P1",          // P1 | P2 | WAIT
-    stage: "start",        // start | trailer | select | level | wait
-    activePlayer: "P1",    // P1 | P2 | WAIT
+    tab: "P1",     // P1 | P2 | WAIT
+    stage: "start",// start | select | level | trailer | wait
+    activePlayer: "P1"
   };
 
-  const codeLabel   = document.getElementById("codeLabel");
-  const codeInput   = document.getElementById("codeInput");
-  const stageLabel  = document.getElementById("stageLabel");
+  const codeLabel = document.getElementById("codeLabel");
+  const codeInput = document.getElementById("codeInput");
+  const stageLabel = document.getElementById("stageLabel");
   const activeLabel = document.getElementById("activeLabel");
-  const onlineEl    = document.getElementById("online");
-  const buttonsEl   = document.getElementById("buttons");
+  const onlineEl = document.getElementById("online");
+  const buttonsEl = document.getElementById("buttons");
 
-  function stageName(s){
-    if(s==="start") return "StartScene";
-    if(s==="trailer") return "Trailer";
-    if(s==="select") return "LevelSelect";
-    if(s==="level") return "Level";
-    if(s==="wait") return "Espera";
-    return s;
+  function setTab(tab){
+    state.tab = tab;
+    document.getElementById("tabP1").classList.toggle("active", tab==="P1");
+    document.getElementById("tabP2").classList.toggle("active", tab==="P2");
+    document.getElementById("tabW").classList.toggle("active", tab==="WAIT");
+    renderButtons();
   }
 
   function setCode(c){
@@ -109,51 +106,42 @@
     history.replaceState({}, "", url.toString());
   }
 
-  function setPlayer(p){
-    state.player = p;
-    document.getElementById("tabP1").classList.toggle("active", p==="P1");
-    document.getElementById("tabP2").classList.toggle("active", p==="P2");
-    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
-    renderButtons();
-  }
-
-  function applyPresence(pres){
-    state.stage = (pres.stage || "start").toLowerCase();
-    state.activePlayer = (pres.activePlayer || "P1").toUpperCase();
-
-    stageLabel.textContent = stageName(state.stage);
+  function setPresence(stage, activePlayer){
+    state.stage = (stage || "start").toLowerCase();
+    state.activePlayer = (activePlayer || "P1").toUpperCase();
+    stageLabel.textContent = state.stage;
     activeLabel.textContent = state.activePlayer;
-
-    // “auto-espera”: si Unity dice que el activo es P1, bloqueamos P2 (y viceversa)
-    const tabP1 = document.getElementById("tabP1");
-    const tabP2 = document.getElementById("tabP2");
-    const tabW  = document.getElementById("tabW");
-
-    tabP1.classList.toggle("disabled", state.activePlayer === "P2");
-    tabP2.classList.toggle("disabled", state.activePlayer === "P1");
-    tabW.classList.toggle("disabled", false);
-
-    if (state.player === "P1" && state.activePlayer === "P2") setPlayer("WAIT");
-    if (state.player === "P2" && state.activePlayer === "P1") setPlayer("WAIT");
-
     renderButtons();
+
+    // Auto: si Unity dice "activo P1/P2", el otro jugador usa "Espera"
+    // (si querés mantenerlo manual, borrá esto)
+    if (state.stage !== "wait") {
+      // si el tab elegido NO es el activo, dejamos que igual elija, pero podés forzarlo:
+      // setTab(state.activePlayer);
+    }
   }
 
-  async function send(cmd){
+  async function sendCommand(finalCmd){
     if(!state.code){ alert("Falta CODE"); return; }
+
+    const player = (state.tab === "P2") ? "P2" : (state.tab === "WAIT") ? "WAIT" : "P1";
+
     try{
       await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, player: state.player, cmd })
+        body: JSON.stringify({
+          code: state.code,
+          player,
+          cmd: finalCmd
+        })
       });
-      navigator.vibrate?.(25);
+      navigator.vibrate?.(20);
     }catch(e){
       alert("No pude enviar. ¿Servidor dormido? Reintentá.");
     }
   }
 
-  // Botones por stage (mínimo para que avances ya)
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
@@ -162,7 +150,6 @@
     ],
     trailer: [
       ["CLOSE TRAILER", "EXITTRAILER", "primary"],
-      ["HOME", "HOME", ""],
       ["EXIT", "EXIT", "danger"]
     ],
     select: [
@@ -185,40 +172,42 @@
     ]
   };
 
+  function prefixCmd(raw){
+    if (state.tab === "WAIT") return `WAIT_${raw}`;
+    if (state.tab === "P2") return `P2_${raw}`;
+    return `P1_${raw}`;
+  }
+
   function renderButtons(){
     const list = BUTTONS[state.stage] || BUTTONS.start;
     buttonsEl.innerHTML = "";
-    for(const [label, rawCmd, css] of list){
+
+    for(const [label, raw, css] of list){
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
 
-      b.onclick = () => {
-        const finalCmd = (state.player === "WAIT")
-          ? `WAIT_${rawCmd}`
-          : `${state.player}_${rawCmd}`;
-        send(finalCmd);
-      };
-
+      b.onclick = () => sendCommand(prefixCmd(raw));
       buttonsEl.appendChild(b);
     }
   }
 
   async function pollPresence(){
     if(!state.code) return;
+
     try{
       const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
       const j = await r.json();
 
-      onlineEl.textContent = "online";
-      onlineEl.classList.remove("warn");
-      onlineEl.classList.add("ok");
-
-      // server actual: { ok:true, presence:{...} } 
-      // tolerancia formato viejo: { ok:true, stage:"start" }
-      const pres = j.presence || { stage: j.stage, activePlayer: j.activePlayer };
-      if (j && j.ok && pres && pres.stage){
-        applyPresence(pres);
+      // ✅ server actual: { ok:true, presence:{ stage, activePlayer } }
+      if(j && j.ok && j.presence){
+        onlineEl.textContent = "online";
+        onlineEl.classList.remove("warn");
+        onlineEl.classList.add("ok");
+        setPresence(j.presence.stage, j.presence.activePlayer);
+      } else {
+        // compat: { ok:true, stage:"start" }
+        if(j && j.ok && j.stage) setPresence(j.stage, "P1");
       }
     }catch(e){
       onlineEl.textContent = "offline";
@@ -227,15 +216,16 @@
     }
   }
 
-  document.getElementById("tabP1").onclick = () => setPlayer("P1");
-  document.getElementById("tabP2").onclick = () => setPlayer("P2");
-  document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
+  document.getElementById("tabP1").onclick = () => setTab("P1");
+  document.getElementById("tabP2").onclick = () => setTab("P2");
+  document.getElementById("tabW").onclick  = () => setTab("WAIT");
   document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
   setCode(state.code);
+  setTab("P1");
   renderButtons();
   pollPresence();
-  setInterval(pollPresence, 500);
+  setInterval(pollPresence, 400);
 </script>
 </body>
 </html>
