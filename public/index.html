@@ -13,26 +13,26 @@
     body{margin:0;background:var(--bg);color:var(--text);}
     .wrap{max-width:720px;margin:0 auto;padding:16px;}
     .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center;border:1px solid #2d3146}
+    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center}
     .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
-    .ok{color:#41d07a;font-weight:800}
-    .warn{color:#ffcc00;font-weight:800}
+    .ok{color:#41d07a;font-weight:700}
+    .warn{color:#ffcc66;font-weight:800}
     .tabs{display:flex;gap:10px;margin:12px 0}
-    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:800}
+    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
     .tab.active{outline:2px solid var(--btn2)}
     .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
     input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
     button{
-      border:0;border-radius:16px;padding:16px 14px;font-weight:900;
+      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
       background:var(--btn);color:var(--text);font-size:16px;
     }
     button.primary{background:var(--btn2)}
     button.danger{background:var(--danger)}
     button.ghost{background:transparent;border:1px solid #2d3146}
     .hint{color:var(--muted);font-size:13px;margin-top:8px}
-    .line{color:var(--muted);font-size:13px;margin-top:6px}
+    .stageLine{color:var(--muted);font-size:13px;margin-top:8px}
   </style>
 </head>
 <body>
@@ -40,11 +40,12 @@
     <div class="top">
       <div class="badge">
         <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span id="online" class="warn">checking...</span></div>
+        <div class="pill"><span id="conn" class="warn">checking...</span></div>
       </div>
+
       <div class="badge">
         <span class="pill">Stage: <b id="stageLabel">---</b></span>
-        <span class="pill">Activo: <b id="playerLabel">P1</b></span>
+        <span class="pill">Activo: <b id="activeLabel">---</b></span>
       </div>
     </div>
 
@@ -58,8 +59,9 @@
       <div class="row">
         <div>
           <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence).</div>
-          <div class="line">Stage detectado: <b id="stageLabel2">---</b></div>
+          <div class="stageLine">Stage detectado: <b id="stageLabel2">---</b></div>
         </div>
+
         <div class="row">
           <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
           <button class="ghost" id="saveCode">OK</button>
@@ -75,21 +77,21 @@
 
   const state = {
     code: (qs.get("code") || "").toUpperCase().trim(),
-    player: "P1",
-    stage: "start"
+    player: "P1",           // P1 | P2 | WAIT (selección local)
+    stage: "start",         // lo trae presence
+    activePlayer: "P1"      // lo trae presence (si querés usarlo)
   };
 
-  const codeLabel  = document.getElementById("codeLabel");
-  const codeInput  = document.getElementById("codeInput");
-  const onlineEl   = document.getElementById("online");
-  const stageLabel = document.getElementById("stageLabel");
-  const stageLabel2= document.getElementById("stageLabel2");
-  const playerLabel= document.getElementById("playerLabel");
-  const buttonsEl  = document.getElementById("buttons");
+  const codeLabel   = document.getElementById("codeLabel");
+  const codeInput   = document.getElementById("codeInput");
+  const stageLabel  = document.getElementById("stageLabel");
+  const stageLabel2 = document.getElementById("stageLabel2");
+  const activeLabel = document.getElementById("activeLabel");
+  const buttonsEl   = document.getElementById("buttons");
+  const connEl      = document.getElementById("conn");
 
   function setPlayer(p){
     state.player = p;
-    playerLabel.textContent = p;
     document.getElementById("tabP1").classList.toggle("active", p==="P1");
     document.getElementById("tabP2").classList.toggle("active", p==="P2");
     document.getElementById("tabW").classList.toggle("active", p==="WAIT");
@@ -107,53 +109,42 @@
     history.replaceState({}, "", url.toString());
   }
 
-  function setStage(s){
-    state.stage = (s || "start").toLowerCase();
+  function applyPresence(stage, activePlayer){
+    state.stage = stage || "start";
+    state.activePlayer = activePlayer || "P1";
+
     stageLabel.textContent = state.stage;
     stageLabel2.textContent = state.stage;
-    renderButtons();
-  }
+    activeLabel.textContent = state.activePlayer;
 
-  async function ping(){
-    try{
-      const r = await fetch("/ping", { cache:"no-store" });
-      if(!r.ok) throw 0;
-      onlineEl.textContent = "online";
-      onlineEl.className = "ok";
-    }catch{
-      onlineEl.textContent = "offline";
-      onlineEl.className = "warn";
-    }
+    renderButtons();
   }
 
   async function send(cmd){
     if(!state.code){ alert("Falta CODE"); return; }
-
-    const payload = {
-      code: state.code,
-      // Mandamos cmd sin prefijo y el server lo arma según player
-      cmd,
-      player: state.player
-    };
-
     try{
       await fetch("/api/send",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
+        // IMPORTANTE: mandamos player separado, y cmd sin prefijo
+        body: JSON.stringify({ code: state.code, player: state.player, cmd })
       });
-      navigator.vibrate?.(20);
+      navigator.vibrate?.(25);
     }catch(e){
       alert("No pude enviar. ¿Servidor dormido? Reintentá.");
     }
   }
 
-  // Botoneras por stage
+  // Botones por stage
   const BUTTONS = {
     start: [
       ["PLAY", "PLAY", "primary"],
       ["TRAILER", "TRAILER", ""],
       ["CLOSE TRAILER", "EXITTRAILER", ""],
+      ["EXIT", "EXIT", "danger"]
+    ],
+    trailer: [
+      ["CLOSE TRAILER", "EXITTRAILER", "primary"],
       ["EXIT", "EXIT", "danger"]
     ],
     select: [
@@ -184,10 +175,7 @@
       const b = document.createElement("button");
       b.textContent = label;
       if(css) b.classList.add(css);
-      b.onclick = () => {
-        if(state.player === "WAIT") send("WAIT_" + cmd);
-        else send(cmd);
-      };
+      b.onclick = () => send(cmd);
       buttonsEl.appendChild(b);
     }
   }
@@ -197,8 +185,21 @@
     try{
       const r = await fetch(`/api/presence?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
       const j = await r.json();
-      if(j && j.ok && j.stage) setStage(j.stage);
-    }catch{ /* silencio */ }
+
+      // ✅ SERVER devuelve { ok:true, presence:{stage, activePlayer} }
+      if(j && j.ok && j.presence){
+        const stage = j.presence.stage || "start";
+        const active = j.presence.activePlayer || "P1";
+        applyPresence(stage, active);
+        connEl.textContent = "online";
+        connEl.classList.remove("warn");
+        connEl.classList.add("ok");
+      }
+    }catch(e){
+      connEl.textContent = "checking...";
+      connEl.classList.remove("ok");
+      connEl.classList.add("warn");
+    }
   }
 
   document.getElementById("tabP1").onclick = () => setPlayer("P1");
@@ -207,13 +208,12 @@
   document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
 
   setCode(state.code);
+  applyPresence("start","P1");
   setPlayer("P1");
-  setStage("start");
-  renderButtons();
 
-  ping();
-  setInterval(ping, 2500);
-  setInterval(pollPresence, 400);
+  // Presence rápido
+  pollPresence();
+  setInterval(pollPresence, 500);
 </script>
 </body>
 </html>
