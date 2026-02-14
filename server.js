@@ -8,102 +8,94 @@ app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ---- In-memory store (suficiente para demo) ----
-const queues = new Map();     // key: `${code}:${player}` -> [{cmd, t}]
-const presence = new Map();   // key: code -> { stage, t }
+// ===== In-memory stores =====
+const queues = new Map(); // code -> [cmd, cmd, ...]
+const states = new Map(); // code -> { stage, active, updatedAt }
 
-function qKey(code, player) {
-  return `${code}:${player}`;
+function normCode(c) {
+  return String(c || "").trim().toUpperCase();
 }
 
-function normCode(code) {
-  return (code || "").toString().trim().toUpperCase();
+function getQueue(code) {
+  const c = normCode(code);
+  if (!queues.has(c)) queues.set(c, []);
+  return queues.get(c);
 }
 
-function normPlayer(player) {
-  const p = (player || "P1").toString().trim().toUpperCase();
-  if (p !== "P1" && p !== "P2" && p !== "WAIT") return "P1";
-  return p;
+function getState(code) {
+  const c = normCode(code);
+  if (!states.has(c)) states.set(c, { stage: "start", active: "P1", updatedAt: Date.now() });
+  return states.get(c);
 }
 
-function safeStage(stage) {
-  const s = (stage || "").toString().trim().toLowerCase();
-  if (["start", "select", "level", "wait"].includes(s)) return s;
-  return "start";
-}
-
-// ---- Static (public/index.html) ----
+// ===== Static site =====
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/ping", (req, res) => res.json({ ok: true }));
-
-// ---- SEND command ----
-// body: { code, cmd, player? }
-// Si cmd ya viene con "P1_" o "P2_" o "WAIT_" igual lo aceptamos.
-// Si NO viene prefijo, lo armamos con player.
+// ===== Send command =====
 app.post("/api/send", (req, res) => {
   const code = normCode(req.body?.code);
-  let cmd = (req.body?.cmd || "").toString().trim();
-  let player = normPlayer(req.body?.player);
+  const cmd = String(req.body?.cmd || "").trim();
 
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
-  // Si cmd NO tiene prefijo (P1_/P2_/WAIT_), se lo agregamos
-  const hasPrefix =
-    cmd.startsWith("P1_") || cmd.startsWith("P2_") || cmd.startsWith("WAIT_");
+  const q = getQueue(code);
+  q.push(cmd);
 
-  if (!hasPrefix) cmd = `${player}_${cmd}`;
-
-  // Encolar según prefijo real
-  let realPlayer = "P1";
-  if (cmd.startsWith("P2_")) realPlayer = "P2";
-  else if (cmd.startsWith("WAIT_")) realPlayer = "WAIT";
-
-  const k = qKey(code, realPlayer);
-  if (!queues.has(k)) queues.set(k, []);
-  queues.get(k).push({ cmd, t: Date.now() });
-
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
-// ---- POLL ----
-// GET /api/poll?code=XXXX&player=P1
-// devuelve { ok:true, cmd:"P1_PLAY" } o { ok:true, cmd:null }
+// ===== Poll command =====
 app.get("/api/poll", (req, res) => {
   const code = normCode(req.query.code);
-  const player = normPlayer(req.query.player);
-
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const k = qKey(code, player);
-  const arr = queues.get(k) || [];
-  const ev = arr.shift();
-  queues.set(k, arr);
-
-  res.json({ ok: true, cmd: ev ? ev.cmd : null });
+  const q = getQueue(code);
+  const cmd = q.length > 0 ? q.shift() : null;
+  return res.json({ ok: true, cmd });
 });
 
-// ---- PRESENCE ----
-// POST /api/presence  body: {code, stage}
-app.post("/api/presence", (req, res) => {
-  const code = normCode(req.body?.code);
-  const stage = safeStage(req.body?.stage);
-
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  presence.set(code, { stage, t: Date.now() });
-  res.json({ ok: true, stage });
-});
-
-// GET /api/presence?code=XXXX -> {ok:true, stage:"select"}
-app.get("/api/presence", (req, res) => {
+// ===== Stage/Presence (state) =====
+app.get("/api/state", (req, res) => {
   const code = normCode(req.query.code);
   if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const p = presence.get(code);
-  res.json({ ok: true, stage: p?.stage || "start" });
+  const st = getState(code);
+  return res.json({ ok: true, stage: st.stage, active: st.active, updatedAt: st.updatedAt });
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Remote running on port", PORT));
+app.post("/api/state", (req, res) => {
+  const code = normCode(req.body?.code);
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+
+  const st = getState(code);
+
+  const stage = String(req.body?.stage || "").trim().toLowerCase();
+  const active = String(req.body?.active || "").trim().toUpperCase();
+
+  if (stage) st.stage = stage;
+  if (active) st.active = active;
+
+  st.updatedAt = Date.now();
+  states.set(code, st);
+
+  return res.json({ ok: true, stage: st.stage, active: st.active });
+});
+
+// Alias viejo por si algún cliente lo llama
+app.get("/api/presence", (req, res) => {
+  req.url = "/api/state";
+  return app._router.handle(req, res);
+});
+app.post("/api/presence", (req, res) => {
+  req.url = "/api/state";
+  return app._router.handle(req, res);
+});
+
+// SPA fallback
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log("Remote running on port", port));
