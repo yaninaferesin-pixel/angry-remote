@@ -3,228 +3,347 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Angry Remote</title>
+  <title>Remote</title>
   <style>
     :root{
-      --bg:#0e0f13; --panel:#161823; --btn:#2a2d3a; --btn2:#6b4cff; --danger:#ff3b30;
-      --text:#f5f6ff; --muted:#a9acc2; --radius:18px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --bg:#0b0f1a; --card:#121a2a; --muted:#7d8aa5; --text:#e9eefc;
+      --accent:#6d5efc; --accent2:#00d1ff; --danger:#ff3b3b; --btn:#1a2440;
+      --btn2:#222f55;
+      --radius:18px;
     }
-    body{margin:0;background:var(--bg);color:var(--text);}
-    .wrap{max-width:720px;margin:0 auto;padding:16px;}
-    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .badge{background:var(--panel);border-radius:999px;padding:10px 12px;display:flex;gap:10px;align-items:center;border:1px solid #2d3146}
-    .pill{border:1px solid #2d3146;border-radius:999px;padding:6px 10px;color:var(--muted)}
-    .ok{color:#41d07a;font-weight:700}
-    .warn{color:#ffd166;font-weight:700}
-    .tabs{display:flex;gap:10px;margin:12px 0}
-    .tab{flex:1;background:var(--panel);border:1px solid #2d3146;color:var(--text);padding:14px;border-radius:999px;font-weight:700}
-    .tab.active{outline:2px solid var(--btn2)}
-    .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid #2d3146}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    input{background:#0f111a;color:var(--text);border:1px solid #2d3146;border-radius:12px;padding:10px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-    button{
-      border:0;border-radius:16px;padding:16px 14px;font-weight:800;
-      background:var(--btn);color:var(--text);font-size:16px;
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 800px at 50% -100px, #1b2a5c 0%, var(--bg) 55%);
+      color:var(--text);
     }
-    button.primary{background:var(--btn2)}
-    button.danger{background:var(--danger)}
-    button.ghost{background:transparent;border:1px solid #2d3146}
-    .hint{color:var(--muted);font-size:13px;margin-top:8px}
-    .stageLine{color:var(--muted);font-size:13px;margin-top:8px}
+    .wrap{max-width:520px;margin:0 auto;padding:18px 16px 28px}
+    .topRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      padding:8px 12px;border-radius:999px;color:var(--text);
+      display:inline-flex;gap:8px;align-items:center;
+    }
+    .pill b{font-weight:700}
+    .onlineDot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15)}
+    .card{
+      margin-top:14px;
+      background:rgba(18,26,42,.78);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 14px 40px rgba(0,0,0,.25);
+    }
+    .tabs{display:flex;gap:10px;margin-top:12px}
+    .tab{
+      flex:1;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--text);
+      padding:12px 10px;
+      border-radius:999px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .tab.active{outline:2px solid rgba(109,94,252,.7); background:rgba(109,94,252,.15)}
+    .muted{color:var(--muted); font-size:13px; line-height:1.35}
+    .row{display:flex;gap:10px}
+    input{
+      width:100%;
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      padding:12px 12px;border-radius:14px;
+      outline:none;
+      font-size:16px;
+    }
+    .btn{
+      user-select:none;
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--text);
+      padding:14px 12px;
+      border-radius:16px;
+      font-weight:800;
+      letter-spacing:.3px;
+      cursor:pointer;
+      width:100%;
+      text-align:center;
+    }
+    .btn.small{padding:11px 10px; font-weight:700}
+    .btn.accent{background:linear-gradient(180deg, rgba(109,94,252,.9), rgba(109,94,252,.55)); border-color:rgba(109,94,252,.9)}
+    .btn.alt{background:linear-gradient(180deg, rgba(0,209,255,.55), rgba(0,209,255,.25)); border-color:rgba(0,209,255,.55)}
+    .btn.danger{background:linear-gradient(180deg, rgba(255,59,59,.9), rgba(255,59,59,.55)); border-color:rgba(255,59,59,.9)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr; gap:10px}
+    .sectionTitle{font-weight:900; margin:8px 2px 10px; font-size:14px; color:#cfe0ff; opacity:.95}
+    .divider{height:1px;background:rgba(255,255,255,.08); margin:12px 0}
+    .hint{font-size:12px; color:var(--muted); margin-top:8px}
+    .warn{color:#ffd36e}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="top">
-      <div class="badge">
-        <div class="pill">CODE: <b id="codeLabel">----</b></div>
-        <div class="pill"><span id="status" class="warn">checking…</span></div>
-      </div>
-      <div class="badge">
-        <span class="pill">Stage: <b id="stageLabel">---</b></span>
-        <span class="pill">Activo: <b id="activeLabel">---</b></span>
-      </div>
+
+    <div class="topRow">
+      <div class="pill"><span>CODE:</span> <b id="roomCode">—</b></div>
+      <div class="pill"><span class="onlineDot"></span> <b id="onlineTxt">offline</b></div>
+      <div class="pill"><span>Stage:</span> <b id="stageTxt">—</b></div>
+      <div class="pill"><span>Activo:</span> <b id="activeTxt">—</b></div>
     </div>
 
     <div class="tabs">
       <button class="tab active" id="tabP1">Player 1</button>
       <button class="tab" id="tabP2">Player 2</button>
-      <button class="tab" id="tabW">Espera</button>
+      <button class="tab" id="tabWait">Espera</button>
     </div>
 
-    <div class="panel">
-      <div class="row">
-        <div>
-          <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence/state).</div>
-          <div class="stageLine">Detectado: <b id="stageLabel2">---</b></div>
-        </div>
-        <div class="row">
-          <input id="codeInput" placeholder="CODE (ej: CULA)" style="width:170px" />
-          <button class="ghost" id="saveCode">OK</button>
-        </div>
+    <div class="card">
+      <div class="muted">
+        Escaneá el QR. La botonera cambia sola según la escena (presence/state).<br/>
+        Detectado: <b id="detectedTxt">—</b>
       </div>
 
-      <div id="buttons" class="grid"></div>
+      <div class="divider"></div>
+
+      <div class="row">
+        <input id="codeInput" placeholder="Ingresá el código..." />
+        <div class="btn small accent" id="btnSetCode" style="max-width:110px">OK</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CONTENIDO DINÁMICO -->
+      <div id="content"></div>
+
+      <div class="divider"></div>
+
+      <div class="grid2">
+        <div class="btn" id="btnHome">HOME</div>
+        <div class="btn" id="btnRestart">RESTART</div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="btn danger" id="btnExit">EXIT</div>
+      </div>
+
+      <div class="hint" id="debugHint"></div>
     </div>
   </div>
 
 <script>
-  const qs = new URLSearchParams(location.search);
+  // ===============================
+  // Estado UI
+  // ===============================
+  let uiMode = "P1"; // "P1" | "P2" | "WAIT"
+  let roomCode = localStorage.getItem("ROOM_CODE") || "";
+  const $ = (id)=>document.getElementById(id);
 
-  const state = {
-    code: (qs.get("code") || "").toUpperCase().trim(),
-    player: "P1",
-    stage: "start",   // start | trailer | select | level | wait
-    active: "P1"
-  };
-
-  const codeLabel = document.getElementById("codeLabel");
-  const codeInput = document.getElementById("codeInput");
-  const stageLabel = document.getElementById("stageLabel");
-  const stageLabel2 = document.getElementById("stageLabel2");
-  const activeLabel = document.getElementById("activeLabel");
-  const buttonsEl = document.getElementById("buttons");
-  const statusEl = document.getElementById("status");
-
-  let failCount = 0;
-
-  function setPlayer(p){
-    state.player = p;
-    document.getElementById("tabP1").classList.toggle("active", p==="P1");
-    document.getElementById("tabP2").classList.toggle("active", p==="P2");
-    document.getElementById("tabW").classList.toggle("active", p==="WAIT");
-    renderButtons();
-  }
-
-  function setCode(c){
-    state.code = (c||"").toUpperCase().trim();
-    codeLabel.textContent = state.code || "----";
-    codeInput.value = state.code;
-
-    const url = new URL(location.href);
-    if (state.code) url.searchParams.set("code", state.code);
-    else url.searchParams.delete("code");
-    history.replaceState({}, "", url.toString());
-  }
-
-  function setStage(s){
-    state.stage = s || "start";
-    stageLabel.textContent = state.stage;
-    stageLabel2.textContent = state.stage;
-    renderButtons();
-  }
-
-  function setActive(a){
-    state.active = a || "---";
-    activeLabel.textContent = state.active;
-  }
-
-  async function send(cmd){
-    if(!state.code){ alert("Falta CODE"); return; }
+  // ===============================
+  // Helpers: commands
+  // ===============================
+  async function sendCmd(cmd){
+    if(!roomCode){
+      setHint("⚠️ Primero poné el CODE y tocá OK.");
+      return;
+    }
     try{
-      await fetch("/api/send",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code: state.code, cmd })
-      });
-      navigator.vibrate?.(25);
+      const res = await fetch(`/cmd?code=${encodeURIComponent(roomCode)}&c=${encodeURIComponent(cmd)}`);
+      const json = await res.json().catch(()=>null);
+      setHint(`✅ cmd: ${cmd}`);
+      return json;
     }catch(e){
-      // si Render está dormido, puede fallar
+      setHint("❌ Error enviando cmd.");
     }
   }
 
-  const BUTTONS = {
-    start: [
-      ["PLAY", "PLAY", "primary"],
-      ["TRAILER", "TRAILER", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    trailer: [
-      ["CLOSE TRAILER", "EXITTRAILER", "primary"],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    select: [
-      ["LEFT", "LEFT", ""],
-      ["RIGHT", "RIGHT", ""],
-      ["PLAY", "PLAY", "primary"],
-      ["HOME", "HOME", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    level: [
-      ["HOME", "HOME", ""],
-      ["RESTART", "RESTART", ""],
-      ["EXIT", "EXIT", "danger"]
-    ],
-    wait: [
-      ["LINDA 0", "LINDAACCION0", "primary"],
-      ["LINDA 1", "LINDAACCION1", "primary"],
-      ["LINDA 2", "LINDAACCION2", "primary"],
-      ["LINDA 3", "LINDAACCION3", "primary"]
-    ]
+  function setHint(t){ $("debugHint").textContent = t || ""; }
+
+  // ===============================
+  // Tabs
+  // ===============================
+  function setTab(mode){
+    uiMode = mode;
+    $("tabP1").classList.toggle("active", mode==="P1");
+    $("tabP2").classList.toggle("active", mode==="P2");
+    $("tabWait").classList.toggle("active", mode==="WAIT");
+    renderContent(lastPresence);
+  }
+
+  $("tabP1").onclick = ()=>setTab("P1");
+  $("tabP2").onclick = ()=>setTab("P2");
+  $("tabWait").onclick = ()=>setTab("WAIT");
+
+  // ===============================
+  // Code input
+  // ===============================
+  $("codeInput").value = roomCode;
+  $("roomCode").textContent = roomCode || "—";
+
+  $("btnSetCode").onclick = ()=>{
+    roomCode = $("codeInput").value.trim().toUpperCase();
+    localStorage.setItem("ROOM_CODE", roomCode);
+    $("roomCode").textContent = roomCode || "—";
+    setHint(roomCode ? "✅ Code seteado." : "⚠️ Sin code.");
   };
 
-  function renderButtons(){
-    const list = BUTTONS[state.stage] || BUTTONS.start;
-    buttonsEl.innerHTML = "";
+  // ===============================
+  // Botones globales
+  // ===============================
+  $("btnHome").onclick = ()=>sendCmd("HOME");
+  $("btnRestart").onclick = ()=>sendCmd("RESTART");
+  $("btnExit").onclick = ()=>sendCmd("EXIT");
 
-    for(const [label, cmd, css] of list){
-      const b = document.createElement("button");
-      b.textContent = label;
-      if(css) b.classList.add(css);
+  // ===============================
+  // Presence polling
+  // ===============================
+  let lastPresence = null;
 
-      b.onclick = () => {
-        if(state.player === "WAIT"){
-          send(`WAIT_${cmd}`);
-        }else{
-          send(`${state.player}_${cmd}`);
-        }
+  async function pollPresence(){
+    if(!roomCode){
+      $("onlineTxt").textContent = "offline";
+      $("stageTxt").textContent = "—";
+      $("activeTxt").textContent = "—";
+      $("detectedTxt").textContent = "—";
+      renderContent(null);
+      return;
+    }
+
+    try{
+      const res = await fetch(`/presence?code=${encodeURIComponent(roomCode)}`);
+      const data = await res.json();
+
+      lastPresence = data;
+
+      const online = !!data?.online;
+      $("onlineTxt").textContent = online ? "online" : "offline";
+      $("stageTxt").textContent = data?.stage || "—";
+      $("detectedTxt").textContent = data?.stage || "—";
+      $("activeTxt").textContent = data?.active || "—";
+
+      renderContent(data);
+    }catch(e){
+      $("onlineTxt").textContent = "offline";
+    }
+  }
+
+  // ===============================
+  // Render dinámico por stage
+  // ===============================
+  function renderContent(presence){
+    const el = $("content");
+    el.innerHTML = "";
+
+    const stage = presence?.stage || "";
+    const active = presence?.active || ""; // "P1" "P2" ...
+
+    if(!stage){
+      el.innerHTML = `<div class="muted">Esperando presencia...</div>`;
+      return;
+    }
+
+    // -------- stage: select --------
+    if(stage === "select"){
+      el.innerHTML = `
+        <div class="sectionTitle">Selección de nivel</div>
+        <div class="grid2">
+          <div class="btn" id="btnLeft">LEFT</div>
+          <div class="btn" id="btnRight">RIGHT</div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="btn accent" id="btnPlay">PLAY</div>
+        </div>
+        <div class="hint">Tip: si no cambia, revisá que Unity esté enviando presence "select".</div>
+      `;
+      $("btnLeft").onclick = ()=>sendCmd("LEFT");
+      $("btnRight").onclick = ()=>sendCmd("RIGHT");
+      $("btnPlay").onclick = ()=>sendCmd("PLAY");
+      return;
+    }
+
+    // -------- stage: wait --------
+    if(stage === "wait"){
+      el.innerHTML = `
+        <div class="sectionTitle">Espera</div>
+        <div class="muted">Modo espera. Podés usar esto para UI de “preparando turno”.</div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="btn alt" id="btnWaitOk">OK</div>
+          <div class="btn" id="btnWaitBack">BACK</div>
+        </div>
+      `;
+      $("btnWaitOk").onclick = ()=>sendCmd("WAIT_OK");
+      $("btnWaitBack").onclick = ()=>sendCmd("WAIT_BACK");
+      return;
+    }
+
+    // -------- stage: level --------
+    if(stage === "level"){
+      // Elegimos qué panel mostrar:
+      // - Si Unity manda active=P1/P2, respetamos eso
+      // - Si no manda, usamos el tab manual (uiMode)
+      const who = (active==="P1"||active==="P2") ? active : (uiMode==="WAIT" ? "P1" : uiMode);
+
+      // ⚠️ Ajustá estos CMD si Unity espera otros strings
+      const cmds = {
+        RITA: "RITA",
+        CARPINCHITA: "CARPINCHITA",
+        OVEJITA: "OVEJITA",
+        PATITO: "PATITO",
+        VAQUITA_PELUDA: "VAQUITA_PELUDA",
+        PODER_ARGENTINO: "PODER_ARGENTINO",
+        END: "END"
       };
 
-      buttonsEl.appendChild(b);
+      el.innerHTML = `
+        <div class="sectionTitle">Nivel (${who})</div>
+        <div class="muted">
+          Si no aparecen acciones, asegurate que presence.stage sea <b>level</b>.
+          <br/>Activo detectado: <b>${active || "—"}</b>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sectionTitle">Elegir personaje</div>
+        <div class="grid2">
+          <div class="btn" id="btnRita">Rita</div>
+          <div class="btn" id="btnCarpin">Carpinchita</div>
+          <div class="btn" id="btnOvej">Ovejita</div>
+          <div class="btn" id="btnPat">Patito</div>
+        </div>
+
+        <div style="margin-top:10px" class="grid2">
+          <div class="btn" id="btnVaq">Vaquita Peluda</div>
+          <div class="btn alt" id="btnPowerArg">Poder Argentino</div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="btn" id="btnEnd">End</div>
+        </div>
+
+        <div class="hint warn">
+          Si tocás y Unity no reacciona: es porque el string del comando no coincide con lo que Unity parsea.
+          Ajustalo en este index.html (sendCmd).
+        </div>
+      `;
+
+      $("btnRita").onclick = ()=>sendCmd(cmds.RITA);
+      $("btnCarpin").onclick = ()=>sendCmd(cmds.CARPINCHITA);
+      $("btnOvej").onclick = ()=>sendCmd(cmds.OVEJITA);
+      $("btnPat").onclick = ()=>sendCmd(cmds.PATITO);
+      $("btnVaq").onclick = ()=>sendCmd(cmds.VAQUITA_PELUDA);
+      $("btnPowerArg").onclick = ()=>sendCmd(cmds.PODER_ARGENTINO);
+      $("btnEnd").onclick = ()=>sendCmd(cmds.END);
+
+      return;
     }
+
+    // -------- default --------
+    el.innerHTML = `<div class="muted">Stage desconocido: <b>${stage}</b></div>`;
   }
 
-  async function pollState(){
-    if(!state.code) return;
-
-    try{
-      const r = await fetch(`/api/state?code=${encodeURIComponent(state.code)}`, { cache:"no-store" });
-      const j = await r.json();
-
-      if(j && j.ok){
-        failCount = 0;
-        statusEl.textContent = "online";
-        statusEl.className = "ok";
-
-        if(j.stage && j.stage !== state.stage) setStage(j.stage);
-        if(j.active) setActive(j.active);
-      }else{
-        failCount++;
-      }
-    }catch(e){
-      failCount++;
-    }
-
-    // Si falla 3 veces seguidas, recién ahí mostramos checking
-    if(failCount >= 3){
-      statusEl.textContent = "checking…";
-      statusEl.className = "warn";
-    }
-  }
-
-  document.getElementById("tabP1").onclick = () => setPlayer("P1");
-  document.getElementById("tabP2").onclick = () => setPlayer("P2");
-  document.getElementById("tabW").onclick  = () => setPlayer("WAIT");
-  document.getElementById("saveCode").onclick = () => setCode(codeInput.value);
-
-  setCode(state.code);
-  setStage("start");
-  setActive("P1");
-  renderButtons();
-
-  setInterval(pollState, 600);
+  // Loop
+  pollPresence();
+  setInterval(pollPresence, 700);
 </script>
 </body>
 </html>
