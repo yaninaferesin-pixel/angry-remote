@@ -9,17 +9,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ===== In-memory store =====
-/**
- * queues[code] = ["P1_SLOT0", "P1_HAT", ...]
- * state[code] = { stage, active, ts }
- */
 const queues = new Map();
 const state = new Map();
 
 function normCode(code) {
   return String(code || "").trim().toUpperCase();
 }
-
 function getQueue(code) {
   if (!queues.has(code)) queues.set(code, []);
   return queues.get(code);
@@ -28,8 +23,9 @@ function getQueue(code) {
 // ===== Static site =====
 app.use(express.static(__dirname));
 
-// Health
+// Health / Ping
 app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/ping", (_req, res) => res.send("pong"));
 
 // POST cmd: { code, cmd }
 app.post("/api/cmd", (req, res) => {
@@ -39,9 +35,7 @@ app.post("/api/cmd", (req, res) => {
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
 
-  const q = getQueue(code);
-  q.push(cmd);
-
+  getQueue(code).push(cmd);
   return res.json({ ok: true });
 });
 
