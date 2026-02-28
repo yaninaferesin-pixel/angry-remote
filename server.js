@@ -1,98 +1,104 @@
-// server.js (COMPLETO)
-// Express server para Remote + Unity polling
-// Endpoints:
-//  - POST /api/send   { code, cmd }   -> encola comando
-//  - GET  /api/poll?code=XXXX         -> devuelve y consume 1 comando
-//  - POST /api/state  { code, stage, active } -> guarda presencia
-//  - GET  /api/state?code=XXXX        -> devuelve presencia
-//  - Sirve /public (index.html)
-
-const express = require("express");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-// In-memory store (ok para demo/jam). Si reinicia Render, se pierde.
-const rooms = new Map();
-/*
-rooms.get(code) => {
-  stage, active, updatedAt,
-  queue: [ "P1_PLAY", "P1_SLOT0", ... ]
-}
-*/
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-function getRoom(codeRaw) {
-  const code = String(codeRaw || "").trim().toUpperCase();
-  if (!code) return null;
+// ===== In-memory stores =====
+const queues = new Map(); // code -> [cmd, cmd, ...]
+const states = new Map(); // code -> { stage, active, updatedAt }
 
-  if (!rooms.has(code)) {
-    rooms.set(code, {
-      stage: "start",
-      active: "P1",
-      updatedAt: Date.now(),
-      queue: []
-    });
-  }
-  return { code, room: rooms.get(code) };
+function normCode(c) {
+  return String(c || "").trim().toUpperCase();
 }
 
-// ---------- API ----------
+function getQueue(code) {
+  const c = normCode(code);
+  if (!c) return null;
+  if (!queues.has(c)) queues.set(c, []);
+  return queues.get(c);
+}
 
+function getState(code) {
+  const c = normCode(code);
+  if (!c) return null;
+  if (!states.has(c)) states.set(c, { stage: "start", active: "P1", updatedAt: Date.now() });
+  return states.get(c);
+}
+
+// ===== Static site =====
+app.use(express.static(path.join(__dirname, "public")));
+
+// ===== Send command =====
 app.post("/api/send", (req, res) => {
-  const { code, cmd } = req.body || {};
-  const r = getRoom(code);
-  if (!r) return res.status(400).json({ ok: false, error: "Missing code" });
+  const code = normCode(req.body?.code);
+  const cmd = String(req.body?.cmd || "").trim();
 
-  const cleanCmd = String(cmd || "").trim();
-  if (!cleanCmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+  if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
 
-  r.room.queue.push(cleanCmd);
-  r.room.updatedAt = Date.now();
+  const q = getQueue(code);
+  q.push(cmd);
 
   return res.json({ ok: true });
 });
 
+// ===== Poll command (Unity) =====
 app.get("/api/poll", (req, res) => {
-  const r = getRoom(req.query.code);
-  if (!r) return res.status(400).json({ ok: false, error: "Missing code" });
+  const code = normCode(req.query.code);
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  const next = r.room.queue.length > 0 ? r.room.queue.shift() : "";
-  // NO cambiamos stage acá, solo consumimos cmd
-  return res.json({ ok: true, cmd: next });
+  const q = getQueue(code);
+  const cmd = q.length > 0 ? q.shift() : null;
+
+  return res.json({ ok: true, cmd });
+});
+
+// ===== Stage/Presence (state) =====
+app.get("/api/state", (req, res) => {
+  const code = normCode(req.query.code);
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+
+  const st = getState(code);
+  return res.json({ ok: true, stage: st.stage, active: st.active, updatedAt: st.updatedAt });
 });
 
 app.post("/api/state", (req, res) => {
-  const { code, stage, active } = req.body || {};
-  const r = getRoom(code);
-  if (!r) return res.status(400).json({ ok: false, error: "Missing code" });
+  const code = normCode(req.body?.code);
+  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
 
-  if (typeof stage === "string" && stage.trim()) r.room.stage = stage.trim();
-  if (typeof active === "string" && active.trim()) r.room.active = active.trim();
+  const st = getState(code);
 
-  r.room.updatedAt = Date.now();
-  return res.json({ ok: true });
+  const stage = String(req.body?.stage || "").trim();
+  const active = String(req.body?.active || "").trim();
+
+  if (stage) st.stage = stage;
+  if (active) st.active = active;
+
+  st.updatedAt = Date.now();
+  states.set(code, st);
+
+  return res.json({ ok: true, stage: st.stage, active: st.active, updatedAt: st.updatedAt });
 });
 
-app.get("/api/state", (req, res) => {
-  const r = getRoom(req.query.code);
-  if (!r) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  return res.json({
-    ok: true,
-    stage: r.room.stage,
-    active: r.room.active,
-    updatedAt: r.room.updatedAt
-  });
+// Backward-compat alias (por si algo llama presence)
+app.get("/api/presence", (req, res) => {
+  req.url = "/api/state";
+  return app._router.handle(req, res);
+});
+app.post("/api/presence", (req, res) => {
+  req.url = "/api/state";
+  return app._router.handle(req, res);
 });
 
-// ---------- Static ----------
-const publicDir = path.join(__dirname, "public");
-app.use(express.static(publicDir));
-
+// SPA fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Remote server running on port", PORT));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log("Remote running on port", port));
