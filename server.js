@@ -9,11 +9,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// code -> { stage, active, ts }
-const stateByCode = new Map();
-// code -> string[]
-const cmdQueueByCode = new Map();
+// -------- In-memory state --------
+const stateByCode = new Map(); // code -> { stage, active, ts }
+const cmdQueueByCode = new Map(); // code -> [cmd strings]
 
+// -------- Helpers --------
 function normCode(code) {
   return (code || "").trim().toUpperCase();
 }
@@ -22,10 +22,10 @@ function ensureQueue(code) {
   return cmdQueueByCode.get(code);
 }
 
-// health
+// -------- Health --------
 app.get("/ping", (req, res) => res.status(200).send("ok"));
 
-// state
+// -------- API: state --------
 app.post("/api/state", (req, res) => {
   const code = normCode(req.body?.code);
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
@@ -45,18 +45,24 @@ app.get("/api/state", (req, res) => {
   return res.json({ ok: true, ...st });
 });
 
-// send command
-app.post("/api/send", (req, res) => {
+// -------- API: send command --------
+function handleSend(req, res) {
   const code = normCode(req.body?.code);
   const cmd = (req.body?.cmd || "").trim();
+
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
 
-  ensureQueue(code).push(cmd);
+  const q = ensureQueue(code);
+  q.push(cmd);
   return res.json({ ok: true });
-});
+}
 
-// poll (Unity)
+app.post("/api/send", handleSend);
+// alias REAL (sin hacks internos)
+app.post("/api/cmd", handleSend);
+
+// -------- API: poll (Unity) --------
 app.get("/api/poll", (req, res) => {
   const code = normCode(req.query?.code);
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
@@ -66,12 +72,14 @@ app.get("/api/poll", (req, res) => {
   return res.json({ ok: true, cmd });
 });
 
-// static
+// -------- Static: serve index --------
 const publicDir = path.join(__dirname, "public");
-const publicIndex = path.join(publicDir, "index.html");
 const rootIndex = path.join(__dirname, "index.html");
+const publicIndex = path.join(publicDir, "index.html");
 
-if (fs.existsSync(publicDir)) app.use(express.static(publicDir));
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+}
 
 app.get("/", (req, res) => {
   if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
@@ -80,4 +88,6 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Remote server running on port", PORT));
+app.listen(PORT, () => {
+  console.log("Remote server running on port", PORT);
+});
