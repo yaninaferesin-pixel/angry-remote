@@ -7,8 +7,7 @@
   <style>
     :root{
       --bg:#0b0f1a; --card:#121a2a; --muted:#7d8aa5; --text:#e9eefc;
-      --accent:#6d5efc; --accent2:#00d1ff; --danger:#ff3b3b; --btn:#1a2440;
-      --btn2:#222f55;
+      --accent:#6d5efc; --accent2:#00d1ff; --danger:#ff3b3b;
       --radius:18px;
     }
     *{box-sizing:border-box}
@@ -88,7 +87,7 @@
 
     <div class="topRow">
       <div class="pill"><span>CODE:</span> <b id="roomCode">—</b></div>
-      <div class="pill" id="onlinePill"><span class="offlineDot" id="dot"></span> <b id="onlineTxt">offline</b></div>
+      <div class="pill"><span class="offlineDot" id="dot"></span> <b id="onlineTxt">offline</b></div>
       <div class="pill"><span>Stage:</span> <b id="stageTxt">—</b></div>
       <div class="pill"><span>Activo:</span> <b id="activeTxt">—</b></div>
     </div>
@@ -131,7 +130,7 @@
   </div>
 
 <script>
-  let uiMode = "P1"; // "P1" | "P2" | "WAIT"
+  let uiMode = "P1";
   let roomCode = localStorage.getItem("ROOM_CODE") || "";
   let lastPresence = null;
 
@@ -156,7 +155,6 @@
       setHint("⚠️ Primero poné el CODE y tocá OK.");
       return;
     }
-
     try{
       const res = await fetch(`/api/send`, {
         method: "POST",
@@ -197,6 +195,23 @@
   $("btnRestart").onclick = ()=>sendCmd(prefixed("RESTART"));
   $("btnExit").onclick = ()=>sendCmd(prefixed("EXIT"));
 
+  function normalizeStage(s){
+    const low = String(s || "").trim().toLowerCase();
+
+    // IMPORTANTÍSIMO: tu Unity manda "select"
+    if(low === "select") return "levelselect";
+
+    if(low === "levelselect" || low === "level_select" || low === "level-select") return "levelselect";
+    if(low.includes("level") && low.includes("select")) return "levelselect";
+
+    if(low === "start" || low === "startscene" || low === "start_scene") return "start";
+    if(low === "trailer") return "trailer";
+    if(low === "level") return "level";
+    if(low === "wait") return "wait";
+
+    return low;
+  }
+
   async function pollPresence(){
     if(!roomCode){
       $("onlineTxt").textContent = "offline";
@@ -214,6 +229,7 @@
 
       const stageRaw = data?.stage || "—";
       const active = data?.active || "—";
+
       $("stageTxt").textContent = stageRaw;
       $("detectedTxt").textContent = stageRaw;
       $("activeTxt").textContent = active;
@@ -230,24 +246,6 @@
       $("onlineTxt").textContent = "offline";
       $("dot").className = "offlineDot";
     }
-  }
-
-  function normalizeStage(s){
-    s = String(s || "").trim();
-    const low = s.toLowerCase();
-
-    // aliases comunes
-    if(low === "levelselect" || low === "level_select" || low === "level-select") return "levelselect";
-    if(low === "startscene" || low === "start_scene") return "start";
-    if(low === "trailer") return "trailer";
-    if(low === "level") return "level";
-    if(low === "wait") return "wait";
-    if(low === "start") return "start";
-
-    // fallback: si viene algo como "LevelSelect" (camelcase)
-    if(low.includes("level") && low.includes("select")) return "levelselect";
-
-    return low;
   }
 
   function renderContent(presence){
@@ -284,7 +282,6 @@
       el.innerHTML = `<div class="sectionTitle">Trailer</div>`;
       const g = document.createElement("div");
       g.className = "grid2";
-      // ✅ SOLO STOP (sin VOLVER)
       g.appendChild(mk("STOP", "STOPTRAILER", "btn danger"));
       el.appendChild(g);
       return;
@@ -293,7 +290,6 @@
     if(stage === "levelselect"){
       el.innerHTML = `<div class="sectionTitle">Level Select</div>`;
 
-      // ✅ navegación que querías
       const nav = document.createElement("div");
       nav.className = "grid3";
       nav.appendChild(mk("LEFT", "LEFT", "btn"));
@@ -301,7 +297,6 @@
       nav.appendChild(mk("RIGHT", "RIGHT", "btn"));
       el.appendChild(nav);
 
-      // ✅ tus accesos directos (si los querés dejar)
       const g = document.createElement("div");
       g.className = "grid2";
       g.style.marginTop = "10px";
