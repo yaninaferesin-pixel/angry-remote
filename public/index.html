@@ -7,9 +7,10 @@
 
   <style>
     :root{
-      --mint-0:#e7ffed;
-      --mint-1:#c9ffdf;
-      --mint-2:#a7f7bf;
+      /* SOLO menta + violetas */
+      --mint-0:#e7fff5;
+      --mint-1:#c9ffe9;
+      --mint-2:#a7f7d7;
 
       --vio-0:#f3efff;
       --vio-1:#cbbcff;
@@ -19,10 +20,8 @@
       --vio-5:#120627;
 
       --ink: rgba(12,6,30,.92);
-
       --radius: 18px;
       --gap: 12px;
-
       --btn-h: 68px;
       --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
@@ -56,7 +55,18 @@
       backdrop-filter: blur(8px);
       flex-wrap:wrap;
     }
-    .codeBox{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .pill{
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing:.05em;
+      background: rgba(243,239,255,.9);
+      border: 1px solid rgba(18,6,39,.10);
+      user-select:none;
+      white-space:nowrap;
+    }
     .codeBox input{
       width: 140px;
       padding: 10px 12px;
@@ -68,16 +78,11 @@
       text-transform: uppercase;
       outline: none;
     }
-    .pill{
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing:.05em;
-      background: rgba(243,239,255,.9);
-      border: 1px solid rgba(18,6,39,.10);
-      user-select:none;
-      white-space:nowrap;
+    .pillBtn{
+      cursor:pointer;
+      background: linear-gradient(180deg, rgba(203,188,255,.95) 0%, rgba(155,131,255,.90) 55%, rgba(91,61,217,.92) 100%);
+      color:#fff;
+      border-color: rgba(18,6,39,.18);
     }
 
     .panel{
@@ -151,7 +156,7 @@
       pointer-events:none;
     }
 
-    /* Overlay de espera (cuando NO es tu turno en Level1) */
+    /* Overlay espera en Level1 para el que NO está en turno */
     .overlay{
       position:absolute;
       inset:0;
@@ -159,9 +164,7 @@
       z-index: 50;
     }
     .overlay.show{ display:block; }
-    .overlay .bg{ filter: saturate(1.05) contrast(1.02); }
-    .overlay .panelContent{ background: rgba(255,255,255,.15); }
-
+    .overlay .panelContent{ background: rgba(255,255,255,.12); }
     .hint{
       font-size: 12px;
       opacity: .95;
@@ -177,54 +180,55 @@
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div class="codeBox">
+      <div class="row codeBox">
         <span class="pill" id="pillPlayer">P?</span>
         <span class="pill">SESSION</span>
         <input id="codeInput" placeholder="CULA" maxlength="12" />
-        <button id="btnApplyCode" class="pill" style="cursor:pointer;">APLICAR</button>
-        <span class="pill" id="pillStage">stage: ?</span>
-        <span class="pill" id="pillTurn">turn: ?</span>
+        <span class="pill pillBtn" id="btnApply">APLICAR</span>
       </div>
-      <div class="codeBox">
-        <span class="pill" id="pillNet">net: ready</span>
+
+      <div class="row">
+        <span class="pill" id="pillStage">stage: ?</span>
+        <span class="pill" id="pillActive">active: ?</span>
+        <span class="pill" id="pillNet">net: ...</span>
       </div>
     </div>
 
-    <!-- Panel único: cambia BG y botones según stage -->
-    <section class="panel" id="mainPanel">
-      <div class="bg" id="mainBg"></div>
+    <section class="panel" id="panel">
+      <div class="bg" id="bgMain"></div>
       <div class="panelContent">
-        <div class="title" id="mainTitle">REMOTE</div>
-
-        <div class="grid" id="btnGrid"></div>
-
-        <div class="hint" id="hintText">Abre P1 con ?p=1 y P2 con ?p=2</div>
+        <div class="title" id="title">...</div>
+        <div class="grid" id="grid"></div>
+        <div class="hint" id="hint">
+          P1: ?p=1 — P2: ?p=2
+        </div>
       </div>
 
-      <!-- Overlay espera (solo se usa en Level1 cuando NO es tu turno) -->
-      <div class="overlay" id="waitOverlay">
-        <div class="bg" id="waitBg"></div>
+      <!-- Espera (LINDA) overlay -->
+      <div class="overlay" id="overlayWait">
+        <div class="bg" id="bgWait"></div>
         <div class="panelContent">
-          <div class="title">ESPERA (LINDA)</div>
-          <div class="grid" id="waitGrid"></div>
-          <div class="hint">Estás fuera de turno. Cuando sea tu turno vuelve el panel de Level1.</div>
+          <div class="title">ESPERA</div>
+          <div class="grid" id="gridWait"></div>
+          <div class="hint">Estás fuera de turno.</div>
         </div>
       </div>
     </section>
   </div>
 
   <script>
-    // ---------------- ASSETS helpers ----------------
+    // ---------- helpers ----------
     function enc(name){ return encodeURIComponent(name); }
     function stylePng(filename){ return "style/" + enc(filename); }
-    function setBg(el, filename){
-      el.style.backgroundImage = `url("${stylePng(filename)}")`;
-    }
-    function imgButton(cmd, filename, title){
+    function setBg(el, filename){ el.style.backgroundImage = `url("${stylePng(filename)}")`; }
+
+    function clearGrid(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+
+    // Botón con imagen que manda cmd por /api/send (tu server real)
+    function makeImgBtn(cmd, filename, title){
       const b = document.createElement("button");
       b.className = "imgBtn";
       b.type = "button";
-      b.dataset.cmd = cmd;
       b.title = title || cmd;
 
       const img = document.createElement("img");
@@ -236,217 +240,183 @@
       return b;
     }
 
-    // ---------------- SESSION + PLAYER ----------------
-    const codeInput = document.getElementById("codeInput");
-    const btnApply = document.getElementById("btnApplyCode");
+    // ---------- session + player ----------
     const pillPlayer = document.getElementById("pillPlayer");
+    const codeInput = document.getElementById("codeInput");
+    const btnApply = document.getElementById("btnApply");
+
     const pillStage = document.getElementById("pillStage");
-    const pillTurn  = document.getElementById("pillTurn");
-    const pillNet   = document.getElementById("pillNet");
+    const pillActive = document.getElementById("pillActive");
+    const pillNet = document.getElementById("pillNet");
+
+    const bgMain = document.getElementById("bgMain");
+    const title = document.getElementById("title");
+    const grid = document.getElementById("grid");
+
+    const overlayWait = document.getElementById("overlayWait");
+    const bgWait = document.getElementById("bgWait");
+    const gridWait = document.getElementById("gridWait");
 
     const params = new URLSearchParams(location.search);
     let sessionCode = (params.get("code") || "").trim().toUpperCase();
     if(sessionCode) codeInput.value = sessionCode;
 
-    // p=1 o p=2 (obligatorio para que cada teléfono sea un jugador)
-    let player = (params.get("p") || params.get("player") || "").toString().trim();
-    if(player !== "1" && player !== "2") player = "1"; // fallback seguro
-    const myPlayerTag = (player === "1") ? "P1" : "P2";
+    let p = (params.get("p") || "").trim();
+    if(p !== "1" && p !== "2") p = "1";
+    const myPlayerTag = (p === "1") ? "P1" : "P2";
     pillPlayer.textContent = myPlayerTag;
 
     btnApply.addEventListener("click", ()=>{
       sessionCode = (codeInput.value || "").trim().toUpperCase();
       const u = new URL(location.href);
       if(sessionCode) u.searchParams.set("code", sessionCode);
-      u.searchParams.set("p", player);
+      u.searchParams.set("p", p);
       history.replaceState({}, "", u.toString());
       pillNet.textContent = "net: ready";
     });
 
-    // ---------------- UI refs ----------------
-    const mainBg = document.getElementById("mainBg");
-    const mainTitle = document.getElementById("mainTitle");
-    const btnGrid = document.getElementById("btnGrid");
-    const hintText = document.getElementById("hintText");
-
-    const waitOverlay = document.getElementById("waitOverlay");
-    const waitBg = document.getElementById("waitBg");
-    const waitGrid = document.getElementById("waitGrid");
-
-    // ---------------- COMMAND SENDER (robusto) ----------------
-    async function postJson(url, body){
-      const res = await fetch(url, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(body)
-      });
-      if(!res.ok) throw new Error("HTTP " + res.status);
-      return res;
-    }
-
+    // ---------- network ----------
     async function sendCommand(cmd){
       if(!sessionCode){
         pillNet.textContent = "net: sin code";
         return;
       }
-      const payload = { code: sessionCode, cmd };
-
-      // endpoints posibles para no romper
-      const endpoints = ["/api/cmd","/api/command","/api/send","/api/push"];
-      for(const ep of endpoints){
-        try{
-          await postJson(ep, payload);
-          pillNet.textContent = "net: ok";
-          return;
-        }catch(e){}
-      }
-
-      // fallback GET
       try{
-        const u = `/api/cmd?code=${encodeURIComponent(sessionCode)}&cmd=${encodeURIComponent(cmd)}`;
-        const r = await fetch(u);
-        if(r.ok){ pillNet.textContent="net: ok"; return; }
-      }catch(e){}
-
-      pillNet.textContent = "net: error";
+        const r = await fetch("/api/send", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ code: sessionCode, cmd })
+        });
+        pillNet.textContent = r.ok ? "net: ok" : ("net: " + r.status);
+      }catch(e){
+        pillNet.textContent = "net: error";
+      }
     }
 
-    // ---------------- RENDER per STAGE ----------------
-    // stage values esperados: "start", "select", "level1"
-    // turn values esperados: "P1" / "P2"
-    // trailer: true/false (para mostrar STOPTRAILER)
-    let stage = "start";
-    let turn = "P1";
-    let trailerPlaying = false;
-
-    function clearGrid(grid){
-      while(grid.firstChild) grid.removeChild(grid.firstChild);
+    async function fetchState(){
+      if(!sessionCode) return { ok:true, stage:"start", active:"" };
+      try{
+        const r = await fetch(`/api/state?code=${encodeURIComponent(sessionCode)}`, { cache:"no-store" });
+        if(!r.ok) return { ok:true, stage:"start", active:"" };
+        return await r.json();
+      }catch(e){
+        return { ok:true, stage:"start", active:"" };
+      }
     }
 
-    function renderStart(){
-      setBg(mainBg, "BG P1.png"); // Start no tiene BG propio => usamos el del jugador (fijo)
-      if(myPlayerTag === "P2") setBg(mainBg, "BG P2.png");
+    // ---------- stage mapping ----------
+    function normalizeStage(s){
+      s = (s || "").toString().trim().toLowerCase();
+      if(!s) return "start";
 
-      mainTitle.textContent = `START (${myPlayerTag})`;
-      hintText.textContent = "StartScene: PLAY / TRAILER / STOPTRAILER (si está reproduciendo) / EXIT";
+      if(s.includes("select")) return "select";     // LevelSelect
+      if(s.includes("level")) return "level1";      // Level1
+      if(s.includes("start")) return "start";       // StartScene
+      if(s.includes("trailer")) return "start";     // trailer vive en start
+      return "start";
+    }
 
-      clearGrid(btnGrid);
-      btnGrid.appendChild(imgButton("PLAY", "PLAY.png", "PLAY"));
-      btnGrid.appendChild(imgButton("TRAILER", "TRAILER.png", "TRAILER"));
+    // ---------- render scene panels ----------
+    function renderStart(active){
+      // BG fijo según jugador
+      setBg(bgMain, myPlayerTag === "P1" ? "BG P1.png" : "BG P2.png");
 
-      if(trailerPlaying){
-        // si no tenés STOP, usamos RESTART como icono (como venías usando)
-        btnGrid.appendChild(imgButton("STOPTRAILER", "RESTART.png", "STOPTRAILER"));
+      title.textContent = `StartScene (${myPlayerTag})`;
+      clearGrid(grid);
+
+      // StartScene: Play, Trailer (StopTrailer cuando trailer andando), Exit
+      grid.appendChild(makeImgBtn("PLAY", "PLAY.png", "PLAY"));
+      grid.appendChild(makeImgBtn("TRAILER", "TRAILER.png", "TRAILER"));
+
+      // Si Unity setea active="trailer" o algo, mostramos STOPTRAILER, si no, igual lo mostramos (no rompe)
+      const trailerOn = (active || "").toString().toLowerCase().includes("trailer");
+      if(trailerOn){
+        grid.appendChild(makeImgBtn("STOPTRAILER", "RESTART.png", "STOPTRAILER"));
+      }else{
+        // opcional: lo dejamos igual para que no falte nunca (si preferís SIEMPRE visible, descomentá y borrá el if)
+        grid.appendChild(makeImgBtn("STOPTRAILER", "RESTART.png", "STOPTRAILER"));
       }
 
-      btnGrid.appendChild(imgButton("EXIT", "EXIT.png", "EXIT"));
+      grid.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
 
-      waitOverlay.classList.remove("show");
+      overlayWait.classList.remove("show");
     }
 
     function renderSelect(){
-      setBg(mainBg, (myPlayerTag==="P1") ? "BG P1.png" : "BG P2.png");
-      mainTitle.textContent = `LEVEL SELECT (${myPlayerTag})`;
-      hintText.textContent = "LevelSelect: LEFT / RIGHT / PLAY / HOME / EXIT (sin Level1/2/3)";
+      setBg(bgMain, myPlayerTag === "P1" ? "BG P1.png" : "BG P2.png");
 
-      clearGrid(btnGrid);
-      btnGrid.appendChild(imgButton("LEFT", "LEFT.png", "LEFT"));
-      btnGrid.appendChild(imgButton("RIGHT", "RIGHT.png", "RIGHT"));
-      btnGrid.appendChild(imgButton("PLAY", "PLAY.png", "PLAY"));
-      btnGrid.appendChild(imgButton("HOME", "HOME.png", "HOME"));
-      btnGrid.appendChild(imgButton("EXIT", "EXIT.png", "EXIT"));
+      title.textContent = `LevelSelect (${myPlayerTag})`;
+      clearGrid(grid);
 
-      waitOverlay.classList.remove("show");
+      // LevelSelect: right, play, left, home y exit
+      grid.appendChild(makeImgBtn("LEFT", "LEFT.png", "LEFT"));
+      grid.appendChild(makeImgBtn("RIGHT", "RIGHT.png", "RIGHT"));
+      grid.appendChild(makeImgBtn("PLAY", "PLAY.png", "PLAY"));
+      grid.appendChild(makeImgBtn("HOME", "HOME.png", "HOME"));
+      grid.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
+
+      overlayWait.classList.remove("show");
     }
 
-    function renderLevel1(){
-      setBg(mainBg, (myPlayerTag==="P1") ? "BG P1.png" : "BG P2.png");
-      mainTitle.textContent = `LEVEL1 (${myPlayerTag})`;
-      hintText.textContent = "Level1: personajes + HAT + HOME/RESTART/EXIT. Si no es tu turno: panel de espera LINDA.";
+    function renderLevel1(active){
+      // BG fijo por jugador
+      setBg(bgMain, myPlayerTag === "P1" ? "BG P1.png" : "BG P2.png");
 
-      // botones gameplay
-      clearGrid(btnGrid);
-      btnGrid.appendChild(imgButton(`${myPlayerTag}_SLOT0`, "OVEJITA.png", "OVEJITA"));
-      btnGrid.appendChild(imgButton(`${myPlayerTag}_SLOT1`, "PATITO.png", "PATITO"));
-      btnGrid.appendChild(imgButton(`${myPlayerTag}_SLOT2`, "CARPINCHITA.png", "CARPINCHITA"));
-      btnGrid.appendChild(imgButton(`${myPlayerTag}_SLOT3`, "RITA.png", "RITA"));
-      btnGrid.appendChild(imgButton(`${myPlayerTag}_SLOT4`, "VAQUITA PELUDA.png", "VAQUITA PELUDA"));
-      btnGrid.appendChild(imgButton(`${myPlayerTag}_HAT`, "poder argentino.png", "PODER ARGENTINO"));
+      title.textContent = `Level1 (${myPlayerTag})`;
+      clearGrid(grid);
 
-      btnGrid.appendChild(imgButton("HOME", "HOME.png", "HOME"));
-      btnGrid.appendChild(imgButton("RESTART", "RESTART.png", "RESTART"));
-      btnGrid.appendChild(imgButton("EXIT", "EXIT.png", "EXIT"));
+      // Level1 botones (con prefijo de jugador)
+      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT0`, "OVEJITA.png", "OVEJITA"));
+      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT1`, "PATITO.png", "PATITO"));
+      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT2`, "CARPINCHITA.png", "CARPINCHITA"));
+      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT3`, "RITA.png", "RITA"));
+      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT4`, "VAQUITA PELUDA.png", "VAQUITA PELUDA"));
+      grid.appendChild(makeImgBtn(`${myPlayerTag}_HAT`, "poder argentino.png", "PODER ARGENTINO"));
 
-      // overlay espera si NO es tu turno
+      grid.appendChild(makeImgBtn("HOME", "HOME.png", "HOME"));
+      grid.appendChild(makeImgBtn("RESTART", "RESTART.png", "RESTART"));
+      grid.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
+
+      // Overlay espera para el que NO está en turno:
+      // Tu server guarda active como string. Usamos active = "P1" / "P2" para turno.
+      const turn = (active || "").toString().trim().toUpperCase();
       const myTurn = (turn === myPlayerTag);
 
-      setBg(waitBg, "BG ESPERA.png");
-      clearGrid(waitGrid);
+      setBg(bgWait, "BG ESPERA.png");
+      clearGrid(gridWait);
 
-      // Linda 1..4
-      waitGrid.appendChild(imgButton("LINDA1", "LINDA 1.png", "LINDA1"));
-      waitGrid.appendChild(imgButton("LINDA2", "LINDA 2.png", "LINDA2"));
-      waitGrid.appendChild(imgButton("LINDA3", "LINDA 3.png", "LINDA3"));
-      waitGrid.appendChild(imgButton("LINDA4", "LINDA 4.png", "LINDA4"));
+      // Panel espera (Linda1..4)
+      gridWait.appendChild(makeImgBtn("LINDA1", "LINDA 1.png", "LINDA1"));
+      gridWait.appendChild(makeImgBtn("LINDA2", "LINDA 2.png", "LINDA2"));
+      gridWait.appendChild(makeImgBtn("LINDA3", "LINDA 3.png", "LINDA3"));
+      gridWait.appendChild(makeImgBtn("LINDA4", "LINDA 4.png", "LINDA4"));
 
-      // opcional: HOME/EXIT en espera
-      waitGrid.appendChild(imgButton("HOME", "HOME.png", "HOME"));
-      waitGrid.appendChild(imgButton("EXIT", "EXIT.png", "EXIT"));
+      // (opcional) home/exit también en espera
+      gridWait.appendChild(makeImgBtn("HOME", "HOME.png", "HOME"));
+      gridWait.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
 
-      if(myTurn) waitOverlay.classList.remove("show");
-      else waitOverlay.classList.add("show");
+      if(myTurn) overlayWait.classList.remove("show");
+      else overlayWait.classList.add("show");
     }
 
-    function renderAll(){
+    // ---------- main loop ----------
+    async function tick(){
+      const st = await fetchState();
+      const stage = normalizeStage(st.stage);
+      const active = (st.active || "");
+
       pillStage.textContent = "stage: " + stage;
-      pillTurn.textContent = "turn: " + turn;
+      pillActive.textContent = "active: " + (active ? active : "-");
 
-      if(stage === "start") renderStart();
+      if(stage === "start") renderStart(active);
       else if(stage === "select") renderSelect();
-      else if(stage === "level1") renderLevel1();
-      else renderStart();
+      else if(stage === "level1") renderLevel1(active);
+      else renderStart(active);
     }
 
-    // ---------------- STATE POLLING ----------------
-    // Intentamos leer estado del server. Si no existe, NO rompe: se queda en start.
-    async function tryFetchState(){
-      if(!sessionCode) return;
-
-      const urls = [
-        `/api/state?code=${encodeURIComponent(sessionCode)}`,
-        `/api/presence?code=${encodeURIComponent(sessionCode)}`
-      ];
-
-      for(const u of urls){
-        try{
-          const r = await fetch(u, { cache:"no-store" });
-          if(!r.ok) continue;
-          const j = await r.json();
-
-          // Aceptamos varios nombres para no romper:
-          // stage: "start"|"select"|"level1"
-          const st = (j.stage || (j.presence && j.presence.stage) || "").toString().toLowerCase();
-          if(st.includes("start")) stage = "start";
-          else if(st.includes("select")) stage = "select";
-          else if(st.includes("level1") || st === "level") stage = "level1";
-
-          // turn: "P1"|"P2"
-          const t = (j.turn || j.currentTurn || j.activePlayer || j.player || (j.presence && j.presence.turn) || "").toString().toUpperCase();
-          if(t === "P1" || t === "P2") turn = t;
-
-          // trailerPlaying bool
-          const tr = (j.trailerPlaying ?? j.trailer ?? (j.presence && j.presence.trailerPlaying));
-          if(typeof tr === "boolean") trailerPlaying = tr;
-
-          renderAll();
-          return;
-        }catch(e){}
-      }
-    }
-
-    // Inicial
-    renderAll();
-    setInterval(tryFetchState, 500);
+    // init
+    tick();
+    setInterval(tick, 350);
   </script>
 </body>
 </html>
