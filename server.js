@@ -73,8 +73,8 @@ app.post("/api/state", (req, res) => {
   const stage = String(req.body?.stage || "").trim().toLowerCase();
   const active = String(req.body?.active || "").trim().toUpperCase();
 
-  if (stage) st.stage = stage;
-  if (active) st.active = active;
+  if (stage) st.stage = stage;   // ej: start / trailer / levelselect / level / wait
+  if (active) st.active = active; // ej: P1 / P2 / WAIT
 
   st.updatedAt = Date.now();
   states.set(code, st);
