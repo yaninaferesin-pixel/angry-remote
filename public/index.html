@@ -1,349 +1,256 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Remote</title>
-  <style>
-    :root{
-      --bg:#0b0f1a; --card:#121a2a; --muted:#7d8aa5; --text:#e9eefc;
-      --accent:#6d5efc; --accent2:#00d1ff; --danger:#ff3b3b; --btn:#1a2440;
-      --btn2:#222f55;
-      --radius:18px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1200px 800px at 50% -100px, #1b2a5c 0%, var(--bg) 55%);
-      color:var(--text);
-    }
-    .wrap{max-width:520px;margin:0 auto;padding:18px 16px 28px}
-    .topRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .pill{
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.08);
-      padding:8px 12px;border-radius:999px;color:var(--text);
-      display:inline-flex;gap:8px;align-items:center;
-    }
-    .pill b{font-weight:700}
-    .onlineDot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15)}
-    .card{
-      margin-top:14px;
-      background:rgba(18,26,42,.78);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius);
-      padding:14px;
-      box-shadow:0 14px 40px rgba(0,0,0,.25);
-    }
-    .tabs{display:flex;gap:10px;margin-top:12px}
-    .tab{
-      flex:1;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.08);
-      color:var(--text);
-      padding:12px 10px;
-      border-radius:999px;
-      font-weight:700;
-      cursor:pointer;
-    }
-    .tab.active{outline:2px solid rgba(109,94,252,.7); background:rgba(109,94,252,.15)}
-    .muted{color:var(--muted); font-size:13px; line-height:1.35}
-    .row{display:flex;gap:10px}
-    input{
-      width:100%;
-      background:rgba(0,0,0,.25);
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--text);
-      padding:12px 12px;border-radius:14px;
-      outline:none;
-      font-size:16px;
-    }
-    .btn{
-      user-select:none;
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--text);
-      padding:14px 12px;
-      border-radius:16px;
-      font-weight:800;
-      letter-spacing:.3px;
-      cursor:pointer;
-      width:100%;
-      text-align:center;
-    }
-    .btn.small{padding:11px 10px; font-weight:700}
-    .btn.accent{background:linear-gradient(180deg, rgba(109,94,252,.9), rgba(109,94,252,.55)); border-color:rgba(109,94,252,.9)}
-    .btn.alt{background:linear-gradient(180deg, rgba(0,209,255,.55), rgba(0,209,255,.25)); border-color:rgba(0,209,255,.55)}
-    .btn.danger{background:linear-gradient(180deg, rgba(255,59,59,.9), rgba(255,59,59,.55)); border-color:rgba(255,59,59,.9)}
-    .grid2{display:grid;grid-template-columns:1fr 1fr; gap:10px}
-    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr; gap:10px}
-    .sectionTitle{font-weight:900; margin:8px 2px 10px; font-size:14px; color:#cfe0ff; opacity:.95}
-    .divider{height:1px;background:rgba(255,255,255,.08); margin:12px 0}
-    .hint{font-size:12px; color:var(--muted); margin-top:8px}
-    .warn{color:#ffd36e}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Angry Remote</title>
+
+<style>
+:root{
+  --bg:#0b1020;
+  --card:#121a2a;
+  --accent:#6d5efc;
+  --danger:#ff3b3b;
+  --text:#ffffff;
+  --muted:#8da0c9;
+  --radius:18px;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.wrap{
+  max-width:520px;
+  margin:auto;
+  padding:16px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-top:14px;
+}
+
+.section-title{
+  font-weight:900;
+  margin-bottom:10px;
+  font-size:14px;
+  opacity:.9;
+}
+
+.status{
+  font-size:13px;
+  margin-bottom:10px;
+  color:var(--muted);
+}
+
+.row{
+  display:flex;
+  gap:8px;
+}
+
+input{
+  flex:1;
+  padding:10px;
+  border-radius:12px;
+  border:none;
+  outline:none;
+}
+
+button{
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+  width:100%;
+  margin-bottom:8px;
+}
+
+.primary{
+  background:var(--accent);
+  color:white;
+}
+
+.ghost{
+  background:rgba(255,255,255,.08);
+  color:white;
+}
+
+.danger{
+  background:var(--danger);
+  color:white;
+}
+
+.tabs{
+  display:flex;
+  gap:6px;
+  margin-top:10px;
+}
+
+.tab{
+  flex:1;
+  padding:8px;
+  border-radius:999px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+  background:rgba(255,255,255,.06);
+}
+
+.tab.active{
+  background:var(--accent);
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
+<div class="wrap">
 
-    <div class="topRow">
-      <div class="pill"><span>CODE:</span> <b id="roomCode">—</b></div>
-      <div class="pill"><span class="onlineDot"></span> <b id="onlineTxt">offline</b></div>
-      <div class="pill"><span>Stage:</span> <b id="stageTxt">—</b></div>
-      <div class="pill"><span>Activo:</span> <b id="activeTxt">—</b></div>
-    </div>
+<h2>Angry Remote 🎮</h2>
 
-    <div class="tabs">
-      <button class="tab active" id="tabP1">Player 1</button>
-      <button class="tab" id="tabP2">Player 2</button>
-      <button class="tab" id="tabWait">Espera</button>
-    </div>
+<div class="status">
+  CODE: <b id="roomCode">—</b><br>
+  Stage: <b id="stageTxt">—</b><br>
+  Active: <b id="activeTxt">—</b><br>
+  Status: <b id="onlineTxt">offline</b>
+</div>
 
-    <div class="card">
-      <div class="muted">
-        Escaneá el QR. La botonera cambia sola según la escena (presence/state).<br/>
-        Detectado: <b id="detectedTxt">—</b>
-      </div>
+<div class="row">
+  <input id="codeInput" placeholder="Ingresar código">
+  <button class="primary" id="btnSetCode">OK</button>
+</div>
 
-      <div class="divider"></div>
+<div class="tabs">
+  <button class="tab active" id="tabP1">P1</button>
+  <button class="tab" id="tabP2">P2</button>
+  <button class="tab" id="tabWait">WAIT</button>
+</div>
 
-      <div class="row">
-        <input id="codeInput" placeholder="Ingresá el código..." />
-        <div class="btn small accent" id="btnSetCode" style="max-width:110px">OK</div>
-      </div>
+<div class="card">
+  <div id="commands"></div>
+</div>
 
-      <div class="divider"></div>
-
-      <!-- CONTENIDO DINÁMICO -->
-      <div id="content"></div>
-
-      <div class="divider"></div>
-
-      <div class="grid2">
-        <div class="btn" id="btnHome">HOME</div>
-        <div class="btn" id="btnRestart">RESTART</div>
-      </div>
-      <div style="margin-top:10px">
-        <div class="btn danger" id="btnExit">EXIT</div>
-      </div>
-
-      <div class="hint" id="debugHint"></div>
-    </div>
-  </div>
+</div>
 
 <script>
-  // ===============================
-  // Estado UI
-  // ===============================
-  let uiMode = "P1"; // "P1" | "P2" | "WAIT"
-  let roomCode = localStorage.getItem("ROOM_CODE") || "";
-  const $ = (id)=>document.getElementById(id);
+let uiMode = "P1";
+let roomCode = localStorage.getItem("ROOM_CODE") || "";
 
-  // ===============================
-  // Helpers: commands
-  // ===============================
-  async function sendCmd(cmd){
-    if(!roomCode){
-      setHint("⚠️ Primero poné el CODE y tocá OK.");
-      return;
-    }
-    try{
-      const res = await fetch(`/cmd?code=${encodeURIComponent(roomCode)}&c=${encodeURIComponent(cmd)}`);
-      const json = await res.json().catch(()=>null);
-      setHint(`✅ cmd: ${cmd}`);
-      return json;
-    }catch(e){
-      setHint("❌ Error enviando cmd.");
-    }
-  }
+const $ = id => document.getElementById(id);
 
-  function setHint(t){ $("debugHint").textContent = t || ""; }
+$("codeInput").value = roomCode;
+$("roomCode").textContent = roomCode || "—";
 
-  // ===============================
-  // Tabs
-  // ===============================
-  function setTab(mode){
-    uiMode = mode;
-    $("tabP1").classList.toggle("active", mode==="P1");
-    $("tabP2").classList.toggle("active", mode==="P2");
-    $("tabWait").classList.toggle("active", mode==="WAIT");
-    renderContent(lastPresence);
-  }
-
-  $("tabP1").onclick = ()=>setTab("P1");
-  $("tabP2").onclick = ()=>setTab("P2");
-  $("tabWait").onclick = ()=>setTab("WAIT");
-
-  // ===============================
-  // Code input
-  // ===============================
-  $("codeInput").value = roomCode;
+$("btnSetCode").onclick = () => {
+  roomCode = $("codeInput").value.trim().toUpperCase();
+  localStorage.setItem("ROOM_CODE", roomCode);
   $("roomCode").textContent = roomCode || "—";
+};
 
-  $("btnSetCode").onclick = ()=>{
-    roomCode = $("codeInput").value.trim().toUpperCase();
-    localStorage.setItem("ROOM_CODE", roomCode);
-    $("roomCode").textContent = roomCode || "—";
-    setHint(roomCode ? "✅ Code seteado." : "⚠️ Sin code.");
+$("tabP1").onclick = () => setTab("P1");
+$("tabP2").onclick = () => setTab("P2");
+$("tabWait").onclick = () => setTab("WAIT");
+
+function setTab(mode){
+  uiMode = mode;
+  $("tabP1").classList.toggle("active", mode==="P1");
+  $("tabP2").classList.toggle("active", mode==="P2");
+  $("tabWait").classList.toggle("active", mode==="WAIT");
+  renderCommands(lastState);
+}
+
+async function sendCmd(cmd){
+  if(!roomCode) return;
+  await fetch(`/api/cmd?code=${roomCode}&c=${cmd}`);
+}
+
+let lastState = null;
+
+async function poll(){
+  if(!roomCode) return;
+
+  try{
+    const r = await fetch(`/api/state?code=${roomCode}`);
+    const data = await r.json();
+
+    lastState = data;
+
+    $("onlineTxt").textContent = data.online ? "online" : "offline";
+    $("stageTxt").textContent = data.stage || "—";
+    $("activeTxt").textContent = data.active || "—";
+
+    renderCommands(data);
+  }
+  catch(e){
+    $("onlineTxt").textContent = "offline";
+  }
+}
+
+function addBtn(cmd, label, css="ghost"){
+  const b = document.createElement("button");
+  b.className = css;
+  b.textContent = label;
+  b.onclick = () => {
+    const prefix = uiMode === "WAIT" ? "WAIT" : uiMode;
+    sendCmd(prefix + "_" + cmd);
   };
+  $("commands").appendChild(b);
+}
 
-  // ===============================
-  // Botones globales
-  // ===============================
-  $("btnHome").onclick = ()=>sendCmd("HOME");
-  $("btnRestart").onclick = ()=>sendCmd("RESTART");
-  $("btnExit").onclick = ()=>sendCmd("EXIT");
+function renderCommands(state){
+  const wrap = $("commands");
+  wrap.innerHTML = "";
+  if(!state) return;
 
-  // ===============================
-  // Presence polling
-  // ===============================
-  let lastPresence = null;
+  const stage = state.stage;
 
-  async function pollPresence(){
-    if(!roomCode){
-      $("onlineTxt").textContent = "offline";
-      $("stageTxt").textContent = "—";
-      $("activeTxt").textContent = "—";
-      $("detectedTxt").textContent = "—";
-      renderContent(null);
-      return;
-    }
-
-    try{
-      const res = await fetch(`/presence?code=${encodeURIComponent(roomCode)}`);
-      const data = await res.json();
-
-      lastPresence = data;
-
-      const online = !!data?.online;
-      $("onlineTxt").textContent = online ? "online" : "offline";
-      $("stageTxt").textContent = data?.stage || "—";
-      $("detectedTxt").textContent = data?.stage || "—";
-      $("activeTxt").textContent = data?.active || "—";
-
-      renderContent(data);
-    }catch(e){
-      $("onlineTxt").textContent = "offline";
-    }
+  if(stage === "start"){
+    addBtn("PLAY", "Play", "primary");
+    return;
   }
 
-  // ===============================
-  // Render dinámico por stage
-  // ===============================
-  function renderContent(presence){
-    const el = $("content");
-    el.innerHTML = "";
-
-    const stage = presence?.stage || "";
-    const active = presence?.active || ""; // "P1" "P2" ...
-
-    if(!stage){
-      el.innerHTML = `<div class="muted">Esperando presencia...</div>`;
-      return;
-    }
-
-    // -------- stage: select --------
-    if(stage === "select"){
-      el.innerHTML = `
-        <div class="sectionTitle">Selección de nivel</div>
-        <div class="grid2">
-          <div class="btn" id="btnLeft">LEFT</div>
-          <div class="btn" id="btnRight">RIGHT</div>
-        </div>
-        <div style="margin-top:10px">
-          <div class="btn accent" id="btnPlay">PLAY</div>
-        </div>
-        <div class="hint">Tip: si no cambia, revisá que Unity esté enviando presence "select".</div>
-      `;
-      $("btnLeft").onclick = ()=>sendCmd("LEFT");
-      $("btnRight").onclick = ()=>sendCmd("RIGHT");
-      $("btnPlay").onclick = ()=>sendCmd("PLAY");
-      return;
-    }
-
-    // -------- stage: wait --------
-    if(stage === "wait"){
-      el.innerHTML = `
-        <div class="sectionTitle">Espera</div>
-        <div class="muted">Modo espera. Podés usar esto para UI de “preparando turno”.</div>
-        <div class="grid2" style="margin-top:10px">
-          <div class="btn alt" id="btnWaitOk">OK</div>
-          <div class="btn" id="btnWaitBack">BACK</div>
-        </div>
-      `;
-      $("btnWaitOk").onclick = ()=>sendCmd("WAIT_OK");
-      $("btnWaitBack").onclick = ()=>sendCmd("WAIT_BACK");
-      return;
-    }
-
-    // -------- stage: level --------
-    if(stage === "level"){
-      // Elegimos qué panel mostrar:
-      // - Si Unity manda active=P1/P2, respetamos eso
-      // - Si no manda, usamos el tab manual (uiMode)
-      const who = (active==="P1"||active==="P2") ? active : (uiMode==="WAIT" ? "P1" : uiMode);
-
-      // ⚠️ Ajustá estos CMD si Unity espera otros strings
-      const cmds = {
-        RITA: "RITA",
-        CARPINCHITA: "CARPINCHITA",
-        OVEJITA: "OVEJITA",
-        PATITO: "PATITO",
-        VAQUITA_PELUDA: "VAQUITA_PELUDA",
-        PODER_ARGENTINO: "PODER_ARGENTINO",
-        END: "END"
-      };
-
-      el.innerHTML = `
-        <div class="sectionTitle">Nivel (${who})</div>
-        <div class="muted">
-          Si no aparecen acciones, asegurate que presence.stage sea <b>level</b>.
-          <br/>Activo detectado: <b>${active || "—"}</b>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="sectionTitle">Elegir personaje</div>
-        <div class="grid2">
-          <div class="btn" id="btnRita">Rita</div>
-          <div class="btn" id="btnCarpin">Carpinchita</div>
-          <div class="btn" id="btnOvej">Ovejita</div>
-          <div class="btn" id="btnPat">Patito</div>
-        </div>
-
-        <div style="margin-top:10px" class="grid2">
-          <div class="btn" id="btnVaq">Vaquita Peluda</div>
-          <div class="btn alt" id="btnPowerArg">Poder Argentino</div>
-        </div>
-
-        <div style="margin-top:10px">
-          <div class="btn" id="btnEnd">End</div>
-        </div>
-
-        <div class="hint warn">
-          Si tocás y Unity no reacciona: es porque el string del comando no coincide con lo que Unity parsea.
-          Ajustalo en este index.html (sendCmd).
-        </div>
-      `;
-
-      $("btnRita").onclick = ()=>sendCmd(cmds.RITA);
-      $("btnCarpin").onclick = ()=>sendCmd(cmds.CARPINCHITA);
-      $("btnOvej").onclick = ()=>sendCmd(cmds.OVEJITA);
-      $("btnPat").onclick = ()=>sendCmd(cmds.PATITO);
-      $("btnVaq").onclick = ()=>sendCmd(cmds.VAQUITA_PELUDA);
-      $("btnPowerArg").onclick = ()=>sendCmd(cmds.PODER_ARGENTINO);
-      $("btnEnd").onclick = ()=>sendCmd(cmds.END);
-
-      return;
-    }
-
-    // -------- default --------
-    el.innerHTML = `<div class="muted">Stage desconocido: <b>${stage}</b></div>`;
+  if(stage === "levelselect"){
+    addBtn("LEVEL_1", "Level 1", "primary");
+    addBtn("LEVEL_2", "Level 2", "primary");
+    addBtn("LEVEL_3", "Level 3", "primary");
+    addBtn("HOME", "Home");
+    return;
   }
 
-  // Loop
-  pollPresence();
-  setInterval(pollPresence, 700);
+  if(stage === "level"){
+    // Personajes
+    addBtn("SLOT0", "Rita", "primary");
+    addBtn("SLOT1", "Carpincha", "primary");
+    addBtn("SLOT2", "Ovejita", "primary");
+    addBtn("SLOT3", "Patito", "primary");
+    addBtn("SLOT4", "Vaquita", "primary");
+
+    // Poder argentino
+    addBtn("HAT", "Poder Argentino 🇦🇷", "primary");
+
+    // Utiles
+    addBtn("RESTART", "Restart");
+    addBtn("HOME", "Home");
+    addBtn("EXIT", "Exit", "danger");
+    return;
+  }
+
+  if(stage === "wait"){
+    addBtn("OK", "OK", "primary");
+    return;
+  }
+}
+
+poll();
+setInterval(poll, 1000);
 </script>
 </body>
 </html>
