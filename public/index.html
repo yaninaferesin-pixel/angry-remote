@@ -2,424 +2,528 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Angry Remote</title>
+
+  <!-- Tipografía: si NO podés usar Adobe Fonts, dejé fallback seguro.
+       Si tenés Adobe Fonts kit (script), lo pegás acá arriba y cambiás --font a esa familia. -->
   <style>
     :root{
-      --bg:#0c1630;
-      --card:#0f213f;
-      --stroke:rgba(255,255,255,.18);
-      --txt:rgba(255,255,255,.92);
+      --mint-0:#e7fff5;
+      --mint-1:#c9ffe9;
+      --mint-2:#a7f7d7;
 
-      /* después lo ajustamos a verde menta + violetas */
-      --btn:#6b5cff;
-      --btn2:#2bd3ff;
-      --danger:#ff3b3b;
-      --muted:rgba(255,255,255,.08);
+      --vio-0:#f3efff;
+      --vio-1:#cbbcff;
+      --vio-2:#9b83ff;
+      --vio-3:#5b3dd9;
+      --vio-4:#2a1366;
+      --vio-5:#120627;
+
+      --ink: rgba(12,6,30,.92);
+
+      --radius: 18px;
+      --gap: 12px;
+
+      --btn-h: 64px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
+    *{box-sizing:border-box;}
+    html,body{height:100%; margin:0; font-family:var(--font); color:var(--ink);}
     body{
-      margin:0;
-      background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.12), transparent), var(--bg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color:var(--txt);
+      background: linear-gradient(180deg, var(--mint-0) 0%, var(--mint-1) 45%, var(--mint-2) 100%);
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
     }
 
-    .wrap{ max-width: 520px; margin: 0 auto; padding: 14px; }
-    .pillrow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .wrap{
+      width:min(860px, 100%);
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: var(--gap);
+    }
+
+    /* Header */
+    .topbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(18,6,39,.08);
+      backdrop-filter: blur(8px);
+    }
+    .codeBox{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .codeBox input{
+      width: 140px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(18,6,39,.15);
+      background: rgba(255,255,255,.75);
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      outline: none;
+    }
     .pill{
-      padding:10px 14px;
-      border-radius:999px;
-      background:rgba(255,255,255,.08);
-      border:1px solid var(--stroke);
-      font-weight:600;
-      letter-spacing:.2px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing:.04em;
+      background: rgba(243,239,255,.9);
+      border: 1px solid rgba(18,6,39,.10);
     }
-    .dot{
-      width:10px;height:10px;border-radius:50%;
-      display:inline-block;margin-right:8px;
-      background:#f33;
-    }
-    .dot.on{ background:#23d18b; }
 
-    .card{
-      margin-top:14px;
-      background:rgba(0,0,0,.18);
-      border:1px solid var(--stroke);
-      border-radius:18px;
-      padding:14px;
+    /* Panels */
+    .panel{
+      flex: 1;
+      min-height: 520px;
+      border-radius: 26px;
+      overflow:hidden;
+      position:relative;
+      border: 1px solid rgba(18,6,39,.10);
+      background: rgba(255,255,255,.55);
+      box-shadow: 0 12px 28px rgba(18,6,39,.10);
     }
-    .row{ display:flex; gap:10px; }
-    input{
-      flex:1;
-      background:rgba(0,0,0,.25);
-      border:1px solid var(--stroke);
-      border-radius:14px;
-      color:var(--txt);
-      padding:12px 14px;
-      font-size:18px;
-      outline:none;
+    .panel.hidden{display:none;}
+
+    .bg{
+      position:absolute; inset:0;
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.05) contrast(1.02);
+      opacity: 1;
     }
-    button{
-      border:0;
-      border-radius:16px;
-      padding:14px 14px;
-      font-size:18px;
-      font-weight:800;
-      color:white;
-      background:var(--btn);
+    .panelContent{
+      position:relative;
+      height:100%;
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .title{
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing:.02em;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.60);
+      border: 1px solid rgba(18,6,39,.10);
+      width: fit-content;
+    }
+
+    /* Buttons grid */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top:auto;
+    }
+    @media (min-width:720px){
+      .grid{ grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Image buttons (usa tus PNG del /public/style) */
+    .imgBtn{
+      height: var(--btn-h);
+      border-radius: 18px;
+      border: 1px solid rgba(18,6,39,.18);
+      background: rgba(255,255,255,.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 8px;
       cursor:pointer;
       user-select:none;
-      -webkit-tap-highlight-color: transparent;
-      flex:1;
+      transition: transform .06s ease, box-shadow .06s ease, border-color .06s ease;
+      box-shadow: 0 10px 20px rgba(18,6,39,.10);
     }
-    button.secondary{ background:var(--btn2); }
-    button.danger{ background:var(--danger); }
-    button.ghost{
-      background:rgba(255,255,255,.05);
-      border:1px solid var(--stroke);
-      color:rgba(255,255,255,.65);
-    }
-    button:disabled{
-      opacity:.35;
-      cursor:not-allowed;
+    .imgBtn:active{ transform: translateY(1px) scale(.995); box-shadow: 0 6px 14px rgba(18,6,39,.10); }
+    .imgBtn img{
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 6px rgba(18,6,39,.18));
+      pointer-events:none;
     }
 
-    .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .grid1{ display:grid; grid-template-columns:1fr; gap:10px; }
+    /* Violet “soft” buttons (si querés algunos sin imagen) */
+    .vioBtn{
+      height: var(--btn-h);
+      border-radius: 18px;
+      border: 1px solid rgba(18,6,39,.18);
+      background: linear-gradient(180deg, rgba(203,188,255,.95) 0%, rgba(155,131,255,.90) 55%, rgba(91,61,217,.92) 100%);
+      color: white;
+      font-weight: 900;
+      letter-spacing:.06em;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(18,6,39,.12);
+    }
+    .vioBtn:active{ transform: translateY(1px); }
 
-    .hint{ opacity:.75; line-height:1.2; margin:10px 0; }
-    .small{ opacity:.7; font-size:14px; }
-
-    /* Slingshot pad */
-    .pad{
-      margin-top:10px;
-      height:260px;
-      border-radius:18px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border:1px solid var(--stroke);
-      position:relative;
-      overflow:hidden;
-      touch-action:none; /* clave para arrastre */
-    }
-    .pad .center{
-      position:absolute; left:50%; top:50%;
-      width:10px; height:10px; border-radius:50%;
-      transform:translate(-50%,-50%);
-      background:rgba(255,255,255,.6);
-    }
-    .pad .stick{
-      position:absolute; left:50%; top:50%;
-      width:2px; height:2px;
-      background:rgba(255,255,255,.65);
-      transform-origin:0 0;
-    }
-    .pad .label{
-      position:absolute; left:12px; top:10px;
-      opacity:.85; font-weight:700;
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
-    .log{ margin-top:8px; font-size:14px; opacity:.85; }
-    .ok{ color:#23d18b; }
+    .mini{
+      height: 46px;
+      border-radius: 14px;
+      padding: 0 14px;
+      font-weight: 900;
+      letter-spacing:.04em;
+    }
+
+    .footerHint{
+      font-size: 12px;
+      opacity: .9;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.60);
+      border: 1px solid rgba(18,6,39,.10);
+      width: fit-content;
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="pillrow">
-      <div class="pill"><span class="small">CODE:</span> <span id="codeLabel">----</span></div>
-      <div class="pill"><span class="dot" id="onlineDot"></span><span id="onlineLabel">offline</span></div>
-      <div class="pill"><span class="small">Stage:</span> <span id="stageLabel">-</span></div>
-      <div class="pill"><span class="small">Activo:</span> <span id="activeLabel">P1</span></div>
-    </div>
-
-    <div class="card">
-      <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence/state).</div>
-
+    <div class="topbar">
+      <div class="codeBox">
+        <span class="pill">SESSION</span>
+        <input id="codeInput" placeholder="CULA" maxlength="12" />
+        <button class="vioBtn mini" id="btnApplyCode">APLICAR</button>
+      </div>
       <div class="row">
-        <input id="codeInput" placeholder="CODE" />
-        <button id="okBtn">OK</button>
+        <span class="pill" id="statusPill">offline</span>
       </div>
-
-      <div id="panel"></div>
-
-      <div class="grid2" style="margin-top:10px;">
-        <button class="ghost" id="homeBtn">HOME</button>
-        <button class="ghost" id="restartBtn">RESTART</button>
-      </div>
-
-      <div class="grid1" style="margin-top:10px;">
-        <button class="danger" id="exitBtn">EXIT</button>
-      </div>
-
-      <div class="log" id="lastCmd"></div>
     </div>
+
+    <!-- ===== Panel 0: Espera (IMPORTANTE) ===== -->
+    <section class="panel" id="panelWait">
+      <div class="bg" id="bgWait"></div>
+      <div class="panelContent">
+        <div class="title">ESPERA</div>
+
+        <div class="row">
+          <button class="imgBtn" data-cmd="TRAILER" title="Trailer">
+            <img id="imgTRAILER" alt="TRAILER">
+          </button>
+          <button class="imgBtn" data-cmd="STOPTRAILER" title="Stop Trailer">
+            <img id="imgRESTART" alt="STOPTRAILER">
+          </button>
+        </div>
+
+        <div class="grid">
+          <!-- Linda 1..4 (IMPORTANTE) -->
+          <button class="imgBtn" data-cmd="LINDA1" title="Linda 1"><img id="imgLINDA1" alt="LINDA1"></button>
+          <button class="imgBtn" data-cmd="LINDA2" title="Linda 2"><img id="imgLINDA2" alt="LINDA2"></button>
+          <button class="imgBtn" data-cmd="LINDA3" title="Linda 3"><img id="imgLINDA3" alt="LINDA3"></button>
+          <button class="imgBtn" data-cmd="LINDA4" title="Linda 4"><img id="imgLINDA4" alt="LINDA4"></button>
+
+          <!-- Navegación básica -->
+          <button class="imgBtn" data-cmd="HOME" title="Home"><img id="imgHOME" alt="HOME"></button>
+          <button class="imgBtn" data-cmd="EXIT" title="Exit"><img id="imgEXIT" alt="EXIT"></button>
+        </div>
+
+        <div class="footerHint">Si no ves el juego, revisá el código arriba (SESSION).</div>
+      </div>
+    </section>
+
+    <!-- ===== Panel 1: P1 ===== -->
+    <section class="panel hidden" id="panelP1">
+      <div class="bg" id="bgP1"></div>
+      <div class="panelContent">
+        <div class="title">P1</div>
+
+        <!-- Personajes (nombres reales) -->
+        <div class="grid">
+          <button class="imgBtn" data-cmd="SLOT0" title="Ovejita"><img id="imgOVEJITA" alt="OVEJITA"></button>
+          <button class="imgBtn" data-cmd="SLOT1" title="Patito"><img id="imgPATITO" alt="PATITO"></button>
+          <button class="imgBtn" data-cmd="SLOT2" title="Carpinchita"><img id="imgCARPINCHITA" alt="CARPINCHITA"></button>
+          <button class="imgBtn" data-cmd="SLOT3" title="Rita"><img id="imgRITA" alt="RITA"></button>
+          <button class="imgBtn" data-cmd="SLOT4" title="Vaquita Peluda"><img id="imgVAQUITA" alt="VAQUITA PELUDA"></button>
+
+          <!-- Poder Argentino -->
+          <button class="imgBtn" data-cmd="HAT" title="Poder Argentino">
+            <img id="imgHAT" alt="PODER ARGENTINO">
+          </button>
+        </div>
+
+        <div class="row">
+          <button class="imgBtn" data-cmd="HOME" title="Home"><img id="imgHOME2" alt="HOME"></button>
+          <button class="imgBtn" data-cmd="EXIT" title="Exit"><img id="imgEXIT2" alt="EXIT"></button>
+        </div>
+
+        <div class="footerHint">P1: Elegí personaje y luego usá el slingshot (drag) desde el móvil.</div>
+      </div>
+    </section>
+
+    <!-- ===== Panel 2: P2 ===== -->
+    <section class="panel hidden" id="panelP2">
+      <div class="bg" id="bgP2"></div>
+      <div class="panelContent">
+        <div class="title">P2</div>
+
+        <!-- Si querés mismos personajes para P2, dejamos igual pero con prefijo P2_ -->
+        <div class="grid">
+          <button class="imgBtn" data-cmd="P2_SLOT0" title="Ovejita"><img id="imgOVEJITA2" alt="OVEJITA"></button>
+          <button class="imgBtn" data-cmd="P2_SLOT1" title="Patito"><img id="imgPATITO2" alt="PATITO"></button>
+          <button class="imgBtn" data-cmd="P2_SLOT2" title="Carpinchita"><img id="imgCARPINCHITA2" alt="CARPINCHITA"></button>
+          <button class="imgBtn" data-cmd="P2_SLOT3" title="Rita"><img id="imgRITA2" alt="RITA"></button>
+          <button class="imgBtn" data-cmd="P2_SLOT4" title="Vaquita Peluda"><img id="imgVAQUITA2" alt="VAQUITA PELUDA"></button>
+
+          <button class="imgBtn" data-cmd="P2_HAT" title="Poder Argentino">
+            <img id="imgHAT2" alt="PODER ARGENTINO">
+          </button>
+        </div>
+
+        <div class="row">
+          <button class="imgBtn" data-cmd="HOME" title="Home"><img id="imgHOME3" alt="HOME"></button>
+          <button class="imgBtn" data-cmd="EXIT" title="Exit"><img id="imgEXIT3" alt="EXIT"></button>
+        </div>
+
+        <div class="footerHint">P2: Si no usás P2, este panel igual queda listo.</div>
+      </div>
+    </section>
+
+    <!-- ===== Panel 3: LevelSelect (SIN Level1/2/3) ===== -->
+    <section class="panel hidden" id="panelLevelSelect">
+      <div class="bg" id="bgLevelSelect"></div>
+      <div class="panelContent">
+        <div class="title">LEVEL SELECT</div>
+
+        <div class="grid">
+          <button class="imgBtn" data-cmd="LEFT" title="Left"><img id="imgLEFT" alt="LEFT"></button>
+          <button class="imgBtn" data-cmd="RIGHT" title="Right"><img id="imgRIGHT" alt="RIGHT"></button>
+          <button class="imgBtn" data-cmd="PLAY" title="Play"><img id="imgPLAY" alt="PLAY"></button>
+
+          <button class="imgBtn" data-cmd="HOME" title="Home"><img id="imgHOME4" alt="HOME"></button>
+          <button class="imgBtn" data-cmd="EXIT" title="Exit"><img id="imgEXIT4" alt="EXIT"></button>
+        </div>
+
+        <div class="footerHint">Navegá con LEFT/RIGHT y entrá con PLAY.</div>
+      </div>
+    </section>
+
   </div>
 
-<script>
-  const $ = (id)=>document.getElementById(id);
-
-  // code from url
-  const url = new URL(location.href);
-  let CODE = (url.searchParams.get("code") || "").trim().toUpperCase();
-  $("codeInput").value = CODE || "";
-  $("codeLabel").textContent = CODE || "----";
-
-  let ACTIVE = "P1";
-
-  function setOnline(on){
-    $("onlineDot").classList.toggle("on", !!on);
-    $("onlineLabel").textContent = on ? "online" : "offline";
-  }
-
-  function setStage(s){
-    $("stageLabel").textContent = s || "-";
-  }
-  function setActive(a){
-    $("activeLabel").textContent = a || "";
-  }
-
-  async function api(path, body){
-    const res = await fetch(path, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(body)
-    });
-    return res.json();
-  }
-
-  async function send(cmd){
-    if(!CODE) return;
-    const full = `${ACTIVE}_${cmd}`;
-    $("lastCmd").innerHTML = `<span class="ok">✅</span> cmd: ${full}`;
-    await api("/api/send", { code: CODE, cmd: full });
-  }
-
-  function stageKey(stage){
-    // Normaliza: "level1" "Level1" "level" => "level"
-    const s = (stage||"").toLowerCase();
-    if (s.startsWith("level")) return "level";
-    if (s.includes("select")) return "select";
-    if (s.includes("trailer")) return "trailer";
-    if (s.includes("start")) return "start";
-    return s || "start";
-  }
-
-  // ----- UI builders -----
-  function btn(text, cmd, cls=""){
-    const b = document.createElement("button");
-    b.textContent = text;
-    if (cls) b.className = cls;
-    b.onclick = ()=>send(cmd);
-    return b;
-  }
-
-  function renderPanel(stage){
-    const key = stageKey(stage);
-    const panel = $("panel");
-    panel.innerHTML = "";
-
-    if(key === "start"){
-      panel.appendChild(document.createElement("div")).className="small";
-      panel.lastChild.textContent = "Start";
-
-      const g = document.createElement("div");
-      g.className="grid2";
-      g.style.marginTop="10px";
-      g.appendChild(btn("PLAY","PLAY"));
-      g.appendChild(btn("TRAILER","TRAILER","secondary"));
-      panel.appendChild(g);
-      return;
+  <script>
+    // ---------- Assets helpers ----------
+    function enc(name){ return encodeURIComponent(name); }
+    function stylePng(filename){
+      return "style/" + enc(filename);
+    }
+    function setImg(id, filename){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.src = stylePng(filename);
+    }
+    function setBg(id, filename){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.style.backgroundImage = `url("${stylePng(filename)}")`;
     }
 
-    if(key === "trailer"){
-      panel.appendChild(document.createElement("div")).className="small";
-      panel.lastChild.textContent = "Trailer";
+    // ---------- Load your images (names EXACTOS como tus PNG en public/style) ----------
+    // Backgrounds
+    setBg("bgWait", "BG ESPERA.png");
+    setBg("bgP1", "BG P1.png");
+    setBg("bgP2", "BG P2.png");
+    // Si no tenés BG específico para LevelSelect, usamos BG ESPERA o el que quieras.
+    setBg("bgLevelSelect", "BG ESPERA.png");
 
-      const g = document.createElement("div");
-      g.className="grid1";
-      g.style.marginTop="10px";
-      g.appendChild(btn("STOP","STOPTRAILER","danger"));
-      panel.appendChild(g);
-      return;
-    }
+    // Core nav buttons
+    setImg("imgLEFT", "LEFT.png");
+    setImg("imgRIGHT", "RIGHT.png");
+    setImg("imgPLAY", "PLAY.png");
+    setImg("imgHOME", "HOME.png");
+    setImg("imgEXIT", "EXIT.png");
+    setImg("imgHOME2", "HOME.png");
+    setImg("imgEXIT2", "EXIT.png");
+    setImg("imgHOME3", "HOME.png");
+    setImg("imgEXIT3", "EXIT.png");
+    setImg("imgHOME4", "HOME.png");
+    setImg("imgEXIT4", "EXIT.png");
 
-    if(key === "select"){
-      panel.appendChild(document.createElement("div")).className="small";
-      panel.lastChild.textContent = "Level Select";
+    // Trailer + stop
+    setImg("imgTRAILER", "TRAILER.png");
+    // Usamos RESTART.png como imagen del stop si no tenés STOPTRAILER.png
+    setImg("imgRESTART", "RESTART.png");
 
-      const g1 = document.createElement("div");
-      g1.className="grid3";
-      g1.style.marginTop="10px";
-      g1.appendChild(btn("LEFT","LEFT","ghost"));
-      g1.appendChild(btn("PLAY","PLAY","secondary"));
-      g1.appendChild(btn("RIGHT","RIGHT","ghost"));
-      panel.appendChild(g1);
+    // Linda 1..4
+    setImg("imgLINDA1", "LINDA 1.png");
+    setImg("imgLINDA2", "LINDA 2.png");
+    setImg("imgLINDA3", "LINDA 3.png");
+    setImg("imgLINDA4", "LINDA 4.png");
 
-      // Si querés esconder levels directos, borrá este bloque.
-      const g2 = document.createElement("div");
-      g2.className="grid2";
-      g2.style.marginTop="10px";
-      g2.appendChild(btn("LEVEL 1","LEVEL1"));
-      g2.appendChild(btn("LEVEL 2","LEVEL2"));
-      panel.appendChild(g2);
+    // Characters
+    setImg("imgOVEJITA", "OVEJITA.png");
+    setImg("imgPATITO", "PATITO.png");
+    setImg("imgCARPINCHITA", "CARPINCHITA.png");
+    setImg("imgRITA", "RITA.png");
+    setImg("imgVAQUITA", "VAQUITA PELUDA.png");
+    setImg("imgHAT", "poder argentino.png");
 
-      const g3 = document.createElement("div");
-      g3.className="grid1";
-      g3.style.marginTop="10px";
-      g3.appendChild(btn("LEVEL 3","LEVEL3"));
-      panel.appendChild(g3);
-      return;
-    }
+    // P2 copies (reusan mismas imágenes)
+    setImg("imgOVEJITA2", "OVEJITA.png");
+    setImg("imgPATITO2", "PATITO.png");
+    setImg("imgCARPINCHITA2", "CARPINCHITA.png");
+    setImg("imgRITA2", "RITA.png");
+    setImg("imgVAQUITA2", "VAQUITA PELUDA.png");
+    setImg("imgHAT2", "poder argentino.png");
 
-    if(key === "level"){
-      panel.appendChild(document.createElement("div")).className="small";
-      panel.lastChild.textContent = "Level";
+    // ---------- Session / Code ----------
+    const statusPill = document.getElementById("statusPill");
+    const codeInput = document.getElementById("codeInput");
+    const btnApply = document.getElementById("btnApplyCode");
 
-      // Slots
-      const slots = document.createElement("div");
-      slots.className="grid3";
-      slots.style.marginTop="10px";
-      slots.appendChild(btn("SLOT 1","SLOT1","ghost"));
-      slots.appendChild(btn("SLOT 2","SLOT2","ghost"));
-      slots.appendChild(btn("SLOT 3","SLOT3","ghost"));
-      slots.appendChild(btn("SLOT 4","SLOT4","ghost"));
-      slots.appendChild(btn("SLOT 5","SLOT5","ghost"));
-      panel.appendChild(slots);
+    // lee ?code=
+    const params = new URLSearchParams(location.search);
+    let sessionCode = (params.get("code") || "").trim().toUpperCase();
+    if(sessionCode) codeInput.value = sessionCode;
 
-      // Power buttons
-      const pow = document.createElement("div");
-      pow.className="grid2";
-      pow.style.marginTop="10px";
-      pow.appendChild(btn("POWER","POWER","secondary"));
-      pow.appendChild(btn("HAT","HAT","danger"));
-      panel.appendChild(pow);
-
-      // Slingshot pad
-      const pad = document.createElement("div");
-      pad.className = "pad";
-      pad.innerHTML = `
-        <div class="label">SLINGSHOT PAD (drag & release)</div>
-        <div class="center"></div>
-        <div class="stick" id="stick"></div>
-      `;
-      panel.appendChild(pad);
-
-      setupPad(pad);
-      return;
-    }
-
-    panel.appendChild(document.createElement("div")).className="small";
-    panel.lastChild.textContent = `Stage desconocido: ${stage}`;
-  }
-
-  // ----- Slingshot pad logic (dx/dy normalizado) -----
-  function setupPad(pad){
-    const stick = pad.querySelector("#stick");
-    let dragging = false;
-    let startX = 0, startY = 0;
-
-    function sendVec(kind, dx, dy){
-      // Invertimos Y porque pantalla hacia abajo es +y,
-      // y en Unity queremos +y hacia arriba.
-      const ny = -dy;
-
-      // clamp y mandar
-      const cx = Math.max(-1, Math.min(1, dx));
-      const cy = Math.max(-1, Math.min(1, ny));
-      send(`${kind}:${cx.toFixed(3)},${cy.toFixed(3)}`);
-    }
-
-    function setStick(dx, dy){
-      const w = pad.clientWidth;
-      const h = pad.clientHeight;
-      const radius = Math.min(w,h)*0.35;
-
-      const px = dx * radius;
-      const py = dy * radius;
-
-      stick.style.transform = `translate(-50%,-50%) translate(${px}px,${py}px)`;
-      stick.style.width = `${Math.sqrt(px*px+py*py)}px`;
-      stick.style.height = `2px`;
-      stick.style.left = "50%";
-      stick.style.top = "50%";
-      stick.style.transformOrigin = "0 0";
-      stick.style.rotate = `${Math.atan2(py, px) * 180/Math.PI}deg`;
-    }
-
-    pad.addEventListener("pointerdown",(e)=>{
-      dragging = true;
-      pad.setPointerCapture(e.pointerId);
-      startX = e.clientX;
-      startY = e.clientY;
-      setStick(0,0);
-      sendVec("DRAG_BEGIN", 0, 0);
+    btnApply.addEventListener("click", () => {
+      sessionCode = (codeInput.value || "").trim().toUpperCase();
+      if(!sessionCode) return;
+      const url = new URL(location.href);
+      url.searchParams.set("code", sessionCode);
+      history.replaceState({}, "", url.toString());
+      ping();
     });
 
-    pad.addEventListener("pointermove",(e)=>{
-      if(!dragging) return;
-      const w = pad.clientWidth;
-      const h = pad.clientHeight;
-      const radius = Math.min(w,h)*0.35;
+    // ---------- Panels control (NO rompe si no hay endpoint de estado) ----------
+    const panelWait = document.getElementById("panelWait");
+    const panelP1 = document.getElementById("panelP1");
+    const panelP2 = document.getElementById("panelP2");
+    const panelLevelSelect = document.getElementById("panelLevelSelect");
 
-      const dx = (e.clientX - startX) / radius;
-      const dy = (e.clientY - startY) / radius;
-
-      setStick(dx,dy);
-      sendVec("DRAG", dx, dy);
-    });
-
-    function end(e){
-      if(!dragging) return;
-      dragging = false;
-      setStick(0,0);
-      send("DRAG_END");
+    function showOnly(panel){
+      [panelWait, panelP1, panelP2, panelLevelSelect].forEach(p => p.classList.add("hidden"));
+      panel.classList.remove("hidden");
     }
 
-    pad.addEventListener("pointerup", end);
-    pad.addEventListener("pointercancel", end);
-    pad.addEventListener("pointerleave", end);
-  }
+    // Default: Espera
+    showOnly(panelWait);
 
-  // ----- Presence polling -----
-  async function fetchState(){
-    if(!CODE) return { ok:false };
-    const res = await fetch(`/api/state?code=${encodeURIComponent(CODE)}`);
-    return res.json();
-  }
+    // ---------- Command sending (robusto: intenta varios endpoints) ----------
+    async function postJson(url, body){
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      return res;
+    }
 
-  async function loop(){
-    try{
-      const st = await fetchState();
-      if(st && st.ok){
-        setOnline(true);
-        setStage(st.stage || "-");
-        setActive(st.active || "");
-        renderPanel(st.stage || "start");
-      }else{
-        setOnline(false);
+    async function sendCommand(cmd){
+      if(!sessionCode){
+        statusPill.textContent = "sin code";
+        return;
       }
-    }catch(e){
-      setOnline(false);
+
+      const payload = { code: sessionCode, cmd };
+
+      // Lista de endpoints posibles (para no romper aunque tu server cambie)
+      const endpoints = [
+        "/api/cmd",
+        "/api/command",
+        "/api/send",
+        "/api/push"
+      ];
+
+      for(const ep of endpoints){
+        try{
+          await postJson(ep, payload);
+          statusPill.textContent = "ok";
+          return;
+        }catch(e){}
+      }
+
+      // Fallback querystring (por si tu server usa GET)
+      try{
+        const u = `/api/cmd?code=${encodeURIComponent(sessionCode)}&cmd=${encodeURIComponent(cmd)}`;
+        const r = await fetch(u);
+        if(r.ok){ statusPill.textContent="ok"; return; }
+      }catch(e){}
+
+      statusPill.textContent = "error";
     }
-    setTimeout(loop, 700);
-  }
 
-  $("okBtn").onclick = ()=>{
-    CODE = ($("codeInput").value || "").trim().toUpperCase();
-    $("codeLabel").textContent = CODE || "----";
-    url.searchParams.set("code", CODE);
-    history.replaceState(null,"",url.toString());
-    loop();
-  };
+    // click handlers
+    document.querySelectorAll("[data-cmd]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const cmd = btn.getAttribute("data-cmd");
+        if(cmd) sendCommand(cmd);
+      });
+    });
 
-  $("homeBtn").onclick = ()=>send("HOME");
-  $("restartBtn").onclick = ()=>send("RESTART");
-  $("exitBtn").onclick = ()=>send("EXIT");
+    // ---------- Ping (si existe) ----------
+    async function ping(){
+      if(!sessionCode) return;
+      // ping suave: no rompe si no existe
+      try{
+        const r = await fetch(`/api/ping?code=${encodeURIComponent(sessionCode)}`);
+        statusPill.textContent = r.ok ? "online" : "online?";
+      }catch(e){
+        statusPill.textContent = "online?";
+      }
+    }
+    ping();
 
-  // start
-  if(CODE) loop();
-</script>
+    // ---------- Stage polling (opcional; si tu server expone /api/state o similar) ----------
+    async function pollStage(){
+      if(!sessionCode) return;
+
+      // NO rompe si no existe el endpoint: si falla, mantenemos panel actual.
+      const candidates = [
+        `/api/state?code=${encodeURIComponent(sessionCode)}`,
+        `/api/presence?code=${encodeURIComponent(sessionCode)}`
+      ];
+
+      for(const url of candidates){
+        try{
+          const r = await fetch(url, { cache:"no-store" });
+          if(!r.ok) continue;
+          const j = await r.json();
+
+          // Soportamos varias formas:
+          // {stage:"wait|p1|p2|levelselect|level"}  ó {presence:{stage:"..."}} etc.
+          const stage = (j.stage || (j.presence && j.presence.stage) || "").toString().toLowerCase();
+
+          if(stage.includes("start") || stage.includes("wait") || stage.includes("trailer")){
+            showOnly(panelWait);
+          }else if(stage.includes("p1")){
+            showOnly(panelP1);
+          }else if(stage.includes("p2")){
+            showOnly(panelP2);
+          }else if(stage.includes("select")){
+            showOnly(panelLevelSelect);
+          }else if(stage.includes("level")){
+            // En Level dejá el panel P1 por defecto (si querés que el jugador controle slingshot + power)
+            showOnly(panelP1);
+          }
+          return;
+        }catch(e){}
+      }
+    }
+
+    setInterval(pollStage, 600);
+  </script>
 </body>
 </html>
