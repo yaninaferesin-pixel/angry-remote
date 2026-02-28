@@ -3,43 +3,41 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ===== In-memory stores =====
-const queues = new Map(); // code -> [cmd, cmd, ...]
-const states = new Map(); // code -> { stage, active, updatedAt }
+// ===== In-memory store =====
+/**
+ * queues[code] = ["P1_SLOT0", "P1_HAT", ...]
+ * state[code] = { stage, active, ts }
+ */
+const queues = new Map();
+const state = new Map();
 
-function normCode(c) {
-  return String(c || "").trim().toUpperCase();
+function normCode(code) {
+  return String(code || "").trim().toUpperCase();
 }
 
 function getQueue(code) {
-  const c = normCode(code);
-  if (!c) return null;
-  if (!queues.has(c)) queues.set(c, []);
-  return queues.get(c);
-}
-
-function getState(code) {
-  const c = normCode(code);
-  if (!c) return null;
-  if (!states.has(c)) states.set(c, { stage: "start", active: "P1", updatedAt: Date.now() });
-  return states.get(c);
+  if (!queues.has(code)) queues.set(code, []);
+  return queues.get(code);
 }
 
 // ===== Static site =====
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(__dirname));
 
-// ===== Send command =====
-app.post("/api/send", (req, res) => {
+// Health
+app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// POST cmd: { code, cmd }
+app.post("/api/cmd", (req, res) => {
   const code = normCode(req.body?.code);
   const cmd = String(req.body?.cmd || "").trim();
 
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-  if (!cmd) return res.status(400).json({ ok: false, error: "Missing cmd" });
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
+  if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
 
   const q = getQueue(code);
   q.push(cmd);
@@ -47,10 +45,10 @@ app.post("/api/send", (req, res) => {
   return res.json({ ok: true });
 });
 
-// ===== Poll command (Unity) =====
+// GET poll?code=XXXX  -> { ok, cmd }
 app.get("/api/poll", (req, res) => {
-  const code = normCode(req.query.code);
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
+  const code = normCode(req.query?.code);
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
 
   const q = getQueue(code);
   const cmd = q.length > 0 ? q.shift() : null;
@@ -58,47 +56,28 @@ app.get("/api/poll", (req, res) => {
   return res.json({ ok: true, cmd });
 });
 
-// ===== Stage/Presence (state) =====
-app.get("/api/state", (req, res) => {
-  const code = normCode(req.query.code);
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  const st = getState(code);
-  return res.json({ ok: true, stage: st.stage, active: st.active, updatedAt: st.updatedAt });
-});
-
+// POST state: { code, stage, active }
 app.post("/api/state", (req, res) => {
   const code = normCode(req.body?.code);
-  if (!code) return res.status(400).json({ ok: false, error: "Missing code" });
-
-  const st = getState(code);
-
   const stage = String(req.body?.stage || "").trim();
-  const active = String(req.body?.active || "").trim();
+  const active = req.body?.active == null ? "" : String(req.body.active).trim();
 
-  if (stage) st.stage = stage;
-  if (active) st.active = active;
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
 
-  st.updatedAt = Date.now();
-  states.set(code, st);
-
-  return res.json({ ok: true, stage: st.stage, active: st.active, updatedAt: st.updatedAt });
+  state.set(code, { stage, active, ts: Date.now() });
+  return res.json({ ok: true });
 });
 
-// Backward-compat alias (por si algo llama presence)
-app.get("/api/presence", (req, res) => {
-  req.url = "/api/state";
-  return app._router.handle(req, res);
-});
-app.post("/api/presence", (req, res) => {
-  req.url = "/api/state";
-  return app._router.handle(req, res);
+// GET state?code=XXXX -> { ok, stage, active, ts }
+app.get("/api/state", (req, res) => {
+  const code = normCode(req.query?.code);
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
+
+  const s = state.get(code) || { stage: "unknown", active: "", ts: 0 };
+  return res.json({ ok: true, ...s });
 });
 
-// SPA fallback
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Remote server running on port ${PORT}`);
 });
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log("Remote running on port", port));
