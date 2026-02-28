@@ -20,14 +20,24 @@ function getQueue(code) {
   return queues.get(code);
 }
 
-// ===== Static site =====
+// ===== Static =====
 app.use(express.static(__dirname));
 
 // Health / Ping
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/ping", (_req, res) => res.send("pong"));
 
-// POST cmd: { code, cmd }
+// ✅ SIEMPRE servir index en /
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// ✅ También si recargás con query (?code=...)
+app.get("/remote", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// ===== API =====
 app.post("/api/cmd", (req, res) => {
   const code = normCode(req.body?.code);
   const cmd = String(req.body?.cmd || "").trim();
@@ -39,7 +49,6 @@ app.post("/api/cmd", (req, res) => {
   return res.json({ ok: true });
 });
 
-// GET poll?code=XXXX  -> { ok, cmd }
 app.get("/api/poll", (req, res) => {
   const code = normCode(req.query?.code);
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
@@ -50,7 +59,6 @@ app.get("/api/poll", (req, res) => {
   return res.json({ ok: true, cmd });
 });
 
-// POST state: { code, stage, active }
 app.post("/api/state", (req, res) => {
   const code = normCode(req.body?.code);
   const stage = String(req.body?.stage || "").trim();
@@ -62,7 +70,6 @@ app.post("/api/state", (req, res) => {
   return res.json({ ok: true });
 });
 
-// GET state?code=XXXX -> { ok, stage, active, ts }
 app.get("/api/state", (req, res) => {
   const code = normCode(req.query?.code);
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
@@ -72,6 +79,4 @@ app.get("/api/state", (req, res) => {
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`Remote server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Remote server running on port ${PORT}`));
