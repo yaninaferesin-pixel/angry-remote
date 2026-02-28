@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 const app = express();
@@ -20,21 +21,34 @@ function getQueue(code) {
   return queues.get(code);
 }
 
-// ===== Static =====
+// ===== Static site =====
 app.use(express.static(__dirname));
 
 // Health / Ping
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/ping", (_req, res) => res.send("pong"));
 
-// ✅ SIEMPRE servir index en /
+// ✅ Resolver index REAL (index.html vs index.html)
+function resolveIndexFile() {
+  const candidates = ["index.html", "index.html", "index.htm"];
+  for (const f of candidates) {
+    const p = path.join(__dirname, f);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+const INDEX_FILE = resolveIndexFile();
+
 app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  if (INDEX_FILE) return res.sendFile(INDEX_FILE);
+  return res.status(200).send("Remote server OK, but index file is missing in repo.");
 });
 
-// ✅ También si recargás con query (?code=...)
-app.get("/remote", (_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// Para rutas tipo /?code=CULA y refresh
+app.get(/^\/(?!api\/).*/, (_req, res) => {
+  if (INDEX_FILE) return res.sendFile(INDEX_FILE);
+  return res.status(200).send("Remote server OK, but index file is missing in repo.");
 });
 
 // ===== API =====
@@ -55,7 +69,6 @@ app.get("/api/poll", (req, res) => {
 
   const q = getQueue(code);
   const cmd = q.length > 0 ? q.shift() : null;
-
   return res.json({ ok: true, cmd });
 });
 
