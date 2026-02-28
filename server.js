@@ -1,85 +1,91 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
-
-const app = express();
-app.use(express.json());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ===== Paths =====
-const publicPath = path.join(__dirname, "public");
+const app = express();
+app.use(express.json());
 
-// ✅ Servir carpeta public
-app.use(express.static(publicPath));
+// -------- In-memory state --------
+const stateByCode = new Map(); // code -> { stage, active, ts }
+const cmdQueueByCode = new Map(); // code -> [cmd strings]
 
-// Health
-app.get("/health", (_req, res) => res.json({ ok: true }));
-app.get("/ping", (_req, res) => res.send("pong"));
-
-// ✅ Root siempre devuelve public/index.html
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(publicPath, "index.html"));
-});
-
-// Para rutas con ?code=CULA o refresh
-app.get(/^\/(?!api\/).*/, (_req, res) => {
-  res.sendFile(path.join(publicPath, "index.html"));
-});
-
-// ===== API =====
-const queues = new Map();
-const state = new Map();
-
+// -------- Helpers --------
 function normCode(code) {
-  return String(code || "").trim().toUpperCase();
+  return (code || "").trim().toUpperCase();
 }
-function getQueue(code) {
-  if (!queues.has(code)) queues.set(code, []);
-  return queues.get(code);
+function ensureQueue(code) {
+  if (!cmdQueueByCode.has(code)) cmdQueueByCode.set(code, []);
+  return cmdQueueByCode.get(code);
 }
 
-app.post("/api/cmd", (req, res) => {
-  const code = normCode(req.body?.code);
-  const cmd = String(req.body?.cmd || "").trim();
+// -------- Health --------
+app.get("/ping", (req, res) => res.status(200).send("ok"));
 
-  if (!code) return res.status(400).json({ ok: false });
-  if (!cmd) return res.status(400).json({ ok: false });
-
-  getQueue(code).push(cmd);
-  return res.json({ ok: true });
-});
-
-app.get("/api/poll", (req, res) => {
-  const code = normCode(req.query?.code);
-  if (!code) return res.status(400).json({ ok: false });
-
-  const q = getQueue(code);
-  const cmd = q.length > 0 ? q.shift() : null;
-  return res.json({ ok: true, cmd });
-});
-
+// -------- API: state --------
 app.post("/api/state", (req, res) => {
   const code = normCode(req.body?.code);
-  const stage = String(req.body?.stage || "");
-  const active = String(req.body?.active || "");
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
 
-  if (!code) return res.status(400).json({ ok: false });
+  const stage = (req.body?.stage || "").trim();
+  const active = (req.body?.active || "").trim();
 
-  state.set(code, { stage, active, ts: Date.now() });
+  stateByCode.set(code, { stage, active, ts: Date.now() });
   return res.json({ ok: true });
 });
 
 app.get("/api/state", (req, res) => {
   const code = normCode(req.query?.code);
-  if (!code) return res.status(400).json({ ok: false });
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
 
-  const s = state.get(code) || { stage: "unknown", active: "", ts: 0 };
-  return res.json({ ok: true, ...s });
+  const st = stateByCode.get(code) || { stage: "start", active: "", ts: 0 };
+  return res.json({ ok: true, ...st });
+});
+
+// -------- API: send command --------
+app.post("/api/send", (req, res) => {
+  const code = normCode(req.body?.code);
+  const cmd = (req.body?.cmd || "").trim();
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
+  if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
+
+  const q = ensureQueue(code);
+  q.push(cmd);
+  return res.json({ ok: true });
+});
+
+// alias
+app.post("/api/cmd", (req, res) => app._router.handle(req, res, () => {}));
+
+// -------- API: poll (Unity) --------
+app.get("/api/poll", (req, res) => {
+  const code = normCode(req.query?.code);
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
+
+  const q = ensureQueue(code);
+  const cmd = q.length > 0 ? q.shift() : "";
+  return res.json({ ok: true, cmd });
+});
+
+// -------- Static: serve index --------
+const publicDir = path.join(__dirname, "public");
+const rootIndex = path.join(__dirname, "index.html");
+const publicIndex = path.join(publicDir, "index.html");
+
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+}
+
+app.get("/", (req, res) => {
+  if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
+  if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
+  return res.status(404).send("index.html not found");
 });
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`Remote server running on port ${PORT}`);
+  console.log("Remote server running on port", PORT);
 });
