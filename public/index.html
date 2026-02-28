@@ -198,15 +198,16 @@
   function normalizeStage(s){
     const low = String(s || "").trim().toLowerCase();
 
-    // IMPORTANTÍSIMO: tu Unity manda "select"
+    // tu LevelSelect llega como "select"
     if(low === "select") return "levelselect";
 
-    if(low === "levelselect" || low === "level_select" || low === "level-select") return "levelselect";
-    if(low.includes("level") && low.includes("select")) return "levelselect";
+    // tu gameplay llega como "level1", "level2", etc
+    if(/^level\d+$/i.test(low)) return "level";
 
-    if(low === "start" || low === "startscene" || low === "start_scene") return "start";
-    if(low === "trailer") return "trailer";
     if(low === "level") return "level";
+    if(low === "levelselect" || low.includes("level") && low.includes("select")) return "levelselect";
+    if(low === "start" || low.includes("start")) return "start";
+    if(low === "trailer") return "trailer";
     if(low === "wait") return "wait";
 
     return low;
@@ -287,27 +288,19 @@
       return;
     }
 
+    // ✅ tu preferencia: navegación por pantalla, SIN botones de niveles
     if(stage === "levelselect"){
       el.innerHTML = `<div class="sectionTitle">Level Select</div>`;
-
       const nav = document.createElement("div");
       nav.className = "grid3";
       nav.appendChild(mk("LEFT", "LEFT", "btn"));
       nav.appendChild(mk("PLAY", "PLAY", "btn alt"));
       nav.appendChild(mk("RIGHT", "RIGHT", "btn"));
       el.appendChild(nav);
-
-      const g = document.createElement("div");
-      g.className = "grid2";
-      g.style.marginTop = "10px";
-      g.appendChild(mk("LEVEL 1", "LEVEL_1", "btn accent"));
-      g.appendChild(mk("LEVEL 2", "LEVEL_2", "btn accent"));
-      g.appendChild(mk("LEVEL 3", "LEVEL_3", "btn accent"));
-      el.appendChild(g);
-
       return;
     }
 
+    // ✅ botones de juego (se muestran también si el stage es level1/level2/etc)
     if(stage === "level"){
       el.innerHTML = `<div class="sectionTitle">Nivel (${active || uiMode})</div>`;
       const g = document.createElement("div");
