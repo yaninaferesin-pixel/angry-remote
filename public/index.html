@@ -137,7 +137,6 @@
 
   const $ = (id)=>document.getElementById(id);
 
-  // Leer code desde URL (?code=XXXX)
   (function readCodeFromUrl(){
     const p = new URLSearchParams(location.search);
     const c = (p.get("code") || "").trim().toUpperCase();
@@ -211,13 +210,12 @@
     try{
       const res = await fetch(`/api/state?code=${encodeURIComponent(roomCode)}`);
       const data = await res.json();
-
       lastPresence = data;
 
-      const stage = data?.stage || "—";
+      const stageRaw = data?.stage || "—";
       const active = data?.active || "—";
-      $("stageTxt").textContent = stage;
-      $("detectedTxt").textContent = stage;
+      $("stageTxt").textContent = stageRaw;
+      $("detectedTxt").textContent = stageRaw;
       $("activeTxt").textContent = active;
 
       const now = Date.now();
@@ -234,12 +232,30 @@
     }
   }
 
+  function normalizeStage(s){
+    s = String(s || "").trim();
+    const low = s.toLowerCase();
+
+    // aliases comunes
+    if(low === "levelselect" || low === "level_select" || low === "level-select") return "levelselect";
+    if(low === "startscene" || low === "start_scene") return "start";
+    if(low === "trailer") return "trailer";
+    if(low === "level") return "level";
+    if(low === "wait") return "wait";
+    if(low === "start") return "start";
+
+    // fallback: si viene algo como "LevelSelect" (camelcase)
+    if(low.includes("level") && low.includes("select")) return "levelselect";
+
+    return low;
+  }
+
   function renderContent(presence){
     const el = $("content");
     el.innerHTML = "";
 
-    const stage = (presence?.stage || "").toLowerCase();
-    const active = presence?.active || "";
+    const stage = normalizeStage(presence?.stage);
+    const active = (presence?.active || "");
 
     if(!stage){
       el.innerHTML = `<div class="muted">Esperando presencia...</div>`;
@@ -264,21 +280,20 @@
       return;
     }
 
-    // ✅ TRAILER
     if(stage === "trailer"){
       el.innerHTML = `<div class="sectionTitle">Trailer</div>`;
       const g = document.createElement("div");
       g.className = "grid2";
+      // ✅ SOLO STOP (sin VOLVER)
       g.appendChild(mk("STOP", "STOPTRAILER", "btn danger"));
-      g.appendChild(mk("VOLVER", "HOME", "btn alt"));
       el.appendChild(g);
       return;
     }
 
-    // ✅ LEVEL SELECT con LEFT / PLAY / RIGHT
     if(stage === "levelselect"){
       el.innerHTML = `<div class="sectionTitle">Level Select</div>`;
 
+      // ✅ navegación que querías
       const nav = document.createElement("div");
       nav.className = "grid3";
       nav.appendChild(mk("LEFT", "LEFT", "btn"));
@@ -286,6 +301,7 @@
       nav.appendChild(mk("RIGHT", "RIGHT", "btn"));
       el.appendChild(nav);
 
+      // ✅ tus accesos directos (si los querés dejar)
       const g = document.createElement("div");
       g.className = "grid2";
       g.style.marginTop = "10px";
@@ -299,7 +315,6 @@
 
     if(stage === "level"){
       el.innerHTML = `<div class="sectionTitle">Nivel (${active || uiMode})</div>`;
-
       const g = document.createElement("div");
       g.className = "grid2";
       g.appendChild(mk("Rita", "SLOT0", "btn accent"));
