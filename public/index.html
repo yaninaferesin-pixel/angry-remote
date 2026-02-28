@@ -2,460 +2,424 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Angry Remote</title>
-
   <style>
     :root{
-      --mint:#8ff0d5;
-      --bg:#06162a;
-      --panel:#0b1f36;
-      --panel2:#0a1a2d;
-      --txt:#eaf2ff;
-      --muted:rgba(234,242,255,.65);
+      --bg:#0c1630;
+      --card:#0f213f;
+      --stroke:rgba(255,255,255,.18);
+      --txt:rgba(255,255,255,.92);
 
-      --violet1:#ede7ff;
-      --violet2:#cdbbff;
-      --violet3:#9b7dff;
-      --violet4:#6a4cff;
-      --violet5:#3c22d8;
-
-      --red:#ff3b3b;
-      --cyan:#16d3ff;
-      --radius:18px;
+      /* después lo ajustamos a verde menta + violetas */
+      --btn:#6b5cff;
+      --btn2:#2bd3ff;
+      --danger:#ff3b3b;
+      --muted:rgba(255,255,255,.08);
     }
 
-    /* Font opcional: subí public/fonts/CCThisManThisMonsterVariable.chew */
-    @font-face{
-      font-family:"CCThisManThisMonster";
-      src:url("/fonts/CCThisManThisMonsterVariable.woff2") format("chew");
-      font-weight:100 900;
-      font-style:normal;
-      font-display:swap;
-    }
-
-    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: "CCThisManThisMonster", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 600px at 50% -100px, rgba(143,240,213,.28), transparent),
-                  linear-gradient(180deg, #07172d, #041021);
+      background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.12), transparent), var(--bg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       color:var(--txt);
-      min-height:100vh;
-      display:flex;
-      justify-content:center;
-      padding:18px 12px 28px;
     }
 
-    .wrap{width:min(560px, 100%);}
-
-    .top{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-      margin-bottom:12px;
-    }
+    .wrap{ max-width: 520px; margin: 0 auto; padding: 14px; }
+    .pillrow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .pill{
-      background: rgba(255,255,255,.1);
-      border:1px solid rgba(255,255,255,.14);
-      padding:8px 12px;
+      padding:10px 14px;
       border-radius:999px;
-      font-size:14px;
-      color:var(--muted);
-      display:flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke);
+      font-weight:600;
+      letter-spacing:.2px;
     }
-    .dot{width:10px; height:10px; border-radius:99px; background:#777}
-    .dot.on{background:#20d57a}
-    .dot.off{background:#ff3b3b}
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      display:inline-block;margin-right:8px;
+      background:#f33;
+    }
+    .dot.on{ background:#23d18b; }
 
     .card{
-      background: linear-gradient(180deg, rgba(143,240,213,.10), rgba(255,255,255,.06));
-      border:1px solid rgba(255,255,255,.14);
-      border-radius: var(--radius);
+      margin-top:14px;
+      background:rgba(0,0,0,.18);
+      border:1px solid var(--stroke);
+      border-radius:18px;
       padding:14px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.25);
     }
-    .row{display:flex; gap:10px; align-items:center}
-    .row + .row{margin-top:10px}
-
+    .row{ display:flex; gap:10px; }
     input{
       flex:1;
-      background: rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.18);
-      border-radius: 14px;
-      padding:14px 14px;
+      background:rgba(0,0,0,.25);
+      border:1px solid var(--stroke);
+      border-radius:14px;
       color:var(--txt);
+      padding:12px 14px;
       font-size:18px;
       outline:none;
     }
-
-    .btn{
+    button{
       border:0;
-      border-radius: 14px;
+      border-radius:16px;
       padding:14px 14px;
+      font-size:18px;
       font-weight:800;
-      letter-spacing:.5px;
-      font-size:16px;
-      color:#1a1333;
+      color:white;
+      background:var(--btn);
       cursor:pointer;
       user-select:none;
-      touch-action: manipulation;
-      min-height:52px;
+      -webkit-tap-highlight-color: transparent;
+      flex:1;
     }
-    .btn:active{transform: translateY(1px)}
-    .btn.v1{background:var(--violet1)}
-    .btn.v2{background:var(--violet2)}
-    .btn.v3{background:var(--violet3); color:#0b0722}
-    .btn.v4{background:var(--violet4); color:#fff}
-    .btn.v5{background:var(--violet5); color:#fff}
-    .btn.cyan{background:var(--cyan); color:#002534}
-    .btn.red{background:var(--red); color:#fff}
-    .btn.ghost{
-      background: rgba(255,255,255,.12);
-      color: var(--txt);
-      border:1px solid rgba(255,255,255,.16);
+    button.secondary{ background:var(--btn2); }
+    button.danger{ background:var(--danger); }
+    button.ghost{
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--stroke);
+      color:rgba(255,255,255,.65);
     }
-    .btn:disabled{opacity:.45; cursor:not-allowed}
+    button:disabled{
+      opacity:.35;
+      cursor:not-allowed;
+    }
 
-    h3{
-      margin:10px 0 8px;
-      font-size:18px;
-      letter-spacing:.3px;
-    }
-    .hint{color:var(--muted); font-size:14px; line-height:1.25}
-    .sep{height:1px; background: rgba(255,255,255,.12); margin:12px 0}
+    .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .grid1{ display:grid; grid-template-columns:1fr; gap:10px; }
 
-    /* Paneles por stage */
-    .stageBlock{display:none}
-    .stageBlock.on{display:block}
+    .hint{ opacity:.75; line-height:1.2; margin:10px 0; }
+    .small{ opacity:.7; font-size:14px; }
 
     /* Slingshot pad */
     .pad{
       margin-top:10px;
-      background: linear-gradient(180deg, rgba(143,240,213,.20), rgba(0,0,0,.15));
-      border:1px solid rgba(255,255,255,.16);
-      border-radius: 18px;
-      height:240px;
+      height:260px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
       position:relative;
       overflow:hidden;
-      touch-action:none;
+      touch-action:none; /* clave para arrastre */
     }
-    .pad::before{
-      content:"SLINGSHOT PAD";
-      position:absolute;
-      left:14px; top:12px;
-      font-size:12px;
-      letter-spacing:1px;
-      color:rgba(255,255,255,.65);
+    .pad .center{
+      position:absolute; left:50%; top:50%;
+      width:10px; height:10px; border-radius:50%;
+      transform:translate(-50%,-50%);
+      background:rgba(255,255,255,.6);
     }
-    .cross{
-      position:absolute;
-      width:18px; height:18px;
-      border-radius:50%;
-      border:2px solid rgba(255,255,255,.85);
-      transform: translate(-50%,-50%);
-      pointer-events:none;
-      display:none;
+    .pad .stick{
+      position:absolute; left:50%; top:50%;
+      width:2px; height:2px;
+      background:rgba(255,255,255,.65);
+      transform-origin:0 0;
     }
-    .cross.on{display:block}
-    .footer{
-      margin-top:10px;
-      font-size:13px;
-      color:rgba(255,255,255,.7);
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    .pad .label{
+      position:absolute; left:12px; top:10px;
+      opacity:.85; font-weight:700;
     }
-    .small{font-size:12px; color:rgba(255,255,255,.65)}
+
+    .log{ margin-top:8px; font-size:14px; opacity:.85; }
+    .ok{ color:#23d18b; }
   </style>
 </head>
 
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="pill"><strong>CODE:</strong> <span id="codeLabel">----</span></div>
-    <div class="pill"><span class="dot off" id="onlineDot"></span> <span id="onlineTxt">offline</span></div>
-    <div class="pill"><strong>Stage:</strong> <span id="stageLabel">unknown</span></div>
-    <div class="pill"><strong>Activo:</strong> <span id="activeLabel">P1</span></div>
-  </div>
-
-  <div class="card">
-    <div class="hint">
-      Escaneá el QR. Esta botonera cambia sola según la escena (presence/state).
-      Detectado: <b id="detectedStage">unknown</b>
+  <div class="wrap">
+    <div class="pillrow">
+      <div class="pill"><span class="small">CODE:</span> <span id="codeLabel">----</span></div>
+      <div class="pill"><span class="dot" id="onlineDot"></span><span id="onlineLabel">offline</span></div>
+      <div class="pill"><span class="small">Stage:</span> <span id="stageLabel">-</span></div>
+      <div class="pill"><span class="small">Activo:</span> <span id="activeLabel">P1</span></div>
     </div>
 
-    <div class="sep"></div>
-
-    <div class="row">
-      <input id="codeInput" placeholder="CÓDIGO" autocomplete="off" />
-      <button class="btn v4" id="okBtn">OK</button>
-    </div>
-
-    <div class="row">
-      <button class="btn v3" id="p1Btn" style="flex:1">Player 1</button>
-      <button class="btn ghost" id="p2Btn" style="flex:1">Player 2</button>
-      <button class="btn ghost" id="waitBtn" style="flex:1">Espera</button>
-    </div>
-
-    <div class="sep"></div>
-
-    <!-- START -->
-    <div id="stage_start" class="stageBlock">
-      <h3>Start</h3>
-      <div class="row">
-        <button class="btn v4" style="flex:1" data-cmd="PLAY">PLAY</button>
-        <button class="btn cyan" style="flex:1" data-cmd="TRAILER">TRAILER</button>
-      </div>
-    </div>
-
-    <!-- SELECT -->
-    <div id="stage_select" class="stageBlock">
-      <h3>Level Select</h3>
-      <div class="row">
-        <button class="btn v2" style="flex:1" data-cmd="LEFT">LEFT</button>
-        <button class="btn cyan" style="flex:1" data-cmd="PLAY">PLAY</button>
-        <button class="btn v2" style="flex:1" data-cmd="RIGHT">RIGHT</button>
-      </div>
-    </div>
-
-    <!-- TRAILER -->
-    <div id="stage_trailer" class="stageBlock">
-      <h3>Trailer</h3>
-      <div class="row">
-        <button class="btn red" style="flex:1" data-cmd="STOPTRAILER">STOP</button>
-      </div>
-    </div>
-
-    <!-- LEVEL -->
-    <div id="stage_level" class="stageBlock">
-      <h3>Level</h3>
+    <div class="card">
+      <div class="hint">Escaneá el QR. La botonera cambia sola según la escena (presence/state).</div>
 
       <div class="row">
-        <button class="btn v1" style="flex:1" data-cmd="SLOT0">SLOT 1</button>
-        <button class="btn v1" style="flex:1" data-cmd="SLOT1">SLOT 2</button>
-        <button class="btn v1" style="flex:1" data-cmd="SLOT2">SLOT 3</button>
-      </div>
-      <div class="row">
-        <button class="btn v1" style="flex:1" data-cmd="SLOT3">SLOT 4</button>
-        <button class="btn v1" style="flex:1" data-cmd="SLOT4">SLOT 5</button>
+        <input id="codeInput" placeholder="CODE" />
+        <button id="okBtn">OK</button>
       </div>
 
-      <div class="row">
-        <button class="btn v5" style="flex:1" data-cmd="HAT">PODER ARGENTINO</button>
-        <button class="btn v4" style="flex:1" data-cmd="POWER">POWER (2do toque)</button>
+      <div id="panel"></div>
+
+      <div class="grid2" style="margin-top:10px;">
+        <button class="ghost" id="homeBtn">HOME</button>
+        <button class="ghost" id="restartBtn">RESTART</button>
       </div>
 
-      <div class="pad" id="pad">
-        <div class="cross" id="cross"></div>
+      <div class="grid1" style="margin-top:10px;">
+        <button class="danger" id="exitBtn">EXIT</button>
       </div>
-      <div class="small">Arrastrá en el pad para apuntar. Soltá para lanzar. (Se envía DRAG_BEGIN / DRAG / DRAG_END)</div>
-    </div>
 
-    <div class="sep"></div>
-
-    <div class="row">
-      <button class="btn ghost" style="flex:1" data-cmd="HOME">HOME</button>
-      <button class="btn ghost" style="flex:1" data-cmd="RESTART">RESTART</button>
-    </div>
-    <div class="row">
-      <button class="btn red" style="flex:1" data-cmd="EXIT">EXIT</button>
-    </div>
-
-    <div class="footer">
-      <span id="lastCmd">cmd: -</span>
+      <div class="log" id="lastCmd"></div>
     </div>
   </div>
-</div>
 
 <script>
-  const API = {
-    cmd: "/api/cmd",
-    pollState: "/api/state?code=",
-  };
+  const $ = (id)=>document.getElementById(id);
 
-  let code = "";
-  let active = "P1"; // P1/P2/WAIT
-  let stage = "unknown";
-  let online = false;
+  // code from url
+  const url = new URL(location.href);
+  let CODE = (url.searchParams.get("code") || "").trim().toUpperCase();
+  $("codeInput").value = CODE || "";
+  $("codeLabel").textContent = CODE || "----";
 
-  const els = {
-    codeLabel: document.getElementById("codeLabel"),
-    onlineDot: document.getElementById("onlineDot"),
-    onlineTxt: document.getElementById("onlineTxt"),
-    stageLabel: document.getElementById("stageLabel"),
-    detectedStage: document.getElementById("detectedStage"),
-    activeLabel: document.getElementById("activeLabel"),
-    codeInput: document.getElementById("codeInput"),
-    okBtn: document.getElementById("okBtn"),
-    lastCmd: document.getElementById("lastCmd"),
-    p1Btn: document.getElementById("p1Btn"),
-    p2Btn: document.getElementById("p2Btn"),
-    waitBtn: document.getElementById("waitBtn"),
-    pad: document.getElementById("pad"),
-    cross: document.getElementById("cross"),
-  };
+  let ACTIVE = "P1";
 
-  function getUrlCode(){
-    const u = new URL(location.href);
-    const c = u.searchParams.get("code");
-    return c ? c.trim().toUpperCase() : "";
+  function setOnline(on){
+    $("onlineDot").classList.toggle("on", !!on);
+    $("onlineLabel").textContent = on ? "online" : "offline";
   }
 
-  function setCode(newCode){
-    code = (newCode || "").trim().toUpperCase();
-    els.codeLabel.textContent = code || "----";
-    els.codeInput.value = code || "";
-    const u = new URL(location.href);
-    if(code) u.searchParams.set("code", code);
-    else u.searchParams.delete("code");
-    history.replaceState({}, "", u.toString());
+  function setStage(s){
+    $("stageLabel").textContent = s || "-";
   }
-
   function setActive(a){
-    active = a;
-    els.activeLabel.textContent = a;
-    els.p1Btn.className = "btn " + (a==="P1" ? "v3" : "ghost");
-    els.p2Btn.className = "btn " + (a==="P2" ? "v3" : "ghost");
-    els.waitBtn.className = "btn " + (a==="WAIT" ? "v3" : "ghost");
+    $("activeLabel").textContent = a || "";
   }
 
-  function normalizeStage(s){
-    s = (s || "").toLowerCase().trim();
-    if(!s) return "unknown";
-    if(s === "start") return "start";
-    if(s === "select") return "select";
-    if(s === "trailer") return "trailer";
-    // level, level1, level2...
-    if(s === "level") return "level";
-    if(s.startsWith("level")) return "level";
-    return s;
-  }
-
-  function showStage(s){
-    document.querySelectorAll(".stageBlock").forEach(b => b.classList.remove("on"));
-    const id = "stage_" + s;
-    const block = document.getElementById(id);
-    if(block) block.classList.add("on");
-  }
-
-  async function sendCmd(shortCmd, payload = null){
-    if(!code) return;
-    const full = `${active}_${shortCmd}${payload ? ":" + payload : ""}`;
-    els.lastCmd.textContent = "cmd: " + full;
-
-    try{
-      await fetch(API.cmd, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code, cmd: full })
-      });
-    }catch(e){}
-  }
-
-  // Botones
-  document.querySelectorAll("[data-cmd]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const c = btn.getAttribute("data-cmd");
-      sendCmd(c);
+  async function api(path, body){
+    const res = await fetch(path, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
     });
-  });
+    return res.json();
+  }
 
-  els.okBtn.addEventListener("click", ()=> setCode(els.codeInput.value));
-  els.p1Btn.addEventListener("click", ()=> setActive("P1"));
-  els.p2Btn.addEventListener("click", ()=> setActive("P2"));
-  els.waitBtn.addEventListener("click", ()=> setActive("WAIT"));
+  async function send(cmd){
+    if(!CODE) return;
+    const full = `${ACTIVE}_${cmd}`;
+    $("lastCmd").innerHTML = `<span class="ok">✅</span> cmd: ${full}`;
+    await api("/api/send", { code: CODE, cmd: full });
+  }
 
-  // Poll state
-  async function pollState(){
-    if(!code){
-      online = false;
-      renderStatus();
+  function stageKey(stage){
+    // Normaliza: "level1" "Level1" "level" => "level"
+    const s = (stage||"").toLowerCase();
+    if (s.startsWith("level")) return "level";
+    if (s.includes("select")) return "select";
+    if (s.includes("trailer")) return "trailer";
+    if (s.includes("start")) return "start";
+    return s || "start";
+  }
+
+  // ----- UI builders -----
+  function btn(text, cmd, cls=""){
+    const b = document.createElement("button");
+    b.textContent = text;
+    if (cls) b.className = cls;
+    b.onclick = ()=>send(cmd);
+    return b;
+  }
+
+  function renderPanel(stage){
+    const key = stageKey(stage);
+    const panel = $("panel");
+    panel.innerHTML = "";
+
+    if(key === "start"){
+      panel.appendChild(document.createElement("div")).className="small";
+      panel.lastChild.textContent = "Start";
+
+      const g = document.createElement("div");
+      g.className="grid2";
+      g.style.marginTop="10px";
+      g.appendChild(btn("PLAY","PLAY"));
+      g.appendChild(btn("TRAILER","TRAILER","secondary"));
+      panel.appendChild(g);
       return;
     }
+
+    if(key === "trailer"){
+      panel.appendChild(document.createElement("div")).className="small";
+      panel.lastChild.textContent = "Trailer";
+
+      const g = document.createElement("div");
+      g.className="grid1";
+      g.style.marginTop="10px";
+      g.appendChild(btn("STOP","STOPTRAILER","danger"));
+      panel.appendChild(g);
+      return;
+    }
+
+    if(key === "select"){
+      panel.appendChild(document.createElement("div")).className="small";
+      panel.lastChild.textContent = "Level Select";
+
+      const g1 = document.createElement("div");
+      g1.className="grid3";
+      g1.style.marginTop="10px";
+      g1.appendChild(btn("LEFT","LEFT","ghost"));
+      g1.appendChild(btn("PLAY","PLAY","secondary"));
+      g1.appendChild(btn("RIGHT","RIGHT","ghost"));
+      panel.appendChild(g1);
+
+      // Si querés esconder levels directos, borrá este bloque.
+      const g2 = document.createElement("div");
+      g2.className="grid2";
+      g2.style.marginTop="10px";
+      g2.appendChild(btn("LEVEL 1","LEVEL1"));
+      g2.appendChild(btn("LEVEL 2","LEVEL2"));
+      panel.appendChild(g2);
+
+      const g3 = document.createElement("div");
+      g3.className="grid1";
+      g3.style.marginTop="10px";
+      g3.appendChild(btn("LEVEL 3","LEVEL3"));
+      panel.appendChild(g3);
+      return;
+    }
+
+    if(key === "level"){
+      panel.appendChild(document.createElement("div")).className="small";
+      panel.lastChild.textContent = "Level";
+
+      // Slots
+      const slots = document.createElement("div");
+      slots.className="grid3";
+      slots.style.marginTop="10px";
+      slots.appendChild(btn("SLOT 1","SLOT1","ghost"));
+      slots.appendChild(btn("SLOT 2","SLOT2","ghost"));
+      slots.appendChild(btn("SLOT 3","SLOT3","ghost"));
+      slots.appendChild(btn("SLOT 4","SLOT4","ghost"));
+      slots.appendChild(btn("SLOT 5","SLOT5","ghost"));
+      panel.appendChild(slots);
+
+      // Power buttons
+      const pow = document.createElement("div");
+      pow.className="grid2";
+      pow.style.marginTop="10px";
+      pow.appendChild(btn("POWER","POWER","secondary"));
+      pow.appendChild(btn("HAT","HAT","danger"));
+      panel.appendChild(pow);
+
+      // Slingshot pad
+      const pad = document.createElement("div");
+      pad.className = "pad";
+      pad.innerHTML = `
+        <div class="label">SLINGSHOT PAD (drag & release)</div>
+        <div class="center"></div>
+        <div class="stick" id="stick"></div>
+      `;
+      panel.appendChild(pad);
+
+      setupPad(pad);
+      return;
+    }
+
+    panel.appendChild(document.createElement("div")).className="small";
+    panel.lastChild.textContent = `Stage desconocido: ${stage}`;
+  }
+
+  // ----- Slingshot pad logic (dx/dy normalizado) -----
+  function setupPad(pad){
+    const stick = pad.querySelector("#stick");
+    let dragging = false;
+    let startX = 0, startY = 0;
+
+    function sendVec(kind, dx, dy){
+      // Invertimos Y porque pantalla hacia abajo es +y,
+      // y en Unity queremos +y hacia arriba.
+      const ny = -dy;
+
+      // clamp y mandar
+      const cx = Math.max(-1, Math.min(1, dx));
+      const cy = Math.max(-1, Math.min(1, ny));
+      send(`${kind}:${cx.toFixed(3)},${cy.toFixed(3)}`);
+    }
+
+    function setStick(dx, dy){
+      const w = pad.clientWidth;
+      const h = pad.clientHeight;
+      const radius = Math.min(w,h)*0.35;
+
+      const px = dx * radius;
+      const py = dy * radius;
+
+      stick.style.transform = `translate(-50%,-50%) translate(${px}px,${py}px)`;
+      stick.style.width = `${Math.sqrt(px*px+py*py)}px`;
+      stick.style.height = `2px`;
+      stick.style.left = "50%";
+      stick.style.top = "50%";
+      stick.style.transformOrigin = "0 0";
+      stick.style.rotate = `${Math.atan2(py, px) * 180/Math.PI}deg`;
+    }
+
+    pad.addEventListener("pointerdown",(e)=>{
+      dragging = true;
+      pad.setPointerCapture(e.pointerId);
+      startX = e.clientX;
+      startY = e.clientY;
+      setStick(0,0);
+      sendVec("DRAG_BEGIN", 0, 0);
+    });
+
+    pad.addEventListener("pointermove",(e)=>{
+      if(!dragging) return;
+      const w = pad.clientWidth;
+      const h = pad.clientHeight;
+      const radius = Math.min(w,h)*0.35;
+
+      const dx = (e.clientX - startX) / radius;
+      const dy = (e.clientY - startY) / radius;
+
+      setStick(dx,dy);
+      sendVec("DRAG", dx, dy);
+    });
+
+    function end(e){
+      if(!dragging) return;
+      dragging = false;
+      setStick(0,0);
+      send("DRAG_END");
+    }
+
+    pad.addEventListener("pointerup", end);
+    pad.addEventListener("pointercancel", end);
+    pad.addEventListener("pointerleave", end);
+  }
+
+  // ----- Presence polling -----
+  async function fetchState(){
+    if(!CODE) return { ok:false };
+    const res = await fetch(`/api/state?code=${encodeURIComponent(CODE)}`);
+    return res.json();
+  }
+
+  async function loop(){
     try{
-      const res = await fetch(API.pollState + encodeURIComponent(code), { cache:"no-store" });
-      const j = await res.json();
-      online = !!j?.ok;
-      stage = normalizeStage(j?.stage);
-      renderStatus();
+      const st = await fetchState();
+      if(st && st.ok){
+        setOnline(true);
+        setStage(st.stage || "-");
+        setActive(st.active || "");
+        renderPanel(st.stage || "start");
+      }else{
+        setOnline(false);
+      }
     }catch(e){
-      online = false;
-      renderStatus();
+      setOnline(false);
     }
+    setTimeout(loop, 700);
   }
 
-  function renderStatus(){
-    els.onlineDot.className = "dot " + (online ? "on" : "off");
-    els.onlineTxt.textContent = online ? "online" : "offline";
-    els.stageLabel.textContent = stage;
-    els.detectedStage.textContent = stage;
-    showStage(stage);
-  }
+  $("okBtn").onclick = ()=>{
+    CODE = ($("codeInput").value || "").trim().toUpperCase();
+    $("codeLabel").textContent = CODE || "----";
+    url.searchParams.set("code", CODE);
+    history.replaceState(null,"",url.toString());
+    loop();
+  };
 
-  // Slingshot pad → manda coords normalizadas 0..1
-  let dragging = false;
-  let lastSend = 0;
+  $("homeBtn").onclick = ()=>send("HOME");
+  $("restartBtn").onclick = ()=>send("RESTART");
+  $("exitBtn").onclick = ()=>send("EXIT");
 
-  function normXY(ev){
-    const r = els.pad.getBoundingClientRect();
-    const x = (ev.clientX - r.left) / r.width;
-    const y = (ev.clientY - r.top) / r.height;
-    const nx = Math.max(0, Math.min(1, x));
-    const ny = Math.max(0, Math.min(1, y));
-    return { nx, ny, cx: ev.clientX, cy: ev.clientY, r };
-  }
-
-  function showCross(nx, ny, r){
-    els.cross.classList.add("on");
-    els.cross.style.left = (nx * r.width) + "px";
-    els.cross.style.top  = (ny * r.height) + "px";
-  }
-
-  function hideCross(){
-    els.cross.classList.remove("on");
-  }
-
-  function sendDrag(type, nx, ny){
-    // payload "x,y"
-    const payload = nx.toFixed(4) + "," + ny.toFixed(4);
-    sendCmd(type, payload);
-  }
-
-  els.pad.addEventListener("pointerdown", (ev)=>{
-    if(stage !== "level") return;
-    dragging = true;
-    els.pad.setPointerCapture(ev.pointerId);
-    const {nx, ny, r} = normXY(ev);
-    showCross(nx, ny, r);
-    sendDrag("DRAG_BEGIN", nx, ny);
-  });
-
-  els.pad.addEventListener("pointermove", (ev)=>{
-    if(!dragging || stage !== "level") return;
-    const now = performance.now();
-    const {nx, ny, r} = normXY(ev);
-    showCross(nx, ny, r);
-
-    // throttle ~30fps
-    if(now - lastSend > 33){
-      lastSend = now;
-      sendDrag("DRAG", nx, ny);
-    }
-  });
-
-  function endDrag(ev){
-    if(!dragging) return;
-    dragging = false;
-    const {nx, ny, r} = normXY(ev);
-    showCross(nx, ny, r);
-    sendDrag("DRAG_END", nx, ny);
-    setTimeout(hideCross, 80);
-  }
-  els.pad.addEventListener("pointerup", endDrag);
-  els.pad.addEventListener("pointercancel", endDrag);
-
-  // boot
-  setCode(getUrlCode());
-  setActive("P1");
-  renderStatus();
-  setInterval(pollState, 250);
+  // start
+  if(CODE) loop();
 </script>
 </body>
 </html>
