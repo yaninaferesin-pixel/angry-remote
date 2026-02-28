@@ -81,7 +81,6 @@
     .sectionTitle{font-weight:900; margin:8px 2px 10px; font-size:14px; color:#cfe0ff; opacity:.95}
     .divider{height:1px;background:rgba(255,255,255,08); margin:12px 0}
     .hint{font-size:12px; color:var(--muted); margin-top:8px}
-    .warn{color:#ffd36e}
   </style>
 </head>
 <body>
@@ -138,14 +137,13 @@
 
   const $ = (id)=>document.getElementById(id);
 
-  // Leer code desde URL (?code=XXXX) para que funcione con GetJoinUrl() de Unity
+  // Leer code desde URL (?code=XXXX)
   (function readCodeFromUrl(){
     const p = new URLSearchParams(location.search);
     const c = (p.get("code") || "").trim().toUpperCase();
     if(c){
       roomCode = c;
       localStorage.setItem("ROOM_CODE", roomCode);
-      // history.replaceState({}, "", location.pathname); // si querés limpiar la URL
     }
   })();
 
@@ -166,9 +164,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: roomCode, cmd })
       });
-      const json = await res.json().catch(()=>null);
+      await res.json().catch(()=>null);
       setHint(`✅ cmd: ${cmd}`);
-      return json;
     }catch(e){
       setHint("❌ Error enviando cmd.");
     }
@@ -192,9 +189,8 @@
     setHint(roomCode ? "✅ Code seteado." : "⚠️ Sin code.");
   };
 
-  // Botones globales (los mando como comandos también, con prefijo del tab actual)
   function prefixed(cmd){
-    const prefix = (uiMode === "WAIT") ? "WAIT" : uiMode; // P1/P2/WAIT
+    const prefix = (uiMode === "WAIT") ? "WAIT" : uiMode;
     return `${prefix}_${cmd}`;
   }
 
@@ -216,7 +212,6 @@
       const res = await fetch(`/api/state?code=${encodeURIComponent(roomCode)}`);
       const data = await res.json();
 
-      // server responde { ok:true, stage, active, updatedAt }
       lastPresence = data;
 
       const stage = data?.stage || "—";
@@ -225,7 +220,6 @@
       $("detectedTxt").textContent = stage;
       $("activeTxt").textContent = active;
 
-      // online/offline: si updatedAt es reciente
       const now = Date.now();
       const updatedAt = Number(data?.updatedAt || 0);
       const online = updatedAt > 0 && (now - updatedAt) < 7000;
@@ -252,12 +246,11 @@
       return;
     }
 
-    // helper para botones en grilla
-    const mk = (label, cmd, css="btn", onClickOverride=null)=>{
+    const mk = (label, cmd, css="btn")=>{
       const d = document.createElement("div");
       d.className = css;
       d.textContent = label;
-      d.onclick = onClickOverride ? onClickOverride : (()=>sendCmd(prefixed(cmd)));
+      d.onclick = ()=>sendCmd(prefixed(cmd));
       return d;
     };
 
@@ -265,22 +258,13 @@
       el.innerHTML = `<div class="sectionTitle">Start</div>`;
       const g = document.createElement("div");
       g.className = "grid2";
-
       g.appendChild(mk("PLAY", "PLAY", "btn accent"));
-
-      // TRAILER: manda comando y además cambia panel inmediato (feedback),
-      // pero Unity sigue siendo la fuente real (por /api/state).
-      g.appendChild(mk("TRAILER", "TRAILER", "btn alt", async ()=>{
-        await sendCmd(prefixed("TRAILER"));
-        // feedback inmediato:
-        renderContent({ stage:"trailer", active: presence?.active || (uiMode==="WAIT"?"WAIT":uiMode) });
-      }));
-
+      g.appendChild(mk("TRAILER", "TRAILER", "btn alt"));
       el.appendChild(g);
       return;
     }
 
-    // ✅ NUEVO: stage trailer
+    // ✅ TRAILER
     if(stage === "trailer"){
       el.innerHTML = `<div class="sectionTitle">Trailer</div>`;
       const g = document.createElement("div");
@@ -288,23 +272,28 @@
       g.appendChild(mk("STOP", "STOPTRAILER", "btn danger"));
       g.appendChild(mk("VOLVER", "HOME", "btn alt"));
       el.appendChild(g);
-
-      el.appendChild(Object.assign(document.createElement("div"), {
-        className:"hint",
-        textContent:"STOP manda P1_STOPTRAILER / P2_STOPTRAILER según tu tab."
-      }));
       return;
     }
 
+    // ✅ LEVEL SELECT con LEFT / PLAY / RIGHT
     if(stage === "levelselect"){
       el.innerHTML = `<div class="sectionTitle">Level Select</div>`;
+
+      const nav = document.createElement("div");
+      nav.className = "grid3";
+      nav.appendChild(mk("LEFT", "LEFT", "btn"));
+      nav.appendChild(mk("PLAY", "PLAY", "btn alt"));
+      nav.appendChild(mk("RIGHT", "RIGHT", "btn"));
+      el.appendChild(nav);
+
       const g = document.createElement("div");
       g.className = "grid2";
+      g.style.marginTop = "10px";
       g.appendChild(mk("LEVEL 1", "LEVEL_1", "btn accent"));
       g.appendChild(mk("LEVEL 2", "LEVEL_2", "btn accent"));
       g.appendChild(mk("LEVEL 3", "LEVEL_3", "btn accent"));
-      g.appendChild(mk("PLAY", "PLAY", "btn alt"));
       el.appendChild(g);
+
       return;
     }
 
@@ -320,11 +309,6 @@
       g.appendChild(mk("Vaquita", "SLOT4", "btn accent"));
       g.appendChild(mk("Poder Argentino 🇦🇷", "HAT", "btn alt"));
       el.appendChild(g);
-
-      el.appendChild(Object.assign(document.createElement("div"), {
-        className:"hint",
-        textContent:"Tip: los comandos salen como P1_SLOT0 / P2_HAT. Unity los recibe por /api/poll."
-      }));
       return;
     }
 
