@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 
 // -------- In-memory state --------
-const stateByCode = new Map(); // code -> { stage, active, ts }
+const stateByCode = new Map();   // code -> { stage, active, ts }
 const cmdQueueByCode = new Map(); // code -> [cmd strings]
 
 // -------- Helpers --------
@@ -45,7 +45,7 @@ app.get("/api/state", (req, res) => {
   return res.json({ ok: true, ...st });
 });
 
-// -------- API: send command --------
+// -------- API: send command (browser -> unity) --------
 app.post("/api/send", (req, res) => {
   const code = normCode(req.body?.code);
   const cmd = (req.body?.cmd || "").trim();
@@ -57,13 +57,19 @@ app.post("/api/send", (req, res) => {
   return res.json({ ok: true });
 });
 
-// alias /api/cmd -> /api/send
+// alias /api/cmd
 app.post("/api/cmd", (req, res) => {
-  req.url = "/api/send";
-  app._router.handle(req, res, () => {});
+  const code = normCode(req.body?.code);
+  const cmd = (req.body?.cmd || "").trim();
+  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
+  if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
+
+  const q = ensureQueue(code);
+  q.push(cmd);
+  return res.json({ ok: true });
 });
 
-// -------- API: poll (Unity) --------
+// -------- API: poll (unity -> server) --------
 app.get("/api/poll", (req, res) => {
   const code = normCode(req.query?.code);
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
@@ -76,7 +82,6 @@ app.get("/api/poll", (req, res) => {
 // -------- Static --------
 const publicDir = path.join(__dirname, "public");
 const publicIndex = path.join(publicDir, "index.html");
-const rootIndex = path.join(__dirname, "index.html");
 
 if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir));
@@ -84,9 +89,10 @@ if (fs.existsSync(publicDir)) {
 
 app.get("/", (req, res) => {
   if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
-  if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
-  return res.status(404).send("index.html not found");
+  return res.status(404).send("public/index.html not found");
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Remote server running on port", PORT));
+app.listen(PORT, () => {
+  console.log("Remote server running on port", PORT);
+});
