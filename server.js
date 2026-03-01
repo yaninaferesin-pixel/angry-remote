@@ -57,8 +57,11 @@ app.post("/api/send", (req, res) => {
   return res.json({ ok: true });
 });
 
-// alias
-app.post("/api/cmd", (req, res) => app._router.handle(req, res, () => {}));
+// alias /api/cmd -> /api/send
+app.post("/api/cmd", (req, res) => {
+  req.url = "/api/send";
+  app._router.handle(req, res);
+});
 
 // -------- API: poll (Unity) --------
 app.get("/api/poll", (req, res) => {
