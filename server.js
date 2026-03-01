@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 
 // -------- In-memory state --------
-const stateByCode = new Map();   // code -> { stage, active, ts }
+const stateByCode = new Map(); // code -> { stage, active, ts }
 const cmdQueueByCode = new Map(); // code -> [cmd strings]
 
 // -------- Helpers --------
@@ -45,7 +45,7 @@ app.get("/api/state", (req, res) => {
   return res.json({ ok: true, ...st });
 });
 
-// -------- API: send command (browser -> unity) --------
+// -------- API: send command --------
 app.post("/api/send", (req, res) => {
   const code = normCode(req.body?.code);
   const cmd = (req.body?.cmd || "").trim();
@@ -57,19 +57,10 @@ app.post("/api/send", (req, res) => {
   return res.json({ ok: true });
 });
 
-// alias /api/cmd
-app.post("/api/cmd", (req, res) => {
-  const code = normCode(req.body?.code);
-  const cmd = (req.body?.cmd || "").trim();
-  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
-  if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
+// alias
+app.post("/api/cmd", (req, res) => app._router.handle(req, res, () => {}));
 
-  const q = ensureQueue(code);
-  q.push(cmd);
-  return res.json({ ok: true });
-});
-
-// -------- API: poll (unity -> server) --------
+// -------- API: poll (Unity) --------
 app.get("/api/poll", (req, res) => {
   const code = normCode(req.query?.code);
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
@@ -79,8 +70,9 @@ app.get("/api/poll", (req, res) => {
   return res.json({ ok: true, cmd });
 });
 
-// -------- Static --------
+// -------- Static: serve index --------
 const publicDir = path.join(__dirname, "public");
+const rootIndex = path.join(__dirname, "index.html");
 const publicIndex = path.join(publicDir, "index.html");
 
 if (fs.existsSync(publicDir)) {
@@ -89,7 +81,8 @@ if (fs.existsSync(publicDir)) {
 
 app.get("/", (req, res) => {
   if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
-  return res.status(404).send("public/index.html not found");
+  if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
+  return res.status(404).send("index.html not found");
 });
 
 const PORT = process.env.PORT || 10000;
