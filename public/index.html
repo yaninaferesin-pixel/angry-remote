@@ -4,419 +4,622 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Angry Remote</title>
-
   <style>
     :root{
-      /* SOLO menta + violetas */
-      --mint-0:#e7ffed;
-      --mint-1:#c9ffce;
-      --mint-2:#a7f7ae;
+      /* verdes tipo BGP1 */
+      --mint-0:#e8fff1;
+      --mint-1:#c9f5dd;
+      --mint-2:#a8eac7;
 
-      --vio-0:#ffeffc;
-      --vio-1:#f3bcff;
-      --vio-2:#d683ff;
-      --vio-3:#c73dd9;
-      --vio-4:#5f1366;
-      --vio-5:#1e0627;
+      /* violetas */
+      --vio-0:#f2e6ff;
+      --vio-1:#dcbcff;
+      --vio-2:#b986ff;
+      --vio-3:#8a49ff;
+      --vio-4:#5a1fd6;
 
-      --ink: rgba(12,6,30,.92);
-      --radius: 18px;
-      --gap: 12px;
-      --btn-h: 68px;
-      --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --ink:#102018;
+      --card: rgba(255,255,255,.62);
+      --stroke: rgba(30,60,40,.18);
+      --shadow: 0 12px 28px rgba(0,0,0,.18);
+      --radius: 22px;
     }
 
-    *{box-sizing:border-box;}
-    html,body{height:100%; margin:0; font-family:var(--font); color:var(--ink);}
+    *{box-sizing:border-box;font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
     body{
-      background: linear-gradient(180deg, var(--mint-0) 0%, var(--mint-1) 52%, var(--mint-2) 100%);
+      margin:0;
+      color:var(--ink);
+      background: linear-gradient(180deg, var(--mint-0), var(--mint-1));
+      min-height:100vh;
       display:flex;
-      align-items:stretch;
       justify-content:center;
     }
 
     .wrap{
-      width:min(920px, 100%);
-      padding: 14px;
-      display:flex;
-      flex-direction:column;
-      gap: var(--gap);
+      width:min(520px, 100%);
+      padding:14px 12px 18px;
     }
 
     .topbar{
       display:flex;
       gap:10px;
       align-items:center;
-      justify-content:space-between;
-      padding: 10px 12px;
-      border-radius: var(--radius);
-      background: rgba(255,255,255,.55);
-      border: 1px solid rgba(18,6,39,.08);
-      backdrop-filter: blur(8px);
       flex-wrap:wrap;
+      padding:10px;
+      border-radius: 18px;
+      background: var(--card);
+      border:1px solid var(--stroke);
+      box-shadow: var(--shadow);
     }
-    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+
     .pill{
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing:.05em;
-      background: rgba(243,239,255,.9);
-      border: 1px solid rgba(18,6,39,.10);
-      user-select:none;
-      white-space:nowrap;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.55);
+      border:1px solid var(--stroke);
+      font-weight:700;
     }
-    .codeBox input{
-      width: 140px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(18,6,39,.15);
-      background: rgba(255,255,255,.75);
-      font-weight: 900;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      outline: none;
-    }
-    .pillBtn{
+
+    .btn{
       cursor:pointer;
-      background: linear-gradient(180deg, rgba(203,188,255,.95) 0%, rgba(155,131,255,.90) 55%, rgba(91,61,217,.92) 100%);
-      color:#fff;
-      border-color: rgba(18,6,39,.18);
+      border:none;
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      color:#1a1226;
+      background: linear-gradient(180deg, var(--vio-0), var(--vio-2));
+      border: 2px solid rgba(90,31,214,.25);
+      box-shadow: 0 10px 18px rgba(0,0,0,.14);
+      transition: transform .06s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: scale(.98); }
+
+    .btn-ghost{
+      background: rgba(255,255,255,.55);
+      border:1px solid var(--stroke);
+      box-shadow:none;
+      font-weight:800;
+    }
+
+    input{
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      padding:10px 12px;
+      font-weight:800;
+      background: rgba(255,255,255,.65);
+      outline:none;
+      min-width: 120px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    .stageLine{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+    }
+    .stageBox{
+      flex:1;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.55);
+      border:1px solid var(--stroke);
+      font-weight:800;
     }
 
     .panel{
-      flex: 1;
-      min-height: 560px;
-      border-radius: 26px;
+      margin-top:14px;
+      border-radius: var(--radius);
       overflow:hidden;
-      position:relative;
-      border: 1px solid rgba(18,6,39,.10);
-      background: rgba(255,255,255,.55);
-      box-shadow: 0 12px 28px rgba(18,6,39,.10);
+      border:1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.35);
     }
 
-    .bg{
-      position:absolute; inset:0;
-      background-size: cover;
-      background-position: center;
-      opacity: 1;
+    .panelHeader{
+      padding:14px 16px;
+      font-size: 22px;
+      font-weight: 1000;
+      background: rgba(255,255,255,.40);
+      border-bottom:1px solid var(--stroke);
+      backdrop-filter: blur(6px);
     }
 
-    .panelContent{
+    .panelBody{
       position:relative;
-      height:100%;
-      padding: 14px;
+      padding:14px;
+      min-height: 520px;
       display:flex;
       flex-direction:column;
-      gap: 12px;
+      gap:12px;
     }
 
-    .title{
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing:.02em;
-      padding: 10px 12px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.60);
-      border: 1px solid rgba(18,6,39,.10);
-      width: fit-content;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top:auto;
-    }
-    @media (min-width:720px){
-      .grid{ grid-template-columns: repeat(3, 1fr); }
-    }
-
-    .imgBtn{
-      height: var(--btn-h);
-      border-radius: 18px;
-      border: 1px solid rgba(18,6,39,.18);
-      background: rgba(255,255,255,.55);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 8px;
-      cursor:pointer;
-      user-select:none;
-      transition: transform .06s ease, box-shadow .06s ease;
-      box-shadow: 0 10px 20px rgba(18,6,39,.10);
-    }
-    .imgBtn:active{ transform: translateY(1px) scale(.995); box-shadow: 0 6px 14px rgba(18,6,39,.10); }
-    .imgBtn img{
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
-      filter: drop-shadow(0 3px 6px rgba(18,6,39,.18));
+    .bgImg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      opacity: .95;
       pointer-events:none;
     }
 
-    /* Overlay espera en Level1 para el que NO está en turno */
-    .overlay{
-      position:absolute;
-      inset:0;
-      display:none;
-      z-index: 50;
+    .controls{
+      position:relative;
+      margin-top:auto;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
     }
-    .overlay.show{ display:block; }
-    .overlay .panelContent{ background: rgba(255,255,255,.12); }
+
+    .imgBtn{
+      background: rgba(255,255,255,.58);
+      border:1px solid var(--stroke);
+      border-radius: 18px;
+      padding:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
+      user-select:none;
+    }
+    .imgBtn:active{ transform: scale(.99); }
+
+    .imgBtn img{
+      height: 54px;
+      width:auto;
+      image-rendering: auto;
+    }
+
+    .wide{ grid-column: 1 / -1; }
+
+    /* Área slingshot (drag) */
+    .slingArea{
+      position:relative;
+      border-radius: 18px;
+      background: rgba(255,255,255,.55);
+      border:1px solid var(--stroke);
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
+      padding:16px;
+      min-height: 160px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-weight:900;
+    }
     .hint{
+      position:absolute;
+      bottom:10px;
+      left:12px;
+      right:12px;
+      font-size:12px;
+      opacity:.85;
+      font-weight:800;
+    }
+
+    .row3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:12px;
+    }
+
+    .row5{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .row5 .wide{grid-column:1/-1}
+
+    .tag{
       font-size: 12px;
-      opacity: .95;
-      padding: 10px 12px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.60);
-      border: 1px solid rgba(18,6,39,.10);
-      width: fit-content;
+      font-weight: 900;
+      opacity:.85;
     }
   </style>
 </head>
-
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div class="row codeBox">
-        <span class="pill" id="pillPlayer">P?</span>
-        <span class="pill">SESSION</span>
+      <button id="p1Btn" class="btn btn-ghost">P1</button>
+      <button id="p2Btn" class="btn btn-ghost">P2</button>
+
+      <div class="pill">
+        <span>SESSION</span>
         <input id="codeInput" placeholder="CULA" maxlength="12" />
-        <span class="pill pillBtn" id="btnApply">APLICAR</span>
+        <button id="applyBtn" class="btn">APLICAR</button>
       </div>
 
-      <div class="row">
-        <span class="pill" id="pillStage">stage: ?</span>
-        <span class="pill" id="pillActive">active: ?</span>
-        <span class="pill" id="pillNet">net: ...</span>
+      <div class="stageLine" style="width:100%">
+        <div class="stageBox">stage: <span id="stageText">-</span></div>
+        <div class="stageBox">active: <span id="activeText">-</span></div>
+        <div class="stageBox">net: <span id="netText">...</span></div>
       </div>
     </div>
 
-    <section class="panel" id="panel">
-      <div class="bg" id="bgMain"></div>
-      <div class="panelContent">
-        <div class="title" id="title">...</div>
-        <div class="grid" id="grid"></div>
-        <div class="hint" id="hint">
-          P1: ?p=1 — P2: ?p=2
-        </div>
+    <div class="panel" id="mainPanel">
+      <div class="panelHeader" id="panelTitle">...</div>
+      <div class="panelBody" id="panelBody">
+        <!-- bg image -->
+        <img id="bgImg" class="bgImg" alt="" />
+        <!-- content injected -->
       </div>
-
-      <!-- Espera (LINDA) overlay -->
-      <div class="overlay" id="overlayWait">
-        <div class="bg" id="bgWait"></div>
-        <div class="panelContent">
-          <div class="title">ESPERA</div>
-          <div class="grid" id="gridWait"></div>
-          <div class="hint">Estás fuera de turno.</div>
-        </div>
-      </div>
-    </section>
+    </div>
   </div>
 
-  <script>
-    // ---------- helpers ----------
-    function enc(name){ return encodeURIComponent(name); }
-    function stylePng(filename){ return "style/" + enc(filename); }
-    function setBg(el, filename){ el.style.backgroundImage = `url("${stylePng(filename)}")`; }
+<script>
+  const $ = (id)=>document.getElementById(id);
 
-    function clearGrid(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+  // ----- Player detect -----
+  function getPlayerFromUrl(){
+    const u = new URL(location.href);
+    const p = (u.searchParams.get("p") || u.searchParams.get("player") || "").trim();
+    if (p === "2") return "P2";
+    if (p === "1") return "P1";
+    return "";
+  }
 
-    // Botón con imagen que manda cmd por /api/send (tu server real)
-    function makeImgBtn(cmd, filename, title){
-      const b = document.createElement("button");
-      b.className = "imgBtn";
-      b.type = "button";
-      b.title = title || cmd;
+  let player = getPlayerFromUrl() || localStorage.getItem("angry_player") || "P1";
+  let code = (new URL(location.href)).searchParams.get("code") || localStorage.getItem("angry_code") || "CULA";
 
-      const img = document.createElement("img");
-      img.alt = title || cmd;
-      img.src = stylePng(filename);
+  $("codeInput").value = code;
 
-      b.appendChild(img);
-      b.addEventListener("click", ()=>sendCommand(cmd));
-      return b;
+  function setPlayer(p){
+    player = p;
+    localStorage.setItem("angry_player", player);
+    render(); // update UI
+  }
+
+  $("p1Btn").onclick = ()=> setPlayer("P1");
+  $("p2Btn").onclick = ()=> setPlayer("P2");
+
+  $("applyBtn").onclick = ()=>{
+    code = ($("codeInput").value || "").trim().toUpperCase();
+    if (!code) code = "CULA";
+    localStorage.setItem("angry_code", code);
+    render();
+  };
+
+  // ----- Network -----
+  let lastState = { stage:"start", active:"", ts:0 };
+  let netOk = false;
+
+  async function apiGetState(){
+    try{
+      const r = await fetch(`/api/state?code=${encodeURIComponent(code)}`, { cache:"no-store" });
+      const j = await r.json();
+      if (j && j.ok){
+        lastState = { stage: j.stage || "start", active: j.active || "", ts: j.ts || 0 };
+        netOk = true;
+      } else {
+        netOk = false;
+      }
+    }catch(e){
+      netOk = false;
+    }
+  }
+
+  async function apiSend(cmd){
+    try{
+      await fetch("/api/send", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ code, cmd })
+      });
+      netOk = true;
+    }catch(e){
+      netOk = false;
+    }
+  }
+
+  // ----- Assets paths (public/style) -----
+  const STYLE = "/style";
+  const IMG = {
+    BG_WAIT: `${STYLE}/BG ESPERA.png`,
+    BG_P1:   `${STYLE}/BG P1.png`,
+    BG_P2:   `${STYLE}/BG P2.png`,
+
+    PLAY:    `${STYLE}/PLAY.png`,
+    TRAILER: `${STYLE}/TRAILER.png`,
+    RESTART: `${STYLE}/RESTART.png`,
+    EXIT:    `${STYLE}/EXIT.png`,
+    HOME:    `${STYLE}/HOME.png`,
+    LEFT:    `${STYLE}/LEFT.png`,
+    RIGHT:   `${STYLE}/RIGHT.png`,
+
+    OVEJITA: `${STYLE}/OVEJITA.png`,
+    PATITO: `${STYLE}/PATITO.png`,
+    CARPINCHITA: `${STYLE}/CARPINCHITA.png`,
+    RITA: `${STYLE}/RITA.png`,
+    VAQUITA_PELUDA: `${STYLE}/VAQUITA PELUDA.png`,
+    HAT: `${STYLE}/poder argentino.png`,
+  };
+
+  // ----- Stage mapping -----
+  function normalizeStage(s){
+    s = (s||"").toLowerCase().trim();
+    if (s.includes("trailer")) return "trailer";
+    if (s.includes("select")) return "select";
+    if (s.includes("level")) return "level";
+    if (s.includes("start")) return "start";
+    // default
+    return "start";
+  }
+
+  function titleFor(stage){
+    if (stage==="start") return `StartScene (${player})`;
+    if (stage==="trailer") return `Trailer (${player})`;
+    if (stage==="select") return `LevelSelect (${player})`;
+    if (stage==="level") return `Level1 (${player})`;
+    return `(${player})`;
+  }
+
+  function bgFor(stage){
+    // el panel principal usa el BG del jugador, el WAIT se muestra como overlay si no es turno
+    if (player==="P2") return IMG.BG_P2;
+    return IMG.BG_P1;
+  }
+
+  function isWaiting(){
+    const act = (lastState.active||"").trim().toUpperCase();
+    if (!act) return false;
+    return act !== player;
+  }
+
+  // ----- UI builders -----
+  function btnImg(imgSrc, label, onClick, wide=false){
+    const b = document.createElement("div");
+    b.className = "imgBtn" + (wide ? " wide" : "");
+    b.innerHTML = `<img src="${imgSrc}" alt=""><div>${label}</div>`;
+    b.onclick = onClick;
+    return b;
+  }
+
+  function panelStart(stage){
+    const root = document.createElement("div");
+    root.className = "controls";
+
+    root.appendChild(btnImg(IMG.PLAY, "PLAY", ()=> apiSend(`${player}_PLAY`)));
+    root.appendChild(btnImg(IMG.TRAILER, "TRAILER", ()=> apiSend(`${player}_TRAILER`)));
+
+    // STOP TRAILER solo cuando stage=trailer
+    if (stage==="trailer"){
+      root.appendChild(btnImg(IMG.RESTART, "STOP TRAILER", ()=> apiSend(`${player}_STOPTRAILER`), true));
     }
 
-    // ---------- session + player ----------
-    const pillPlayer = document.getElementById("pillPlayer");
-    const codeInput = document.getElementById("codeInput");
-    const btnApply = document.getElementById("btnApply");
+    root.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`), true));
+    return root;
+  }
 
-    const pillStage = document.getElementById("pillStage");
-    const pillActive = document.getElementById("pillActive");
-    const pillNet = document.getElementById("pillNet");
+  function panelSelect(){
+    const root = document.createElement("div");
+    root.className = "controls";
 
-    const bgMain = document.getElementById("bgMain");
-    const title = document.getElementById("title");
-    const grid = document.getElementById("grid");
+    root.appendChild(btnImg(IMG.LEFT, "LEFT", ()=> apiSend(`${player}_LEFT`)));
+    root.appendChild(btnImg(IMG.RIGHT, "RIGHT", ()=> apiSend(`${player}_RIGHT`)));
 
-    const overlayWait = document.getElementById("overlayWait");
-    const bgWait = document.getElementById("bgWait");
-    const gridWait = document.getElementById("gridWait");
+    root.appendChild(btnImg(IMG.PLAY, "PLAY", ()=> apiSend(`${player}_PLAY`), true));
+    root.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
+    root.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
 
-    const params = new URLSearchParams(location.search);
-    let sessionCode = (params.get("code") || "").trim().toUpperCase();
-    if(sessionCode) codeInput.value = sessionCode;
+    return root;
+  }
 
-    let p = (params.get("p") || "").trim();
-    if(p !== "1" && p !== "2") p = "1";
-    const myPlayerTag = (p === "1") ? "P1" : "P2";
-    pillPlayer.textContent = myPlayerTag;
+  function panelLevel(){
+    const root = document.createElement("div");
+    root.style.position="relative";
+    root.style.display="flex";
+    root.style.flexDirection="column";
+    root.style.gap="12px";
+    root.style.height="100%";
 
-    btnApply.addEventListener("click", ()=>{
-      sessionCode = (codeInput.value || "").trim().toUpperCase();
-      const u = new URL(location.href);
-      if(sessionCode) u.searchParams.set("code", sessionCode);
-      u.searchParams.set("p", p);
-      history.replaceState({}, "", u.toString());
-      pillNet.textContent = "net: ready";
+    // Slots (animales)
+    const slots = document.createElement("div");
+    slots.className = "row5";
+
+    slots.appendChild(btnImg(IMG.OVEJITA, "OVEJITA", ()=> apiSend(`${player}_SLOT0`)));
+    slots.appendChild(btnImg(IMG.PATITO, "PATITO", ()=> apiSend(`${player}_SLOT1`)));
+    slots.appendChild(btnImg(IMG.CARPINCHITA, "CARPINCHITA", ()=> apiSend(`${player}_SLOT2`)));
+    slots.appendChild(btnImg(IMG.RITA, "RITA", ()=> apiSend(`${player}_SLOT3`)));
+    slots.appendChild(btnImg(IMG.VAQUITA_PELUDA, "VAQUITA PELUDA", ()=> apiSend(`${player}_SLOT4`), true));
+
+    root.appendChild(slots);
+
+    // Slingshot area + power
+    const sling = document.createElement("div");
+    sling.className = "slingArea";
+    sling.innerHTML = `
+      <div>
+        <div style="font-size:16px;font-weight:1000;">SLINGSHOT</div>
+        <div class="tag">Arrastrá acá para lanzar (desde el teléfono)</div>
+      </div>
+      <div class="hint">Tip: arrastrá hacia atrás (dx/dy en [-1..1]).</div>
+    `;
+
+    // Drag logic -> normalized dx/dy relative to area center
+    let dragging = false;
+    let rect = null;
+
+    function getXY(ev){
+      const t = ev.touches ? ev.touches[0] : ev;
+      const x = t.clientX;
+      const y = t.clientY;
+      return {x,y};
+    }
+
+    function normFromPoint(x,y){
+      if (!rect) rect = sling.getBoundingClientRect();
+      const cx = rect.left + rect.width*0.5;
+      const cy = rect.top + rect.height*0.5;
+
+      // normalized within half size
+      const dx = (x - cx) / (rect.width*0.5);
+      const dy = (y - cy) / (rect.height*0.5);
+
+      // clamp
+      const cdx = Math.max(-1, Math.min(1, dx));
+      const cdy = Math.max(-1, Math.min(1, dy));
+      return {dx: cdx, dy: cdy};
+    }
+
+    function sendDrag(cmd, dx, dy){
+      // usamos 3 decimales para estabilidad
+      const f = (n)=> (Math.round(n*1000)/1000).toString();
+      if (cmd === "DRAG_END"){
+        apiSend(`${player}_DRAG_END`);
+      } else {
+        apiSend(`${player}_${cmd} ${f(dx)} ${f(dy)}`);
+      }
+    }
+
+    sling.addEventListener("touchstart", (ev)=>{
+      ev.preventDefault();
+      dragging = true;
+      rect = sling.getBoundingClientRect();
+      const {x,y} = getXY(ev);
+      const {dx,dy} = normFromPoint(x,y);
+      sendDrag("DRAG_BEGIN", dx, dy);
+    }, {passive:false});
+
+    sling.addEventListener("touchmove", (ev)=>{
+      if (!dragging) return;
+      ev.preventDefault();
+      const {x,y} = getXY(ev);
+      const {dx,dy} = normFromPoint(x,y);
+      sendDrag("DRAG", dx, dy);
+    }, {passive:false});
+
+    sling.addEventListener("touchend", (ev)=>{
+      if (!dragging) return;
+      ev.preventDefault();
+      dragging = false;
+      sendDrag("DRAG_END");
+    }, {passive:false});
+
+    // mouse (para test en PC)
+    sling.addEventListener("mousedown", (ev)=>{
+      dragging = true;
+      rect = sling.getBoundingClientRect();
+      const {dx,dy} = normFromPoint(ev.clientX, ev.clientY);
+      sendDrag("DRAG_BEGIN", dx, dy);
+    });
+    window.addEventListener("mousemove", (ev)=>{
+      if (!dragging) return;
+      const {dx,dy} = normFromPoint(ev.clientX, ev.clientY);
+      sendDrag("DRAG", dx, dy);
+    });
+    window.addEventListener("mouseup", ()=>{
+      if (!dragging) return;
+      dragging = false;
+      sendDrag("DRAG_END");
     });
 
-    // ---------- network ----------
-    async function sendCommand(cmd){
-      if(!sessionCode){
-        pillNet.textContent = "net: sin code";
-        return;
-      }
-      try{
-        const r = await fetch("/api/send", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ code: sessionCode, cmd })
-        });
-        pillNet.textContent = r.ok ? "net: ok" : ("net: " + r.status);
-      }catch(e){
-        pillNet.textContent = "net: error";
-      }
+    root.appendChild(sling);
+
+    // Row de botones: HAT + POWER + nav
+    const row = document.createElement("div");
+    row.className = "row3";
+
+    row.appendChild(btnImg(IMG.HAT, "PODER ARGENTINO", ()=> apiSend(`${player}_HAT`)));
+    row.appendChild(btnImg(IMG.PLAY, "POWER (2do toque)", ()=> apiSend(`${player}_POWER`)));
+    row.appendChild(btnImg(IMG.RESTART, "RESTART", ()=> apiSend(`${player}_RESTART`)));
+
+    root.appendChild(row);
+
+    const nav = document.createElement("div");
+    nav.className = "controls";
+    nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
+    nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
+    root.appendChild(nav);
+
+    return root;
+  }
+
+  function render(){
+    $("stageText").textContent = normalizeStage(lastState.stage);
+    $("activeText").textContent = (lastState.active || "-");
+    $("netText").textContent = netOk ? "ok" : "offline";
+
+    const stage = normalizeStage(lastState.stage);
+    $("panelTitle").textContent = titleFor(stage);
+    $("bgImg").src = bgFor(stage);
+
+    const body = $("panelBody");
+    // remove children except bgImg
+    [...body.children].forEach(ch=>{
+      if (ch.id !== "bgImg") body.removeChild(ch);
+    });
+
+    // WAIT overlay si no es tu turno
+    if (isWaiting()){
+      const wait = document.createElement("div");
+      wait.style.position="absolute";
+      wait.style.inset="0";
+      wait.style.display="flex";
+      wait.style.alignItems="center";
+      wait.style.justifyContent="center";
+      wait.style.flexDirection="column";
+      wait.style.gap="10px";
+      wait.style.padding="18px";
+      wait.style.zIndex="10";
+      wait.style.background="rgba(0,0,0,.08)";
+
+      const img = document.createElement("img");
+      img.src = IMG.BG_WAIT;
+      img.style.width="100%";
+      img.style.height="100%";
+      img.style.objectFit="cover";
+      img.style.borderRadius="18px";
+      img.style.border="1px solid rgba(0,0,0,.12)";
+      img.style.boxShadow="0 12px 28px rgba(0,0,0,.18)";
+      wait.appendChild(img);
+
+      const txt = document.createElement("div");
+      txt.textContent = "WAITING...";
+      txt.style.position="absolute";
+      txt.style.bottom="22px";
+      txt.style.left="0";
+      txt.style.right="0";
+      txt.style.textAlign="center";
+      txt.style.fontWeight="1000";
+      txt.style.fontSize="22px";
+      wait.appendChild(txt);
+
+      body.appendChild(wait);
+      return; // si estás waiting no mostramos controles para no interferir
     }
 
-    async function fetchState(){
-      if(!sessionCode) return { ok:true, stage:"start", active:"" };
-      try{
-        const r = await fetch(`/api/state?code=${encodeURIComponent(sessionCode)}`, { cache:"no-store" });
-        if(!r.ok) return { ok:true, stage:"start", active:"" };
-        return await r.json();
-      }catch(e){
-        return { ok:true, stage:"start", active:"" };
-      }
+    // Panels por stage
+    let controls = null;
+    if (stage === "start" || stage === "trailer"){
+      controls = panelStart(stage);
+    } else if (stage === "select"){
+      controls = panelSelect();
+    } else if (stage === "level"){
+      controls = panelLevel();
+    } else {
+      controls = panelStart(stage);
     }
 
-    // ---------- stage mapping ----------
-    function normalizeStage(s){
-      s = (s || "").toString().trim().toLowerCase();
-      if(!s) return "start";
+    body.appendChild(controls);
+  }
 
-      if(s.includes("select")) return "select";     // LevelSelect
-      if(s.includes("level")) return "level1";      // Level1
-      if(s.includes("start")) return "start";       // StartScene
-      if(s.includes("trailer")) return "start";     // trailer vive en start
-      return "start";
-    }
+  async function tick(){
+    await apiGetState();
+    render();
+  }
 
-    // ---------- render scene panels ----------
-    function renderStart(active){
-      // BG fijo según jugador
-      setBg(bgMain, myPlayerTag === "P1" ? "BG P1.png" : "BG P2.png");
-
-      title.textContent = `StartScene (${myPlayerTag})`;
-      clearGrid(grid);
-
-      // StartScene: Play, Trailer (StopTrailer cuando trailer andando), Exit
-      grid.appendChild(makeImgBtn("PLAY", "PLAY.png", "PLAY"));
-      grid.appendChild(makeImgBtn("TRAILER", "TRAILER.png", "TRAILER"));
-
-      // Si Unity setea active="trailer" o algo, mostramos STOPTRAILER, si no, igual lo mostramos (no rompe)
-      const trailerOn = (active || "").toString().toLowerCase().includes("trailer");
-      if(trailerOn){
-        grid.appendChild(makeImgBtn("STOPTRAILER", "RESTART.png", "STOPTRAILER"));
-      }else{
-        // opcional: lo dejamos igual para que no falte nunca (si preferís SIEMPRE visible, descomentá y borrá el if)
-        grid.appendChild(makeImgBtn("STOPTRAILER", "RESTART.png", "STOPTRAILER"));
-      }
-
-      grid.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
-
-      overlayWait.classList.remove("show");
-    }
-
-    function renderSelect(){
-      setBg(bgMain, myPlayerTag === "P1" ? "BG P1.png" : "BG P2.png");
-
-      title.textContent = `LevelSelect (${myPlayerTag})`;
-      clearGrid(grid);
-
-      // LevelSelect: right, play, left, home y exit
-      grid.appendChild(makeImgBtn("LEFT", "LEFT.png", "LEFT"));
-      grid.appendChild(makeImgBtn("RIGHT", "RIGHT.png", "RIGHT"));
-      grid.appendChild(makeImgBtn("PLAY", "PLAY.png", "PLAY"));
-      grid.appendChild(makeImgBtn("HOME", "HOME.png", "HOME"));
-      grid.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
-
-      overlayWait.classList.remove("show");
-    }
-
-    function renderLevel1(active){
-      // BG fijo por jugador
-      setBg(bgMain, myPlayerTag === "P1" ? "BG P1.png" : "BG P2.png");
-
-      title.textContent = `Level1 (${myPlayerTag})`;
-      clearGrid(grid);
-
-      // Level1 botones (con prefijo de jugador)
-      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT0`, "OVEJITA.png", "OVEJITA"));
-      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT1`, "PATITO.png", "PATITO"));
-      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT2`, "CARPINCHITA.png", "CARPINCHITA"));
-      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT3`, "RITA.png", "RITA"));
-      grid.appendChild(makeImgBtn(`${myPlayerTag}_SLOT4`, "VAQUITA PELUDA.png", "VAQUITA PELUDA"));
-      grid.appendChild(makeImgBtn(`${myPlayerTag}_HAT`, "poder argentino.png", "PODER ARGENTINO"));
-
-      grid.appendChild(makeImgBtn("HOME", "HOME.png", "HOME"));
-      grid.appendChild(makeImgBtn("RESTART", "RESTART.png", "RESTART"));
-      grid.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
-
-      // Overlay espera para el que NO está en turno:
-      // Tu server guarda active como string. Usamos active = "P1" / "P2" para turno.
-      const turn = (active || "").toString().trim().toUpperCase();
-      const myTurn = (turn === myPlayerTag);
-
-      setBg(bgWait, "BG ESPERA.png");
-      clearGrid(gridWait);
-
-      // Panel espera (Linda1..4)
-      gridWait.appendChild(makeImgBtn("LINDA1", "LINDA 1.png", "LINDA1"));
-      gridWait.appendChild(makeImgBtn("LINDA2", "LINDA 2.png", "LINDA2"));
-      gridWait.appendChild(makeImgBtn("LINDA3", "LINDA 3.png", "LINDA3"));
-      gridWait.appendChild(makeImgBtn("LINDA4", "LINDA 4.png", "LINDA4"));
-
-      // (opcional) home/exit también en espera
-      gridWait.appendChild(makeImgBtn("HOME", "HOME.png", "HOME"));
-      gridWait.appendChild(makeImgBtn("EXIT", "EXIT.png", "EXIT"));
-
-      if(myTurn) overlayWait.classList.remove("show");
-      else overlayWait.classList.add("show");
-    }
-
-    // ---------- main loop ----------
-    async function tick(){
-      const st = await fetchState();
-      const stage = normalizeStage(st.stage);
-      const active = (st.active || "");
-
-      pillStage.textContent = "stage: " + stage;
-      pillActive.textContent = "active: " + (active ? active : "-");
-
-      if(stage === "start") renderStart(active);
-      else if(stage === "select") renderSelect();
-      else if(stage === "level1") renderLevel1(active);
-      else renderStart(active);
-    }
-
-    // init
-    tick();
-    setInterval(tick, 350);
-  </script>
+  // boot
+  render();
+  tick();
+  setInterval(tick, 650);
+</script>
 </body>
 </html>
