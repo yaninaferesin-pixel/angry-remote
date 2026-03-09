@@ -219,6 +219,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      touch-action:manipulation;
     }
 
     .imgOnlyBtn img{
@@ -287,6 +288,7 @@
       align-items:center;
       justify-content:center;
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+      touch-action:manipulation;
     }
 
     .charBtn img{
@@ -303,6 +305,7 @@
       padding:0;
       cursor:pointer;
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+      touch-action:manipulation;
     }
 
     .specialPower img{
@@ -369,6 +372,7 @@
       cursor:pointer;
       padding:0;
       filter: drop-shadow(0 10px 18px rgba(0,0,0,.14));
+      touch-action:manipulation;
     }
 
     .powerBig img{
@@ -477,37 +481,41 @@
   let shotFired = false;
 
   const IMG = {
-    BG_WAIT: "/style/BG ESPERA.png?v=3",
-    BG_P1: "/style/BG P1.png?v=3",
-    BG_P2: "/style/BG P2.png?v=3",
-    SLINGSHOT: "/style/SLINGSHOT.png?v=3",
+    BG_WAIT: "/style/BG ESPERA.png?v=4",
+    BG_P1: "/style/BG P1.png?v=4",
+    BG_P2: "/style/BG P2.png?v=4",
+    SLINGSHOT: "/style/SLINGSHOT.png?v=4",
 
-    PLAY: "/style/PLAY.png?v=3",
-    TRAILER: "/style/TRAILER.png?v=3",
-    RESTART: "/style/RESTART.png?v=3",
-    EXIT: "/style/EXIT.png?v=3",
-    HOME: "/style/HOME.png?v=3",
-    LEFT: "/style/LEFT.png?v=3",
-    RIGHT: "/style/RIGHT.png?v=3",
+    PLAY: "/style/PLAY.png?v=4",
+    TRAILER: "/style/TRAILER.png?v=4",
+    RESTART: "/style/RESTART.png?v=4",
+    EXIT: "/style/EXIT.png?v=4",
+    HOME: "/style/HOME.png?v=4",
+    LEFT: "/style/LEFT.png?v=4",
+    RIGHT: "/style/RIGHT.png?v=4",
 
-    OVEJITA: "/style/OVEJITA.png?v=3",
-    PATITO: "/style/PATITO.png?v=3",
-    CARPINCHITA: "/style/CARPINCHITA.png?v=3",
-    RITA: "/style/RITA.png?v=3",
-    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=3",
-    HAT: "/style/poder argentino.png?v=3",
+    OVEJITA: "/style/OVEJITA.png?v=4",
+    PATITO: "/style/PATITO.png?v=4",
+    CARPINCHITA: "/style/CARPINCHITA.png?v=4",
+    RITA: "/style/RITA.png?v=4",
+    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=4",
+    HAT: "/style/poder argentino.png?v=4",
 
-    ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=3",
-    ANGRY_PATITO: "/style/ANGRY PATITO.png?v=3",
-    ANGRY_CARPINCHITA: "/style/ANGRY CARPINCHITA.png?v=3",
-    ANGRY_RITA: "/style/ANGRY RITA.png?v=3",
-    ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png?v=3",
+    ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=4",
+    ANGRY_PATITO: "/style/ANGRY PATITO.png?v=4",
+    ANGRY_CARPINCHITA: "/style/ANGRY CARPINCHITA.png?v=4",
+    ANGRY_RITA: "/style/ANGRY RITA.png?v=4",
+    ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png?v=4",
 
-    LINDA1: "/style/LINDA 1.png?v=3",
-    LINDA2: "/style/LINDA 2.png?v=3",
-    LINDA3: "/style/LINDA 3.png?v=3",
-    LINDA4: "/style/LINDA 4.png?v=3"
+    LINDA1: "/style/LINDA 1.png?v=4",
+    LINDA2: "/style/LINDA 2.png?v=4",
+    LINDA3: "/style/LINDA 3.png?v=4",
+    LINDA4: "/style/LINDA 4.png?v=4"
   };
+
+  function dbg(...args){
+    console.log("[REMOTE]", ...args);
+  }
 
   function getPlayerFromUrl(){
     const u = new URL(location.href);
@@ -556,6 +564,7 @@
   }
 
   async function apiSend(cmd){
+    dbg("SEND", cmd);
     try{
       await fetch("/api/send", {
         method:"POST",
@@ -564,8 +573,30 @@
       });
       netOk = true;
     }catch(e){
+      console.error("[REMOTE] SEND ERROR", cmd, e);
       netOk = false;
     }
+  }
+
+  function bindPress(el, fn){
+    let fired = false;
+
+    const run = async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (fired) return;
+      fired = true;
+      try{
+        await fn();
+      } finally {
+        setTimeout(() => { fired = false; }, 180);
+      }
+    };
+
+    el.addEventListener("touchstart", run, { passive:false });
+    el.addEventListener("mousedown", run);
+    el.addEventListener("click", run);
+    return el;
   }
 
   function normalizeStage(s){
@@ -610,11 +641,11 @@
     return layer;
   }
 
-  function makeImageButton(src, onClick, extraClass=""){
+  function makeImageButton(src, fn, extraClass=""){
     const b = document.createElement("button");
     b.className = `imgOnlyBtn ${extraClass}`.trim();
     b.innerHTML = `<img src="${src}" alt="">`;
-    b.onclick = onClick;
+    bindPress(b, fn);
     return b;
   }
 
@@ -646,14 +677,9 @@
     const center = document.createElement("div");
     center.className = "centerStage";
 
-    const playBtn = makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "medium");
-    center.appendChild(playBtn);
-
-    const trailerBtn = makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`), "medium");
-    center.appendChild(trailerBtn);
-
-    const exitBtn = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "small");
-    center.appendChild(exitBtn);
+    center.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "medium"));
+    center.appendChild(makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`), "medium"));
+    center.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "small"));
 
     layer.appendChild(center);
     addFooter(layer);
@@ -727,7 +753,7 @@
     const hatBtn = document.createElement("button");
     hatBtn.className = "specialPower";
     hatBtn.innerHTML = `<img src="${IMG.HAT}" alt="">`;
-    hatBtn.onclick = ()=> apiSend(`${player}_HAT`);
+    bindPress(hatBtn, ()=> apiSend(`${player}_HAT`));
     specialTop.appendChild(hatBtn);
 
     wrap.appendChild(specialTop);
@@ -745,12 +771,12 @@
       const btn = document.createElement("button");
       btn.className = "charBtn";
       btn.innerHTML = `<img src="${c.img}" alt="">`;
-      btn.onclick = async ()=>{
+      bindPress(btn, async ()=>{
         shotFired = false;
         selectedSlot = c.slot;
         await apiSend(`${player}_SLOT${c.slot}`);
         render();
-      };
+      });
       chars.appendChild(btn);
     });
 
@@ -821,7 +847,6 @@
     function normFromPoint(x, y){
       if (!rect) rect = aimCanvas.getBoundingClientRect();
 
-      // estrella = 0,0
       const starX = rect.left + rect.width * 0.505;
       const starY = rect.top + rect.height * 0.255;
 
@@ -863,6 +888,7 @@
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
       shotFired = true;
+      dbg("POWER STAGE READY");
       render();
     }
 
@@ -948,7 +974,11 @@
     const btn = document.createElement("button");
     btn.className = "powerBig";
     btn.innerHTML = `<img src="${getAngryImageForSlot(selectedSlot)}" alt="">`;
-    btn.onclick = ()=> apiSend(`${player}_POWER`);
+
+    bindPress(btn, async ()=>{
+      dbg("POWER TAP", player, selectedSlot);
+      await apiSend(`${player}_POWER`);
+    });
 
     power.appendChild(btn);
     layer.appendChild(power);
