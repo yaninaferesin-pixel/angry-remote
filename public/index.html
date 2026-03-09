@@ -15,12 +15,9 @@
     :root{
       --mint-0:#eef9f1;
       --mint-1:#dff2e5;
-      --pink-0:#f6e9f8;
-      --pink-1:#ecd9f3;
       --vio-0:#f2e6ff;
       --vio-1:#dcbcff;
       --vio-2:#b986ff;
-      --vio-3:#8a49ff;
       --ink:#142016;
       --shadow:0 12px 26px rgba(0,0,0,.14);
       --stroke:rgba(30,60,40,.12);
@@ -213,33 +210,37 @@
       align-items:center;
     }
 
-    .iconBtn{
-      width:62px;
-      height:62px;
+    .imgOnlyBtn{
       border:none;
-      border-radius:18px;
-      background:rgba(255,255,255,.82);
-      border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
+      background:transparent;
+      padding:0;
+      cursor:pointer;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
       display:flex;
       align-items:center;
       justify-content:center;
-      cursor:pointer;
-      padding:10px;
     }
 
-    .iconBtn.circle{
-      width:72px;
-      height:72px;
-      border-radius:999px;
-    }
-
-    .iconBtn img{
-      max-width:100%;
-      max-height:100%;
+    .imgOnlyBtn img{
+      display:block;
       object-fit:contain;
       pointer-events:none;
       user-select:none;
+    }
+
+    .imgOnlyBtn.icon img{
+      width:72px;
+      height:72px;
+    }
+
+    .imgOnlyBtn.medium img{
+      height:92px;
+      width:auto;
+    }
+
+    .imgOnlyBtn.small img{
+      height:72px;
+      width:auto;
     }
 
     .centerStage{
@@ -249,36 +250,6 @@
       align-items:center;
       justify-content:center;
       gap:26px;
-    }
-
-    .singleImageButton{
-      border:none;
-      background:transparent;
-      padding:0;
-      cursor:pointer;
-      filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
-    }
-
-    .singleImageButton img{
-      display:block;
-      width:auto;
-      height:108px;
-      object-fit:contain;
-      pointer-events:none;
-      user-select:none;
-    }
-
-    .singleImageButton.small img{ height:72px; }
-    .singleImageButton.medium img{ height:92px; }
-
-    .labelChip{
-      padding:12px 18px;
-      border-radius:16px;
-      background:#b86ae7;
-      color:#161616;
-      box-shadow:var(--shadow);
-      font-size:26px;
-      line-height:1;
     }
 
     .charLayout{
@@ -327,23 +298,16 @@
     }
 
     .specialPower{
-      width:88px;
-      height:88px;
       border:none;
-      border-radius:999px;
-      background:rgba(255,255,255,.84);
-      border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      background:transparent;
+      padding:0;
       cursor:pointer;
-      padding:10px;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
     }
 
     .specialPower img{
-      max-width:100%;
-      max-height:100%;
+      width:88px;
+      height:88px;
       object-fit:contain;
       pointer-events:none;
     }
@@ -359,10 +323,10 @@
       position:relative;
       flex:1;
       min-height:70vh;
-      border-radius:28px;
-      overflow:hidden;
       touch-action:none;
       background:transparent;
+      overflow:hidden;
+      border-radius:28px;
     }
 
     .aimCanvas img{
@@ -370,7 +334,8 @@
       inset:0;
       width:100%;
       height:100%;
-      object-fit:cover;
+      object-fit:contain;
+      object-position:center center;
       pointer-events:none;
       user-select:none;
     }
@@ -463,13 +428,11 @@
 
     @media (max-width:440px){
       .footerTitle{ font-size:42px; }
-      .iconBtn{ width:56px; height:56px; }
-      .iconBtn.circle{ width:66px; height:66px; }
-      .singleImageButton img{ height:96px; }
-      .singleImageButton.medium img{ height:82px; }
-      .singleImageButton.small img{ height:66px; }
+      .imgOnlyBtn.icon img{ width:66px; height:66px; }
+      .imgOnlyBtn.medium img{ height:82px; }
+      .imgOnlyBtn.small img{ height:66px; }
       .charBtn img{ max-width:122px; max-height:106px; }
-      .specialPower{ width:78px; height:78px; }
+      .specialPower img{ width:78px; height:78px; }
       .powerBig img{ width:min(76vw, 250px); }
     }
   </style>
@@ -517,7 +480,7 @@
     BG_WAIT: "/style/BG ESPERA.png",
     BG_P1: "/style/BG P1.png",
     BG_P2: "/style/BG P2.png",
-    BG_SLING: "/style/Y slingshot.png",
+    SLINGSHOT: "/style/SLINGSHOT.png",
 
     PLAY: "/style/PLAY.png",
     TRAILER: "/style/TRAILER.png",
@@ -540,10 +503,10 @@
     ANGRY_RITA: "/style/ANGRY RITA.png",
     ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png",
 
-    LINDA1: "/style/LINDA1.png",
-    LINDA2: "/style/LINDA2.png",
-    LINDA3: "/style/LINDA3.png",
-    LINDA4: "/style/LINDA4.png"
+    LINDA1: "/style/LINDA 1.png",
+    LINDA2: "/style/LINDA 2.png",
+    LINDA3: "/style/LINDA 3.png",
+    LINDA4: "/style/LINDA 4.png"
   };
 
   function getPlayerFromUrl(){
@@ -620,12 +583,7 @@
     return act === player;
   }
 
-  function bgForMain(stage){
-    if (stage === "level" && selectedSlot !== null && !shotFired) return IMG.BG_SLING;
-    if (stage === "level" && selectedSlot !== null && shotFired) return IMG.BG_SLING;
-    if (stage === "select") return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
-    if (stage === "trailer") return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
-    if (stage === "start") return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
+  function bgForMain(){
     return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
   }
 
@@ -652,9 +610,9 @@
     return layer;
   }
 
-  function makeImageButton(src, onClick, className="iconBtn"){
+  function makeImageButton(src, onClick, extraClass=""){
     const b = document.createElement("button");
-    b.className = className;
+    b.className = `imgOnlyBtn ${extraClass}`.trim();
     b.innerHTML = `<img src="${src}" alt="">`;
     b.onclick = onClick;
     return b;
@@ -685,34 +643,22 @@
   function renderStart(stage){
     const layer = clearLayer();
 
-    const top = document.createElement("div");
-    top.className = "topIcons";
-    layer.appendChild(top);
-
     const center = document.createElement("div");
     center.className = "centerStage";
 
-    if (stage === "trailer"){
-      const trailerLabel = document.createElement("div");
-      trailerLabel.className = "labelChip";
-      trailerLabel.textContent = "TRAILER";
-      center.appendChild(trailerLabel);
-    }
-
-    const playBtn = makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "singleImageButton medium");
+    const playBtn = makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "medium");
     center.appendChild(playBtn);
 
     if (stage !== "trailer"){
-      const trailerBtn = document.createElement("button");
-      trailerBtn.className = "labelChip";
-      trailerBtn.style.border = "none";
-      trailerBtn.style.cursor = "pointer";
-      trailerBtn.textContent = "TRAILER";
-      trailerBtn.onclick = ()=> apiSend(`${player}_TRAILER`);
+      const trailerBtn = makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`), "medium");
+      center.appendChild(trailerBtn);
+    } else {
+      const trailerBtn = makeImageButton(IMG.TRAILER, ()=> {}, "medium");
+      trailerBtn.style.pointerEvents = "none";
       center.appendChild(trailerBtn);
     }
 
-    const exitBtn = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "singleImageButton small");
+    const exitBtn = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "small");
     center.appendChild(exitBtn);
 
     layer.appendChild(center);
@@ -727,12 +673,12 @@
 
     const left = document.createElement("div");
     left.className = "iconRow";
-    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
     top.appendChild(left);
 
     const right = document.createElement("div");
     right.className = "iconRow";
-    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
     top.appendChild(right);
 
     layer.appendChild(top);
@@ -740,9 +686,9 @@
     const center = document.createElement("div");
     center.className = "centerStage";
 
-    const label = document.createElement("div");
-    label.className = "labelChip";
-    label.textContent = "LEVEL SELECT";
+    const label = makeImageButton(IMG.TRAILER, ()=> {}, "medium");
+    label.style.pointerEvents = "none";
+    label.querySelector("img").src = "/style/TRAILER.png";
     center.appendChild(label);
 
     const navRow = document.createElement("div");
@@ -750,9 +696,9 @@
     navRow.style.justifyContent = "center";
     navRow.style.width = "100%";
 
-    navRow.appendChild(makeImageButton(IMG.LEFT, ()=> apiSend(`${player}_LEFT`), "iconBtn circle"));
-    navRow.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "iconBtn circle"));
-    navRow.appendChild(makeImageButton(IMG.RIGHT, ()=> apiSend(`${player}_RIGHT`), "iconBtn circle"));
+    navRow.appendChild(makeImageButton(IMG.LEFT, ()=> apiSend(`${player}_LEFT`), "icon"));
+    navRow.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "icon"));
+    navRow.appendChild(makeImageButton(IMG.RIGHT, ()=> apiSend(`${player}_RIGHT`), "icon"));
 
     center.appendChild(navRow);
     layer.appendChild(center);
@@ -767,13 +713,13 @@
 
     const left = document.createElement("div");
     left.className = "iconRow";
-    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
     top.appendChild(left);
 
     const right = document.createElement("div");
     right.className = "iconRow";
-    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
-    right.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "iconBtn circle"));
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
+    right.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "icon"));
     top.appendChild(right);
 
     layer.appendChild(top);
@@ -802,13 +748,15 @@
       { img: IMG.PATITO, slot: 1 },
       { img: IMG.CARPINCHITA, slot: 2 }
     ].forEach(c=>{
-      const btn = makeImageButton(c.img, async ()=>{
+      const btn = document.createElement("button");
+      btn.className = "charBtn";
+      btn.innerHTML = `<img src="${c.img}" alt="">`;
+      btn.onclick = async ()=>{
         shotFired = false;
         selectedSlot = c.slot;
         await apiSend(`${player}_SLOT${c.slot}`);
         render();
-      }, "charBtn");
-
+      };
       chars.appendChild(btn);
     });
 
@@ -825,18 +773,18 @@
 
     const left = document.createElement("div");
     left.className = "iconRow";
-    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
     top.appendChild(left);
 
     const right = document.createElement("div");
     right.className = "iconRow";
-    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
     right.appendChild(makeImageButton(IMG.RESTART, async ()=> {
       selectedSlot = null;
       shotFired = false;
       await apiSend(`${player}_RESTART`);
       render();
-    }, "iconBtn circle"));
+    }, "icon"));
     top.appendChild(right);
 
     layer.appendChild(top);
@@ -848,7 +796,7 @@
     aimCanvas.className = "aimCanvas";
 
     const aimBg = document.createElement("img");
-    aimBg.src = IMG.BG_SLING;
+    aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
     const badge = document.createElement("div");
@@ -868,23 +816,26 @@
       return { x: t.clientX, y: t.clientY };
     }
 
+    function fmt(n){
+      return (Math.round(n * 1000) / 1000).toString();
+    }
+
     function normFromPoint(x, y){
       if (!rect) rect = aimCanvas.getBoundingClientRect();
 
-      const cx = rect.left + rect.width * 0.5;
-      const cy = rect.top + rect.height * 0.72;
+      // Centro exacto del remoto = estrella del SLINGSHOT.png
+      // Ajustado visualmente para que la estrella sea 0,0
+      const starX = rect.left + rect.width * 0.505;
+      const starY = rect.top + rect.height * 0.255;
 
-      const dx = (x - cx) / (rect.width * 0.82);
-      const dy = (y - cy) / (rect.height * 1.05);
+      // Radio de movimiento medido desde la estrella
+      const dx = (x - starX) / (rect.width * 0.34);
+      const dy = (y - starY) / (rect.height * 0.30);
 
-      const cdx = Math.max(-1, Math.min(0, dx));
-      const cdy = Math.max(-1, Math.min(0, dy));
+      const cdx = Math.max(-1, Math.min(1, dx));
+      const cdy = Math.max(-1, Math.min(1, dy));
 
       return { dx: cdx, dy: cdy };
-    }
-
-    function fmt(n){
-      return (Math.round(n * 1000) / 1000).toString();
     }
 
     async function flushAimLoop(){
@@ -974,18 +925,18 @@
 
     const left = document.createElement("div");
     left.className = "iconRow";
-    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
     top.appendChild(left);
 
     const right = document.createElement("div");
     right.className = "iconRow";
-    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
     right.appendChild(makeImageButton(IMG.RESTART, async ()=> {
       selectedSlot = null;
       shotFired = false;
       await apiSend(`${player}_RESTART`);
       render();
-    }, "iconBtn circle"));
+    }, "icon"));
     top.appendChild(right);
 
     layer.appendChild(top);
@@ -1015,12 +966,12 @@
 
     const left = document.createElement("div");
     left.className = "iconRow";
-    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
     top.appendChild(left);
 
     const right = document.createElement("div");
     right.className = "iconRow";
-    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
     top.appendChild(right);
 
     layer.appendChild(top);
@@ -1072,7 +1023,7 @@
 
     applyTopSelection();
     updateTopVisibility(stage);
-    $("screenBg").src = bgForMain(stage);
+    $("screenBg").src = bgForMain();
 
     if (stage === "start" || stage === "trailer"){
       selectedSlot = null;
@@ -1098,12 +1049,6 @@
 
   async function tick(){
     await apiGetState();
-
-    const act = (lastState.active || "").trim().toUpperCase();
-    if (act && act !== player){
-      // conserva selección, pero si el otro está activo mostramos waiting
-    }
-
     render();
   }
 
