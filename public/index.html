@@ -477,36 +477,36 @@
   let shotFired = false;
 
   const IMG = {
-    BG_WAIT: "/style/BG ESPERA.png",
-    BG_P1: "/style/BG P1.png",
-    BG_P2: "/style/BG P2.png",
-    SLINGSHOT: "/style/SLINGSHOT.png",
+    BG_WAIT: "/style/BG ESPERA.png?v=3",
+    BG_P1: "/style/BG P1.png?v=3",
+    BG_P2: "/style/BG P2.png?v=3",
+    SLINGSHOT: "/style/SLINGSHOT.png?v=3",
 
-    PLAY: "/style/PLAY.png",
-    TRAILER: "/style/TRAILER.png",
-    RESTART: "/style/RESTART.png",
-    EXIT: "/style/EXIT.png",
-    HOME: "/style/HOME.png",
-    LEFT: "/style/LEFT.png",
-    RIGHT: "/style/RIGHT.png",
+    PLAY: "/style/PLAY.png?v=3",
+    TRAILER: "/style/TRAILER.png?v=3",
+    RESTART: "/style/RESTART.png?v=3",
+    EXIT: "/style/EXIT.png?v=3",
+    HOME: "/style/HOME.png?v=3",
+    LEFT: "/style/LEFT.png?v=3",
+    RIGHT: "/style/RIGHT.png?v=3",
 
-    OVEJITA: "/style/OVEJITA.png",
-    PATITO: "/style/PATITO.png",
-    CARPINCHITA: "/style/CARPINCHITA.png",
-    RITA: "/style/RITA.png",
-    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png",
-    HAT: "/style/poder argentino.png",
+    OVEJITA: "/style/OVEJITA.png?v=3",
+    PATITO: "/style/PATITO.png?v=3",
+    CARPINCHITA: "/style/CARPINCHITA.png?v=3",
+    RITA: "/style/RITA.png?v=3",
+    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=3",
+    HAT: "/style/poder argentino.png?v=3",
 
-    ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png",
-    ANGRY_PATITO: "/style/ANGRY PATITO.png",
-    ANGRY_CARPINCHITA: "/style/ANGRY CARPINCHITA.png",
-    ANGRY_RITA: "/style/ANGRY RITA.png",
-    ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png",
+    ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=3",
+    ANGRY_PATITO: "/style/ANGRY PATITO.png?v=3",
+    ANGRY_CARPINCHITA: "/style/ANGRY CARPINCHITA.png?v=3",
+    ANGRY_RITA: "/style/ANGRY RITA.png?v=3",
+    ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png?v=3",
 
-    LINDA1: "/style/LINDA 1.png",
-    LINDA2: "/style/LINDA 2.png",
-    LINDA3: "/style/LINDA 3.png",
-    LINDA4: "/style/LINDA 4.png"
+    LINDA1: "/style/LINDA 1.png?v=3",
+    LINDA2: "/style/LINDA 2.png?v=3",
+    LINDA3: "/style/LINDA 3.png?v=3",
+    LINDA4: "/style/LINDA 4.png?v=3"
   };
 
   function getPlayerFromUrl(){
@@ -649,14 +649,8 @@
     const playBtn = makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "medium");
     center.appendChild(playBtn);
 
-    if (stage !== "trailer"){
-      const trailerBtn = makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`), "medium");
-      center.appendChild(trailerBtn);
-    } else {
-      const trailerBtn = makeImageButton(IMG.TRAILER, ()=> {}, "medium");
-      trailerBtn.style.pointerEvents = "none";
-      center.appendChild(trailerBtn);
-    }
+    const trailerBtn = makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`), "medium");
+    center.appendChild(trailerBtn);
 
     const exitBtn = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "small");
     center.appendChild(exitBtn);
@@ -686,9 +680,9 @@
     const center = document.createElement("div");
     center.className = "centerStage";
 
-    const label = makeImageButton(IMG.TRAILER, ()=> {}, "medium");
-    label.style.pointerEvents = "none";
-    label.querySelector("img").src = "/style/TRAILER.png";
+    const label = document.createElement("div");
+    label.className = "powerLabel";
+    label.textContent = "LEVEL SELECT";
     center.appendChild(label);
 
     const navRow = document.createElement("div");
@@ -797,6 +791,10 @@
 
     const aimBg = document.createElement("img");
     aimBg.src = IMG.SLINGSHOT;
+    aimBg.onerror = () => {
+      console.error("No cargó SLINGSHOT:", aimBg.src);
+      aimBg.src = "/style/SLINGSHOT.png?v=fallback";
+    };
     aimCanvas.appendChild(aimBg);
 
     const badge = document.createElement("div");
@@ -823,12 +821,10 @@
     function normFromPoint(x, y){
       if (!rect) rect = aimCanvas.getBoundingClientRect();
 
-      // Centro exacto del remoto = estrella del SLINGSHOT.png
-      // Ajustado visualmente para que la estrella sea 0,0
+      // estrella = 0,0
       const starX = rect.left + rect.width * 0.505;
       const starY = rect.top + rect.height * 0.255;
 
-      // Radio de movimiento medido desde la estrella
       const dx = (x - starX) / (rect.width * 0.34);
       const dy = (y - starY) / (rect.height * 0.30);
 
