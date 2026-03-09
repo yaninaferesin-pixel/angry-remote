@@ -16,16 +16,18 @@
       --mint-0:#eef9f1;
       --mint-1:#dff2e5;
       --mint-2:#cfead8;
+      --pink-0:#f7e9f6;
+      --pink-1:#efdaf0;
       --vio-0:#f2e6ff;
       --vio-1:#dcbcff;
       --vio-2:#b986ff;
       --vio-3:#8a49ff;
       --vio-4:#4a147f;
       --ink:#142016;
-      --card: rgba(255,255,255,.70);
+      --card: rgba(255,255,255,.72);
       --stroke: rgba(30,60,40,.14);
-      --shadow: 0 10px 24px rgba(0,0,0,.14);
-      --radius: 22px;
+      --shadow: 0 12px 26px rgba(0,0,0,.14);
+      --radius: 26px;
       --safe-bottom: max(16px, env(safe-area-inset-bottom));
     }
 
@@ -55,6 +57,8 @@
       gap:10px;
     }
 
+    .hidden{ display:none !important; }
+
     .topbar{
       display:flex;
       align-items:center;
@@ -81,7 +85,7 @@
       min-width:54px;
       height:44px;
       padding:0 14px;
-      font: inherit;
+      font:inherit;
       font-size:18px;
       cursor:pointer;
       box-shadow:0 4px 10px rgba(0,0,0,.08);
@@ -109,7 +113,7 @@
       background:rgba(255,255,255,.82);
       padding:0 12px;
       text-transform:uppercase;
-      font: inherit;
+      font:inherit;
       font-size:18px;
       outline:none;
     }
@@ -119,7 +123,7 @@
       border-radius:999px;
       height:42px;
       padding:0 18px;
-      font: inherit;
+      font:inherit;
       font-size:18px;
       cursor:pointer;
       color:#25153a;
@@ -131,11 +135,12 @@
     .statusRow{
       display:flex;
       gap:8px;
+      margin-top:8px;
     }
 
     .statusBox{
       flex:1;
-      min-height:48px;
+      min-height:46px;
       padding:10px 12px;
       border-radius:16px;
       background:rgba(255,255,255,.68);
@@ -145,14 +150,14 @@
       align-items:center;
       justify-content:center;
       text-align:center;
-      font-size:18px;
+      font-size:17px;
       line-height:1;
     }
 
     .screen{
       position:relative;
       flex:1;
-      min-height:70vh;
+      min-height:74vh;
       border-radius:28px;
       overflow:hidden;
       background:rgba(255,255,255,.50);
@@ -181,106 +186,73 @@
       padding:14px;
     }
 
-    .title{
-      font-size:34px;
-      line-height:.95;
-      color:#172117;
-      text-shadow:0 2px 0 rgba(255,255,255,.35);
-      margin:0;
-    }
-
-    .subtle{
-      font-size:18px;
-      line-height:1.05;
-      opacity:.86;
-    }
-
-    .heroActions{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
+    .footerTitle{
       margin-top:auto;
-    }
-
-    .heroBtn{
-      border:none;
-      border-radius:24px;
-      background:rgba(255,255,255,.72);
-      border:1px solid var(--stroke);
-      min-height:96px;
-      padding:10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      box-shadow:var(--shadow);
-    }
-
-    .heroBtn img{
-      max-width:100%;
-      max-height:72px;
-      object-fit:contain;
-      pointer-events:none;
-      user-select:none;
-    }
-
-    .wide{
-      grid-column:1 / -1;
-    }
-
-    .charGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:auto;
-    }
-
-    .charBtn{
-      border:none;
-      border-radius:22px;
-      background:rgba(255,255,255,.76);
-      border:1px solid var(--stroke);
-      min-height:110px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:12px;
-      cursor:pointer;
-      box-shadow:var(--shadow);
-    }
-
-    .charBtn img{
-      max-width:88%;
-      max-height:88px;
-      object-fit:contain;
+      text-align:center;
+      font-size:52px;
+      line-height:.9;
+      color:#f7f7f7;
+      text-shadow:
+        0 4px 0 rgba(0,0,0,.08),
+        0 10px 18px rgba(0,0,0,.18);
       user-select:none;
       pointer-events:none;
     }
 
-    .charBtn.wide{
-      grid-column:1 / -1;
-      min-height:120px;
+    .panelGlass{
+      position:relative;
+      flex:1;
+      border-radius:28px;
+      overflow:hidden;
+      background:rgba(255,255,255,.30);
+      border:1px solid rgba(255,255,255,.30);
+      box-shadow:var(--shadow);
+      min-height:60vh;
     }
 
-    .aimMode{
+    .panelInner{
+      position:relative;
+      z-index:2;
       height:100%;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:14px;
+      padding:18px;
     }
 
-    .aimHeader{
+    .panelBg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.22;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .topIcons{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
     }
 
+    .topIcons.center{
+      justify-content:center;
+    }
+
+    .iconRow{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
     .iconBtn{
-      width:68px;
-      height:68px;
+      width:62px;
+      height:62px;
       border:none;
-      border-radius:20px;
+      border-radius:18px;
       background:rgba(255,255,255,.78);
       border:1px solid var(--stroke);
       box-shadow:var(--shadow);
@@ -291,6 +263,12 @@
       padding:10px;
     }
 
+    .iconBtn.circle{
+      width:74px;
+      height:74px;
+      border-radius:999px;
+    }
+
     .iconBtn img{
       max-width:100%;
       max-height:100%;
@@ -299,35 +277,123 @@
       user-select:none;
     }
 
+    .centerStage{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:26px;
+    }
+
+    .singleImageButton{
+      border:none;
+      background:transparent;
+      padding:0;
+      cursor:pointer;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+    }
+
+    .singleImageButton img{
+      display:block;
+      width:auto;
+      height:110px;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .singleImageButton.small img{
+      height:74px;
+    }
+
+    .singleImageButton.medium img{
+      height:92px;
+    }
+
+    .labelChip{
+      padding:12px 18px;
+      border-radius:14px;
+      background:#b86ae7;
+      color:#1a1a1a;
+      box-shadow:var(--shadow);
+      font-size:26px;
+      line-height:1;
+    }
+
+    .charArea{
+      flex:1;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px 18px;
+      align-content:center;
+      justify-items:center;
+      padding:8px 10px 0;
+    }
+
+    .charBtn{
+      border:none;
+      background:transparent;
+      padding:0;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+    }
+
+    .charBtn img{
+      max-width:140px;
+      max-height:120px;
+      object-fit:contain;
+      user-select:none;
+      pointer-events:none;
+    }
+
+    .charBtn.wide{
+      grid-column:1 / -1;
+    }
+
+    .charBtn.wide img{
+      max-width:180px;
+      max-height:138px;
+    }
+
+    .aimMode{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
     .aimCanvas{
       position:relative;
       flex:1;
-      min-height:62vh;
+      min-height:68vh;
       border-radius:28px;
       overflow:hidden;
-      background:rgba(255,255,255,.30);
-      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.25);
+      border:1px solid rgba(255,255,255,.22);
       touch-action:none;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
     }
 
-    .aimBg{
+    .aimCanvas img{
       position:absolute;
       inset:0;
       width:100%;
       height:100%;
       object-fit:cover;
-      opacity:.98;
       pointer-events:none;
       user-select:none;
     }
 
-    .aimBadge{
+    .aimHint{
       position:absolute;
       left:14px;
       top:14px;
       padding:10px 14px;
-      border-radius:16px;
+      border-radius:14px;
       background:rgba(255,255,255,.72);
       border:1px solid var(--stroke);
       box-shadow:var(--shadow);
@@ -338,8 +404,8 @@
     .powerDock{
       display:flex;
       justify-content:center;
-      gap:14px;
-      padding-top:2px;
+      align-items:center;
+      padding:6px 0 0;
     }
 
     .powerOnly{
@@ -364,19 +430,11 @@
       pointer-events:none;
     }
 
-    .waiting{
+    .waitingWrap{
       height:100%;
       display:flex;
       flex-direction:column;
       gap:12px;
-      justify-content:flex-start;
-    }
-
-    .waitingTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
     }
 
     .waitingPanel{
@@ -384,60 +442,53 @@
       flex:1;
       border-radius:26px;
       overflow:hidden;
-      background:#a9d6ea;
+      background:#d9cae4;
       border:1px solid rgba(0,0,0,.08);
       box-shadow:var(--shadow);
     }
 
-    .waitingTitle{
+    .waitingBg{
       position:absolute;
-      left:0;
-      right:0;
-      top:18px;
-      text-align:center;
-      font-size:42px;
-      color:rgba(255,255,255,.88);
-      text-shadow:0 2px 0 rgba(0,0,0,.08);
-      z-index:3;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.45;
+      pointer-events:none;
     }
 
     .waitingGrid{
       position:absolute;
-      inset:90px 16px 16px 16px;
+      inset:100px 24px 24px 24px;
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:14px;
+      gap:24px;
       z-index:2;
     }
 
-    .bubbleCard{
-      background:#f4ead3;
-      border-radius:20px;
+    .waitCard{
       display:flex;
       align-items:center;
       justify-content:center;
-      overflow:hidden;
-      box-shadow:0 8px 14px rgba(0,0,0,.08);
     }
 
-    .bubbleCard img{
+    .waitCard img{
       width:100%;
-      height:100%;
+      max-width:170px;
       object-fit:contain;
-      pointer-events:none;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.10));
     }
 
-    .hidden{
-      display:none !important;
-    }
-
-    @media (max-width: 440px){
-      .title{ font-size:28px; }
-      .statusBox{ font-size:16px; }
-      .iconBtn{ width:60px; height:60px; }
+    @media (max-width:440px){
+      .footerTitle{ font-size:42px; }
+      .iconBtn{ width:56px; height:56px; }
+      .iconBtn.circle{ width:66px; height:66px; }
+      .singleImageButton img{ height:96px; }
+      .singleImageButton.medium img{ height:82px; }
+      .singleImageButton.small img{ height:66px; }
+      .charBtn img{ max-width:120px; max-height:104px; }
+      .charBtn.wide img{ max-width:160px; max-height:120px; }
       .powerOnly{ width:104px; height:104px; }
-      .heroBtn{ min-height:86px; }
-      .charBtn{ min-height:96px; }
     }
   </style>
 </head>
@@ -456,7 +507,7 @@
         </div>
       </div>
 
-      <div id="statusRow" class="statusRow" style="margin-top:8px;">
+      <div id="statusRow" class="statusRow">
         <div class="statusBox">stage: <span id="stageText" style="margin-left:6px;">-</span></div>
         <div class="statusBox">active: <span id="activeText" style="margin-left:6px;">-</span></div>
         <div class="statusBox">net: <span id="netText" style="margin-left:6px;">...</span></div>
@@ -465,7 +516,7 @@
 
     <div class="screen" id="screen">
       <img id="screenBg" class="bg" alt="" />
-      <div class="layer" id="layer"></div>
+      <div id="layer" class="layer"></div>
     </div>
   </div>
 
@@ -583,6 +634,12 @@
     return act !== player;
   }
 
+  function isCurrentPlayerActive(){
+    const act = (lastState.active || "").trim().toUpperCase();
+    if (!act) return true;
+    return act === player;
+  }
+
   function bgForMain(stage){
     if (stage === "level" && selectedSlot !== null) return IMG.BG_SLING;
     return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
@@ -590,8 +647,6 @@
 
   function updateTopVisibility(stage){
     const topShell = $("topShell");
-
-    // Solo visible en StartScene / Trailer
     if (stage === "start" || stage === "trailer"){
       topShell.classList.remove("hidden");
     } else {
@@ -613,7 +668,7 @@
     return layer;
   }
 
-  function makeImageButton(src, onClick, className="heroBtn"){
+  function makeImageButton(src, onClick, className="iconBtn"){
     const b = document.createElement("button");
     b.className = className;
     b.innerHTML = `<img src="${src}" alt="">`;
@@ -621,120 +676,165 @@
     return b;
   }
 
-  function renderStart(stage){
-    const layer = clearLayer();
-
-    const title = document.createElement("h1");
-    title.className = "title";
-    title.textContent = player === "P1" ? "Player 1" : "Player 2";
-    layer.appendChild(title);
-
-    const subtle = document.createElement("div");
-    subtle.className = "subtle";
-    subtle.textContent = stage === "trailer" ? "Trailer" : "Start";
-    layer.appendChild(subtle);
-
-    const actions = document.createElement("div");
-    actions.className = "heroActions";
-
-    actions.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`)));
-    actions.appendChild(makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`)));
-
-    if (stage === "trailer"){
-      const stop = makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_STOPTRAILER`));
-      stop.classList.add("wide");
-      actions.appendChild(stop);
-    }
-
-    const exit = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`));
-    exit.classList.add("wide");
-    actions.appendChild(exit);
-
-    layer.appendChild(actions);
+  function footerText(){
+    return player === "P1" ? "PLAYER 1" : "PLAYER 2";
   }
 
-  function renderSelect(){
+  function addFooter(layer, textOverride){
+    const ft = document.createElement("div");
+    ft.className = "footerTitle";
+    ft.textContent = textOverride || footerText();
+    layer.appendChild(ft);
+  }
+
+  function buildGlassPanel(){
+    const panel = document.createElement("div");
+    panel.className = "panelGlass";
+
+    const bg = document.createElement("img");
+    bg.className = "panelBg";
+    bg.src = player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
+    panel.appendChild(bg);
+
+    const inner = document.createElement("div");
+    inner.className = "panelInner";
+    panel.appendChild(inner);
+
+    return { panel, inner };
+  }
+
+  function renderStart(stage){
     const layer = clearLayer();
+    const { panel, inner } = buildGlassPanel();
 
-    const title = document.createElement("h1");
-    title.className = "title";
-    title.textContent = "Choose";
-    layer.appendChild(title);
+    if (stage === "trailer"){
+      const top = document.createElement("div");
+      top.className = "topIcons center";
 
-    const grid = document.createElement("div");
-    grid.className = "charGrid";
+      const trailerLabel = document.createElement("div");
+      trailerLabel.className = "labelChip";
+      trailerLabel.textContent = "TRAILER";
 
-    const chars = [
+      top.appendChild(trailerLabel);
+      inner.appendChild(top);
+    }
+
+    const center = document.createElement("div");
+    center.className = "centerStage";
+
+    const playBtn = makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "singleImageButton");
+    playBtn.classList.add("medium");
+    center.appendChild(playBtn);
+
+    if (stage !== "trailer"){
+      const trailerBtn = makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`), "singleImageButton");
+      trailerBtn.classList.add("small");
+      center.appendChild(trailerBtn);
+    }
+
+    const exitBtn = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "singleImageButton");
+    exitBtn.classList.add("small");
+    center.appendChild(exitBtn);
+
+    inner.appendChild(center);
+    layer.appendChild(panel);
+    addFooter(layer);
+  }
+
+  function renderLevelSelect(){
+    const layer = clearLayer();
+    const { panel, inner } = buildGlassPanel();
+
+    const top = document.createElement("div");
+    top.className = "topIcons";
+
+    const leftIcons = document.createElement("div");
+    leftIcons.className = "iconRow";
+    leftIcons.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    top.appendChild(leftIcons);
+
+    const rightIcons = document.createElement("div");
+    rightIcons.className = "iconRow";
+    rightIcons.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    rightIcons.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "iconBtn circle"));
+    top.appendChild(rightIcons);
+
+    inner.appendChild(top);
+
+    const center = document.createElement("div");
+    center.className = "centerStage";
+
+    const trailerLabel = document.createElement("div");
+    trailerLabel.className = "labelChip";
+    trailerLabel.textContent = "LEVEL SELECT";
+    center.appendChild(trailerLabel);
+
+    const navRow = document.createElement("div");
+    navRow.className = "iconRow";
+    navRow.style.justifyContent = "center";
+    navRow.style.width = "100%";
+
+    navRow.appendChild(makeImageButton(IMG.LEFT, ()=> apiSend(`${player}_LEFT`), "iconBtn circle"));
+    navRow.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`), "iconBtn circle"));
+    navRow.appendChild(makeImageButton(IMG.RIGHT, ()=> apiSend(`${player}_RIGHT`), "iconBtn circle"));
+
+    center.appendChild(navRow);
+    inner.appendChild(center);
+
+    layer.appendChild(panel);
+    addFooter(layer);
+  }
+
+  function renderCharacterSelectInLevel(){
+    const layer = clearLayer();
+    const { panel, inner } = buildGlassPanel();
+
+    const top = document.createElement("div");
+    top.className = "topIcons";
+
+    const leftIcons = document.createElement("div");
+    leftIcons.className = "iconRow";
+    leftIcons.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    top.appendChild(leftIcons);
+
+    const rightIcons = document.createElement("div");
+    rightIcons.className = "iconRow";
+    rightIcons.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    rightIcons.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "iconBtn circle"));
+    top.appendChild(rightIcons);
+
+    inner.appendChild(top);
+
+    const chars = document.createElement("div");
+    chars.className = "charArea";
+
+    [
+      { img: IMG.HAT, slot: null, action: ()=> apiSend(`${player}_HAT`) },
+      { img: IMG.RITA, slot: 3 },
+      { img: IMG.VAQUITA_PELUDA, slot: 4 },
       { img: IMG.OVEJITA, slot: 0 },
       { img: IMG.PATITO, slot: 1 },
-      { img: IMG.CARPINCHITA, slot: 2 },
-      { img: IMG.RITA, slot: 3 },
-      { img: IMG.VAQUITA_PELUDA, slot: 4, wide: true }
-    ];
-
-    chars.forEach(c=>{
+      { img: IMG.CARPINCHITA, slot: 2 }
+    ].forEach(c=>{
       const btn = makeImageButton(c.img, async ()=>{
-        selectedSlot = c.slot;
         shotFired = false;
+
+        if (c.action){
+          await c.action();
+          return;
+        }
+
+        selectedSlot = c.slot;
         await apiSend(`${player}_SLOT${c.slot}`);
         render();
       }, "charBtn");
-      if (c.wide) btn.classList.add("wide");
-      grid.appendChild(btn);
+
+      chars.appendChild(btn);
     });
 
-    layer.appendChild(grid);
-  }
-
-  function renderWaiting(){
-    const layer = clearLayer();
-
-    const wrap = document.createElement("div");
-    wrap.className = "waiting";
-
-    const top = document.createElement("div");
-    top.className = "waitingTop";
-
-    const left = makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn");
-    const pause = makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "iconBtn");
-
-    const title = document.createElement("h1");
-    title.className = "title";
-    title.style.margin = "0 auto";
-    title.textContent = player === "P1" ? "Player 1" : "Player 2";
-
-    top.appendChild(left);
-    top.appendChild(title);
-    top.appendChild(pause);
-
-    wrap.appendChild(top);
-
-    const panel = document.createElement("div");
-    panel.className = "waitingPanel";
-
-    const bg = document.createElement("img");
-    bg.className = "bg";
-    bg.src = IMG.BG_WAIT;
-    panel.appendChild(bg);
-
-    const wt = document.createElement("div");
-    wt.className = "waitingTitle";
-    wt.textContent = "WAITING...";
-    panel.appendChild(wt);
-
-    const grid = document.createElement("div");
-    grid.className = "waitingGrid";
-
-    [IMG.WAIT1, IMG.WAIT2, IMG.WAIT3, IMG.WAIT4].forEach(src=>{
-      const c = document.createElement("div");
-      c.className = "bubbleCard";
-      c.innerHTML = `<img src="${src}" alt="">`;
-      grid.appendChild(c);
-    });
-
-    panel.appendChild(grid);
-    wrap.appendChild(panel);
-    layer.appendChild(wrap);
+    inner.appendChild(chars);
+    layer.appendChild(panel);
+    addFooter(layer);
   }
 
   function renderAimStage(){
@@ -743,33 +843,36 @@
     const aimWrap = document.createElement("div");
     aimWrap.className = "aimMode";
 
-    const header = document.createElement("div");
-    header.className = "aimHeader";
+    const top = document.createElement("div");
+    top.className = "topIcons";
 
-    const homeBtn = makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn");
-    const hatBtn = makeImageButton(IMG.HAT, ()=> apiSend(`${player}_HAT`), "iconBtn");
-    const restartBtn = makeImageButton(IMG.RESTART, ()=> {
+    const leftIcons = document.createElement("div");
+    leftIcons.className = "iconRow";
+    leftIcons.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    top.appendChild(leftIcons);
+
+    const rightIcons = document.createElement("div");
+    rightIcons.className = "iconRow";
+    rightIcons.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    rightIcons.appendChild(makeImageButton(IMG.RESTART, async ()=> {
       selectedSlot = null;
       shotFired = false;
-      apiSend(`${player}_RESTART`);
-    }, "iconBtn");
+      await apiSend(`${player}_RESTART`);
+      render();
+    }, "iconBtn circle"));
+    top.appendChild(rightIcons);
 
-    header.appendChild(homeBtn);
-    header.appendChild(hatBtn);
-    header.appendChild(restartBtn);
-
-    aimWrap.appendChild(header);
+    aimWrap.appendChild(top);
 
     const aimCanvas = document.createElement("div");
     aimCanvas.className = "aimCanvas";
 
     const aimBg = document.createElement("img");
-    aimBg.className = "aimBg";
     aimBg.src = IMG.BG_SLING;
     aimCanvas.appendChild(aimBg);
 
     const badge = document.createElement("div");
-    badge.className = "aimBadge";
+    badge.className = "aimHint";
     badge.textContent = shotFired ? "POWER" : "SLINGSHOT";
     aimCanvas.appendChild(badge);
 
@@ -789,10 +892,10 @@
       if (!rect) rect = aimCanvas.getBoundingClientRect();
 
       const cx = rect.left + rect.width * 0.5;
-      const cy = rect.top + rect.height * 0.62;
+      const cy = rect.top + rect.height * 0.70;
 
-      const dx = (x - cx) / (rect.width * 0.52);
-      const dy = (y - cy) / (rect.height * 0.68);
+      const dx = (x - cx) / (rect.width * 0.72);
+      const dy = (y - cy) / (rect.height * 0.92);
 
       const cdx = Math.max(-1, Math.min(0, dx));
       const cdy = Math.max(-1, Math.min(0, dy));
@@ -884,33 +987,90 @@
     aimWrap.appendChild(aimCanvas);
 
     if (shotFired){
-      const powerDock = document.createElement("div");
-      powerDock.className = "powerDock";
+      const dock = document.createElement("div");
+      dock.className = "powerDock";
 
       const powerBtn = document.createElement("button");
       powerBtn.className = "powerOnly";
       powerBtn.innerHTML = `<img src="${IMG.POWER}" alt="">`;
       powerBtn.onclick = ()=> apiSend(`${player}_POWER`);
 
-      powerDock.appendChild(powerBtn);
-      aimWrap.appendChild(powerDock);
+      dock.appendChild(powerBtn);
+      aimWrap.appendChild(dock);
     }
 
     layer.appendChild(aimWrap);
   }
 
+  function renderWaiting(){
+    const layer = clearLayer();
+
+    const wrap = document.createElement("div");
+    wrap.className = "waitingWrap";
+
+    const top = document.createElement("div");
+    top.className = "topIcons";
+
+    const left = document.createElement("div");
+    left.className = "iconRow";
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn"));
+    top.appendChild(left);
+
+    const right = document.createElement("div");
+    right.className = "iconRow";
+    right.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "iconBtn circle"));
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "iconBtn circle"));
+    top.appendChild(right);
+
+    wrap.appendChild(top);
+
+    const panel = document.createElement("div");
+    panel.className = "waitingPanel";
+
+    const bg = document.createElement("img");
+    bg.className = "waitingBg";
+    bg.src = IMG.BG_WAIT;
+    panel.appendChild(bg);
+
+    const grid = document.createElement("div");
+    grid.className = "waitingGrid";
+
+    [IMG.WAIT1, IMG.WAIT2, IMG.WAIT3, IMG.WAIT4].forEach(src=>{
+      const c = document.createElement("div");
+      c.className = "waitCard";
+      c.innerHTML = `<img src="${src}" alt="">`;
+      grid.appendChild(c);
+    });
+
+    panel.appendChild(grid);
+    wrap.appendChild(panel);
+
+    layer.appendChild(wrap);
+    addFooter(layer, "WAITING");
+  }
+
   function renderLevel(){
-    if (isWaiting()){
+    if (!isCurrentPlayerActive() && shotFired){
       renderWaiting();
       return;
     }
 
     if (selectedSlot === null){
-      renderSelect();
+      renderCharacterSelectInLevel();
       return;
     }
 
-    renderAimStage();
+    if (!shotFired){
+      renderAimStage();
+      return;
+    }
+
+    if (isCurrentPlayerActive()){
+      renderAimStage();
+      return;
+    }
+
+    renderWaiting();
   }
 
   function render(){
@@ -918,7 +1078,6 @@
 
     applyTopSelection();
     updateTopVisibility(stage);
-
     $("screenBg").src = bgForMain(stage);
 
     if (stage === "start" || stage === "trailer"){
@@ -931,7 +1090,7 @@
     if (stage === "select"){
       selectedSlot = null;
       shotFired = false;
-      renderSelect();
+      renderLevelSelect();
       return;
     }
 
@@ -947,9 +1106,8 @@
     await apiGetState();
 
     const act = (lastState.active || "").trim().toUpperCase();
-    if (act && act !== player){
-      // si ahora está jugando el otro, volver a waiting/panel pasivo
-      shotFired = false;
+    if (act && act !== player && shotFired){
+      // queda waiting mientras el otro esté activo
     }
 
     render();
@@ -958,7 +1116,7 @@
   loadPersisted();
   render();
   tick();
-  setInterval(tick, 450);
+  setInterval(tick, 350);
 </script>
 </body>
 </html>
