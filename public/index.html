@@ -6,18 +6,14 @@
   <title>Angry Remote</title>
   <style>
     :root{
-      /* verdes tipo BGP1 */
       --mint-0:#e8fff1;
       --mint-1:#c9f5dd;
       --mint-2:#a8eac7;
-
-      /* violetas */
       --vio-0:#f2e6ff;
       --vio-1:#dcbcff;
       --vio-2:#b986ff;
       --vio-3:#8a49ff;
       --vio-4:#5a1fd6;
-
       --ink:#102018;
       --card: rgba(255,255,255,.62);
       --stroke: rgba(30,60,40,.18);
@@ -180,7 +176,6 @@
 
     .wide{ grid-column: 1 / -1; }
 
-    /* Área slingshot (drag) */
     .slingArea{
       position:relative;
       border-radius: 18px;
@@ -194,7 +189,9 @@
       justify-content:center;
       text-align:center;
       font-weight:900;
+      touch-action:none;
     }
+
     .hint{
       position:absolute;
       bottom:10px;
@@ -247,9 +244,7 @@
     <div class="panel" id="mainPanel">
       <div class="panelHeader" id="panelTitle">...</div>
       <div class="panelBody" id="panelBody">
-        <!-- bg image -->
         <img id="bgImg" class="bgImg" alt="" />
-        <!-- content injected -->
       </div>
     </div>
   </div>
@@ -257,7 +252,6 @@
 <script>
   const $ = (id)=>document.getElementById(id);
 
-  // ----- Player detect -----
   function getPlayerFromUrl(){
     const u = new URL(location.href);
     const p = (u.searchParams.get("p") || u.searchParams.get("player") || "").trim();
@@ -274,7 +268,7 @@
   function setPlayer(p){
     player = p;
     localStorage.setItem("angry_player", player);
-    render(); // update UI
+    render();
   }
 
   $("p1Btn").onclick = ()=> setPlayer("P1");
@@ -287,7 +281,6 @@
     render();
   };
 
-  // ----- Network -----
   let lastState = { stage:"start", active:"", ts:0 };
   let netOk = false;
 
@@ -319,13 +312,11 @@
     }
   }
 
-  // ----- Assets paths (public/style) -----
   const STYLE = "/style";
   const IMG = {
     BG_WAIT: `${STYLE}/BG ESPERA.png`,
     BG_P1:   `${STYLE}/BG P1.png`,
     BG_P2:   `${STYLE}/BG P2.png`,
-
     PLAY:    `${STYLE}/PLAY.png`,
     TRAILER: `${STYLE}/TRAILER.png`,
     RESTART: `${STYLE}/RESTART.png`,
@@ -333,7 +324,6 @@
     HOME:    `${STYLE}/HOME.png`,
     LEFT:    `${STYLE}/LEFT.png`,
     RIGHT:   `${STYLE}/RIGHT.png`,
-
     OVEJITA: `${STYLE}/OVEJITA.png`,
     PATITO: `${STYLE}/PATITO.png`,
     CARPINCHITA: `${STYLE}/CARPINCHITA.png`,
@@ -342,14 +332,12 @@
     HAT: `${STYLE}/poder argentino.png`,
   };
 
-  // ----- Stage mapping -----
   function normalizeStage(s){
     s = (s||"").toLowerCase().trim();
     if (s.includes("trailer")) return "trailer";
     if (s.includes("select")) return "select";
     if (s.includes("level")) return "level";
     if (s.includes("start")) return "start";
-    // default
     return "start";
   }
 
@@ -362,7 +350,6 @@
   }
 
   function bgFor(stage){
-    // el panel principal usa el BG del jugador, el WAIT se muestra como overlay si no es turno
     if (player==="P2") return IMG.BG_P2;
     return IMG.BG_P1;
   }
@@ -373,7 +360,6 @@
     return act !== player;
   }
 
-  // ----- UI builders -----
   function btnImg(imgSrc, label, onClick, wide=false){
     const b = document.createElement("div");
     b.className = "imgBtn" + (wide ? " wide" : "");
@@ -389,7 +375,6 @@
     root.appendChild(btnImg(IMG.PLAY, "PLAY", ()=> apiSend(`${player}_PLAY`)));
     root.appendChild(btnImg(IMG.TRAILER, "TRAILER", ()=> apiSend(`${player}_TRAILER`)));
 
-    // STOP TRAILER solo cuando stage=trailer
     if (stage==="trailer"){
       root.appendChild(btnImg(IMG.RESTART, "STOP TRAILER", ()=> apiSend(`${player}_STOPTRAILER`), true));
     }
@@ -420,7 +405,6 @@
     root.style.gap="12px";
     root.style.height="100%";
 
-    // Slots (animales)
     const slots = document.createElement("div");
     slots.className = "row5";
 
@@ -432,98 +416,128 @@
 
     root.appendChild(slots);
 
-    // Slingshot area + power
     const sling = document.createElement("div");
     sling.className = "slingArea";
     sling.innerHTML = `
       <div>
         <div style="font-size:16px;font-weight:1000;">SLINGSHOT</div>
-        <div class="tag">Arrastrá acá para lanzar (desde el teléfono)</div>
+        <div class="tag">Arrastrá para apuntar. Al soltar, dispara.</div>
       </div>
-      <div class="hint">Tip: arrastrá hacia atrás (dx/dy en [-1..1]).</div>
+      <div class="hint">Se envía AIM limitado + FIRE final. Mucho más fluido.</div>
     `;
 
-    // Drag logic -> normalized dx/dy relative to area center
     let dragging = false;
     let rect = null;
+    let lastAim = { dx: 0, dy: 0 };
+    let aimDirty = false;
+    let aimSending = false;
+    let rafPending = false;
 
     function getXY(ev){
       const t = ev.touches ? ev.touches[0] : ev;
-      const x = t.clientX;
-      const y = t.clientY;
-      return {x,y};
+      return { x: t.clientX, y: t.clientY };
     }
 
     function normFromPoint(x,y){
       if (!rect) rect = sling.getBoundingClientRect();
-      const cx = rect.left + rect.width*0.5;
-      const cy = rect.top + rect.height*0.5;
 
-      // normalized within half size
-      const dx = (x - cx) / (rect.width*0.5);
-      const dy = (y - cy) / (rect.height*0.5);
+      const cx = rect.left + rect.width * 0.5;
+      const cy = rect.top + rect.height * 0.5;
 
-      // clamp
-      const cdx = Math.max(-1, Math.min(1, dx));
-      const cdy = Math.max(-1, Math.min(1, dy));
-      return {dx: cdx, dy: cdy};
+      const dx = (x - cx) / (rect.width * 0.5);
+      const dy = (y - cy) / (rect.height * 0.5);
+
+      // Ya lo mandamos del lado "hacia atrás":
+      // izquierda = negativo, arriba = negativo
+      const cdx = Math.max(-1, Math.min(0, dx));
+      const cdy = Math.max(-1, Math.min(0, dy));
+
+      return { dx: cdx, dy: cdy };
     }
 
-    function sendDrag(cmd, dx, dy){
-      // usamos 3 decimales para estabilidad
-      const f = (n)=> (Math.round(n*1000)/1000).toString();
-      if (cmd === "DRAG_END"){
-        apiSend(`${player}_DRAG_END`);
-      } else {
-        apiSend(`${player}_${cmd} ${f(dx)} ${f(dy)}`);
+    function fmt(n){
+      return (Math.round(n * 1000) / 1000).toString();
+    }
+
+    async function flushAimLoop(){
+      if (aimSending) return;
+      aimSending = true;
+
+      while (aimDirty) {
+        aimDirty = false;
+        const cmd = `${player}_AIM ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`;
+        await apiSend(cmd);
       }
+
+      aimSending = false;
+    }
+
+    function queueAim(dx, dy){
+      lastAim = { dx, dy };
+      aimDirty = true;
+
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+          rafPending = false;
+          flushAimLoop();
+        });
+      }
+    }
+
+    async function sendFire(){
+      await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
     }
 
     sling.addEventListener("touchstart", (ev)=>{
       ev.preventDefault();
       dragging = true;
       rect = sling.getBoundingClientRect();
+
       const {x,y} = getXY(ev);
-      const {dx,dy} = normFromPoint(x,y);
-      sendDrag("DRAG_BEGIN", dx, dy);
-    }, {passive:false});
+      const p = normFromPoint(x,y);
+      queueAim(p.dx, p.dy);
+    }, { passive:false });
 
     sling.addEventListener("touchmove", (ev)=>{
       if (!dragging) return;
       ev.preventDefault();
-      const {x,y} = getXY(ev);
-      const {dx,dy} = normFromPoint(x,y);
-      sendDrag("DRAG", dx, dy);
-    }, {passive:false});
 
-    sling.addEventListener("touchend", (ev)=>{
+      const {x,y} = getXY(ev);
+      const p = normFromPoint(x,y);
+      queueAim(p.dx, p.dy);
+    }, { passive:false });
+
+    sling.addEventListener("touchend", async (ev)=>{
       if (!dragging) return;
       ev.preventDefault();
       dragging = false;
-      sendDrag("DRAG_END");
-    }, {passive:false});
+      await flushAimLoop();
+      await sendFire();
+    }, { passive:false });
 
-    // mouse (para test en PC)
     sling.addEventListener("mousedown", (ev)=>{
       dragging = true;
       rect = sling.getBoundingClientRect();
-      const {dx,dy} = normFromPoint(ev.clientX, ev.clientY);
-      sendDrag("DRAG_BEGIN", dx, dy);
+      const p = normFromPoint(ev.clientX, ev.clientY);
+      queueAim(p.dx, p.dy);
     });
+
     window.addEventListener("mousemove", (ev)=>{
       if (!dragging) return;
-      const {dx,dy} = normFromPoint(ev.clientX, ev.clientY);
-      sendDrag("DRAG", dx, dy);
+      const p = normFromPoint(ev.clientX, ev.clientY);
+      queueAim(p.dx, p.dy);
     });
-    window.addEventListener("mouseup", ()=>{
+
+    window.addEventListener("mouseup", async ()=>{
       if (!dragging) return;
       dragging = false;
-      sendDrag("DRAG_END");
+      await flushAimLoop();
+      await sendFire();
     });
 
     root.appendChild(sling);
 
-    // Row de botones: HAT + POWER + nav
     const row = document.createElement("div");
     row.className = "row3";
 
@@ -552,12 +566,10 @@
     $("bgImg").src = bgFor(stage);
 
     const body = $("panelBody");
-    // remove children except bgImg
     [...body.children].forEach(ch=>{
       if (ch.id !== "bgImg") body.removeChild(ch);
     });
 
-    // WAIT overlay si no es tu turno
     if (isWaiting()){
       const wait = document.createElement("div");
       wait.style.position="absolute";
@@ -593,10 +605,9 @@
       wait.appendChild(txt);
 
       body.appendChild(wait);
-      return; // si estás waiting no mostramos controles para no interferir
+      return;
     }
 
-    // Panels por stage
     let controls = null;
     if (stage === "start" || stage === "trailer"){
       controls = panelStart(stage);
@@ -616,7 +627,6 @@
     render();
   }
 
-  // boot
   render();
   tick();
   setInterval(tick, 650);
