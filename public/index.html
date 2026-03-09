@@ -4,253 +4,510 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Angry Remote</title>
+
   <style>
+    @font-face {
+      font-family: "MonsterChew";
+      src: url("/Font/CCThisManThisMonster W00 Chew/CCThisManThisMonster W00 Chew.ttf") format("truetype");
+      font-display: swap;
+    }
+
     :root{
-      --mint-0:#e8fff1;
-      --mint-1:#c9f5dd;
-      --mint-2:#a8eac7;
+      --mint-0:#eef9f1;
+      --mint-1:#dff2e5;
+      --mint-2:#cfead8;
       --vio-0:#f2e6ff;
       --vio-1:#dcbcff;
       --vio-2:#b986ff;
       --vio-3:#8a49ff;
-      --vio-4:#5a1fd6;
-      --ink:#102018;
-      --card: rgba(255,255,255,.62);
-      --stroke: rgba(30,60,40,.18);
-      --shadow: 0 12px 28px rgba(0,0,0,.18);
+      --vio-4:#4a147f;
+      --ink:#142016;
+      --card: rgba(255,255,255,.70);
+      --stroke: rgba(30,60,40,.14);
+      --shadow: 0 10px 24px rgba(0,0,0,.14);
       --radius: 22px;
+      --safe-bottom: max(16px, env(safe-area-inset-bottom));
     }
 
-    *{box-sizing:border-box;font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
-    body{
+    *{ box-sizing:border-box; }
+
+    html, body{
       margin:0;
-      color:var(--ink);
+      min-height:100%;
       background: linear-gradient(180deg, var(--mint-0), var(--mint-1));
-      min-height:100vh;
+      color:var(--ink);
+      font-family: "MonsterChew", system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    body{
       display:flex;
       justify-content:center;
     }
 
-    .wrap{
-      width:min(520px, 100%);
-      padding:14px 12px 18px;
+    .app{
+      width:min(540px, 100%);
+      min-height:100vh;
+      padding:10px 10px var(--safe-bottom);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
     }
 
     .topbar{
       display:flex;
-      gap:10px;
       align-items:center;
-      flex-wrap:wrap;
-      padding:10px;
-      border-radius: 18px;
-      background: var(--card);
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:18px;
+      background:var(--card);
       border:1px solid var(--stroke);
-      box-shadow: var(--shadow);
+      box-shadow:var(--shadow);
     }
 
-    .pill{
+    .topLeft{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .playerChip{
+      border:none;
+      border-radius:999px;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(0,0,0,.08);
+      min-width:54px;
+      height:44px;
+      padding:0 14px;
+      font: inherit;
+      font-size:18px;
+      cursor:pointer;
+      box-shadow:0 4px 10px rgba(0,0,0,.08);
+    }
+
+    .playerChip.active{
+      background: linear-gradient(180deg, var(--vio-0), var(--vio-2));
+      color:#221235;
+      border-color: rgba(90,31,214,.25);
+    }
+
+    .sessionMini{
       display:flex;
       align-items:center;
       gap:8px;
-      padding:10px 12px;
-      border-radius:999px;
-      background: rgba(255,255,255,.55);
-      border:1px solid var(--stroke);
-      font-weight:700;
+      flex:1;
+      justify-content:flex-end;
     }
 
-    .btn{
-      cursor:pointer;
-      border:none;
-      border-radius:999px;
-      padding:10px 14px;
-      font-weight:900;
-      color:#1a1226;
-      background: linear-gradient(180deg, var(--vio-0), var(--vio-2));
-      border: 2px solid rgba(90,31,214,.25);
-      box-shadow: 0 10px 18px rgba(0,0,0,.14);
-      transition: transform .06s ease;
-      user-select:none;
-    }
-    .btn:active{ transform: scale(.98); }
-
-    .btn-ghost{
-      background: rgba(255,255,255,.55);
-      border:1px solid var(--stroke);
-      box-shadow:none;
-      font-weight:800;
-    }
-
-    input{
+    .sessionMini input{
+      width:110px;
+      height:42px;
       border-radius:14px;
       border:1px solid var(--stroke);
-      padding:10px 12px;
-      font-weight:800;
-      background: rgba(255,255,255,.65);
+      background:rgba(255,255,255,.82);
+      padding:0 12px;
+      text-transform:uppercase;
+      font: inherit;
+      font-size:18px;
       outline:none;
-      min-width: 120px;
-      text-transform: uppercase;
-      letter-spacing: .6px;
     }
 
-    .stageLine{
-      display:flex;
-      gap:10px;
-      margin-top:10px;
-    }
-    .stageBox{
-      flex:1;
-      padding:10px 12px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.55);
-      border:1px solid var(--stroke);
-      font-weight:800;
-    }
-
-    .panel{
-      margin-top:14px;
-      border-radius: var(--radius);
-      overflow:hidden;
-      border:1px solid var(--stroke);
-      box-shadow: var(--shadow);
-      background: rgba(255,255,255,.35);
-    }
-
-    .panelHeader{
-      padding:14px 16px;
-      font-size: 22px;
-      font-weight: 1000;
-      background: rgba(255,255,255,.40);
-      border-bottom:1px solid var(--stroke);
-      backdrop-filter: blur(6px);
-    }
-
-    .panelBody{
-      position:relative;
-      padding:14px;
-      min-height: 520px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .bgImg{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      opacity: .95;
-      pointer-events:none;
-    }
-
-    .controls{
-      position:relative;
-      margin-top:auto;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-
-    .imgBtn{
-      background: rgba(255,255,255,.58);
-      border:1px solid var(--stroke);
-      border-radius: 18px;
-      padding:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      font-weight:1000;
+    .miniBtn{
+      border:none;
+      border-radius:999px;
+      height:42px;
+      padding:0 18px;
+      font: inherit;
+      font-size:18px;
       cursor:pointer;
-      box-shadow: 0 10px 18px rgba(0,0,0,.10);
-      user-select:none;
-    }
-    .imgBtn:active{ transform: scale(.99); }
-
-    .imgBtn img{
-      height: 54px;
-      width:auto;
-      image-rendering: auto;
+      color:#25153a;
+      background: linear-gradient(180deg, var(--vio-0), var(--vio-2));
+      border:1px solid rgba(90,31,214,.22);
+      box-shadow:0 8px 14px rgba(0,0,0,.10);
     }
 
-    .wide{ grid-column: 1 / -1; }
+    .statusRow{
+      display:flex;
+      gap:8px;
+    }
 
-    .slingArea{
-      position:relative;
-      border-radius: 18px;
-      background: rgba(255,255,255,.55);
+    .statusBox{
+      flex:1;
+      min-height:48px;
+      padding:10px 12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.68);
       border:1px solid var(--stroke);
-      box-shadow: 0 10px 18px rgba(0,0,0,.10);
-      padding:16px;
-      min-height: 160px;
+      box-shadow:var(--shadow);
       display:flex;
       align-items:center;
       justify-content:center;
       text-align:center;
-      font-weight:900;
-      touch-action:none;
+      font-size:18px;
+      line-height:1;
     }
 
-    .hint{
+    .screen{
+      position:relative;
+      flex:1;
+      min-height:70vh;
+      border-radius:28px;
+      overflow:hidden;
+      background:rgba(255,255,255,.50);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+    }
+
+    .bg{
       position:absolute;
-      bottom:10px;
-      left:12px;
-      right:12px;
-      font-size:12px;
-      opacity:.85;
-      font-weight:800;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.98;
+      pointer-events:none;
+      user-select:none;
     }
 
-    .row3{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
+    .layer{
+      position:relative;
+      z-index:2;
+      height:100%;
+      display:flex;
+      flex-direction:column;
       gap:12px;
+      padding:14px;
     }
 
-    .row5{
+    .title{
+      font-size:34px;
+      line-height:.95;
+      color:#172117;
+      text-shadow:0 2px 0 rgba(255,255,255,.35);
+      margin:0;
+    }
+
+    .subtle{
+      font-size:18px;
+      line-height:1.05;
+      opacity:.86;
+    }
+
+    .heroActions{
       display:grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns:1fr 1fr;
       gap:12px;
+      margin-top:auto;
     }
-    .row5 .wide{grid-column:1/-1}
 
-    .tag{
-      font-size: 12px;
-      font-weight: 900;
-      opacity:.85;
+    .heroBtn{
+      border:none;
+      border-radius:24px;
+      background:rgba(255,255,255,.72);
+      border:1px solid var(--stroke);
+      min-height:96px;
+      padding:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+
+    .heroBtn img{
+      max-width:100%;
+      max-height:72px;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .wide{
+      grid-column:1 / -1;
+    }
+
+    .charGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:auto;
+    }
+
+    .charBtn{
+      border:none;
+      border-radius:22px;
+      background:rgba(255,255,255,.76);
+      border:1px solid var(--stroke);
+      min-height:110px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+
+    .charBtn img{
+      max-width:88%;
+      max-height:88px;
+      object-fit:contain;
+      user-select:none;
+      pointer-events:none;
+    }
+
+    .charBtn.wide{
+      grid-column:1 / -1;
+      min-height:120px;
+    }
+
+    .aimMode{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .aimHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .iconBtn{
+      width:68px;
+      height:68px;
+      border:none;
+      border-radius:20px;
+      background:rgba(255,255,255,.78);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      padding:10px;
+    }
+
+    .iconBtn img{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .aimCanvas{
+      position:relative;
+      flex:1;
+      min-height:62vh;
+      border-radius:28px;
+      overflow:hidden;
+      background:rgba(255,255,255,.30);
+      border:1px solid rgba(255,255,255,.25);
+      touch-action:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+    }
+
+    .aimBg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.98;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .aimBadge{
+      position:absolute;
+      left:14px;
+      top:14px;
+      padding:10px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.72);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      font-size:18px;
+      z-index:3;
+    }
+
+    .powerDock{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      padding-top:2px;
+    }
+
+    .powerOnly{
+      width:120px;
+      height:120px;
+      border-radius:999px;
+      border:none;
+      background:rgba(255,255,255,.84);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      padding:16px;
+    }
+
+    .powerOnly img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      pointer-events:none;
+    }
+
+    .waiting{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      justify-content:flex-start;
+    }
+
+    .waitingTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .waitingPanel{
+      position:relative;
+      flex:1;
+      border-radius:26px;
+      overflow:hidden;
+      background:#a9d6ea;
+      border:1px solid rgba(0,0,0,.08);
+      box-shadow:var(--shadow);
+    }
+
+    .waitingTitle{
+      position:absolute;
+      left:0;
+      right:0;
+      top:18px;
+      text-align:center;
+      font-size:42px;
+      color:rgba(255,255,255,.88);
+      text-shadow:0 2px 0 rgba(0,0,0,.08);
+      z-index:3;
+    }
+
+    .waitingGrid{
+      position:absolute;
+      inset:90px 16px 16px 16px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      z-index:2;
+    }
+
+    .bubbleCard{
+      background:#f4ead3;
+      border-radius:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      box-shadow:0 8px 14px rgba(0,0,0,.08);
+    }
+
+    .bubbleCard img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      pointer-events:none;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    @media (max-width: 440px){
+      .title{ font-size:28px; }
+      .statusBox{ font-size:16px; }
+      .iconBtn{ width:60px; height:60px; }
+      .powerOnly{ width:104px; height:104px; }
+      .heroBtn{ min-height:86px; }
+      .charBtn{ min-height:96px; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <button id="p1Btn" class="btn btn-ghost">P1</button>
-      <button id="p2Btn" class="btn btn-ghost">P2</button>
+  <div class="app">
+    <div id="topShell">
+      <div id="topbar" class="topbar">
+        <div class="topLeft">
+          <button id="p1Btn" class="playerChip">P1</button>
+          <button id="p2Btn" class="playerChip">P2</button>
+        </div>
 
-      <div class="pill">
-        <span>SESSION</span>
-        <input id="codeInput" placeholder="CULA" maxlength="12" />
-        <button id="applyBtn" class="btn">APLICAR</button>
+        <div class="sessionMini">
+          <input id="codeInput" maxlength="12" placeholder="CULA" />
+          <button id="applyBtn" class="miniBtn">APLICAR</button>
+        </div>
       </div>
 
-      <div class="stageLine" style="width:100%">
-        <div class="stageBox">stage: <span id="stageText">-</span></div>
-        <div class="stageBox">active: <span id="activeText">-</span></div>
-        <div class="stageBox">net: <span id="netText">...</span></div>
+      <div id="statusRow" class="statusRow" style="margin-top:8px;">
+        <div class="statusBox">stage: <span id="stageText" style="margin-left:6px;">-</span></div>
+        <div class="statusBox">active: <span id="activeText" style="margin-left:6px;">-</span></div>
+        <div class="statusBox">net: <span id="netText" style="margin-left:6px;">...</span></div>
       </div>
     </div>
 
-    <div class="panel" id="mainPanel">
-      <div class="panelHeader" id="panelTitle">...</div>
-      <div class="panelBody" id="panelBody">
-        <img id="bgImg" class="bgImg" alt="" />
-      </div>
+    <div class="screen" id="screen">
+      <img id="screenBg" class="bg" alt="" />
+      <div class="layer" id="layer"></div>
     </div>
   </div>
 
 <script>
-  const $ = (id)=>document.getElementById(id);
+  const $ = id => document.getElementById(id);
+
+  let player = "P1";
+  let code = "CULA";
+  let lastState = { stage:"start", active:"", ts:0 };
+  let netOk = false;
+
+  let selectedSlot = null;
+  let shotFired = false;
+
+  const IMG = {
+    BG_WAIT: "/style/BG ESPERA.png",
+    BG_P1: "/style/BG P1.png",
+    BG_P2: "/style/BG P2.png",
+    BG_SLING: "/style/Y slingshot.png",
+
+    PLAY: "/style/PLAY.png",
+    TRAILER: "/style/TRAILER.png",
+    RESTART: "/style/RESTART.png",
+    EXIT: "/style/EXIT.png",
+    HOME: "/style/HOME.png",
+    LEFT: "/style/LEFT.png",
+    RIGHT: "/style/RIGHT.png",
+
+    OVEJITA: "/style/OVEJITA.png",
+    PATITO: "/style/PATITO.png",
+    CARPINCHITA: "/style/CARPINCHITA.png",
+    RITA: "/style/RITA.png",
+    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png",
+
+    HAT: "/style/poder argentino.png",
+    POWER: "/style/PLAY.png",
+
+    WAIT1: "/style/pig1.png",
+    WAIT2: "/style/pig2.png",
+    WAIT3: "/style/pig3.png",
+    WAIT4: "/style/pig4.png"
+  };
 
   function getPlayerFromUrl(){
     const u = new URL(location.href);
@@ -260,14 +517,17 @@
     return "";
   }
 
-  let player = getPlayerFromUrl() || localStorage.getItem("angry_player") || "P1";
-  let code = (new URL(location.href)).searchParams.get("code") || localStorage.getItem("angry_code") || "CULA";
-
-  $("codeInput").value = code;
+  function loadPersisted(){
+    player = getPlayerFromUrl() || localStorage.getItem("angry_player") || "P1";
+    code = (new URL(location.href)).searchParams.get("code") || localStorage.getItem("angry_code") || "CULA";
+    $("codeInput").value = code;
+  }
 
   function setPlayer(p){
     player = p;
     localStorage.setItem("angry_player", player);
+    selectedSlot = null;
+    shotFired = false;
     render();
   }
 
@@ -275,14 +535,10 @@
   $("p2Btn").onclick = ()=> setPlayer("P2");
 
   $("applyBtn").onclick = ()=>{
-    code = ($("codeInput").value || "").trim().toUpperCase();
-    if (!code) code = "CULA";
+    code = ($("codeInput").value || "").trim().toUpperCase() || "CULA";
     localStorage.setItem("angry_code", code);
     render();
   };
-
-  let lastState = { stage:"start", active:"", ts:0 };
-  let netOk = false;
 
   async function apiGetState(){
     try{
@@ -312,28 +568,8 @@
     }
   }
 
-  const STYLE = "/style";
-  const IMG = {
-    BG_WAIT: `${STYLE}/BG ESPERA.png`,
-    BG_P1:   `${STYLE}/BG P1.png`,
-    BG_P2:   `${STYLE}/BG P2.png`,
-    PLAY:    `${STYLE}/PLAY.png`,
-    TRAILER: `${STYLE}/TRAILER.png`,
-    RESTART: `${STYLE}/RESTART.png`,
-    EXIT:    `${STYLE}/EXIT.png`,
-    HOME:    `${STYLE}/HOME.png`,
-    LEFT:    `${STYLE}/LEFT.png`,
-    RIGHT:   `${STYLE}/RIGHT.png`,
-    OVEJITA: `${STYLE}/OVEJITA.png`,
-    PATITO: `${STYLE}/PATITO.png`,
-    CARPINCHITA: `${STYLE}/CARPINCHITA.png`,
-    RITA: `${STYLE}/RITA.png`,
-    VAQUITA_PELUDA: `${STYLE}/VAQUITA PELUDA.png`,
-    HAT: `${STYLE}/poder argentino.png`,
-  };
-
   function normalizeStage(s){
-    s = (s||"").toLowerCase().trim();
+    s = (s || "").toLowerCase().trim();
     if (s.includes("trailer")) return "trailer";
     if (s.includes("select")) return "select";
     if (s.includes("level")) return "level";
@@ -341,90 +577,201 @@
     return "start";
   }
 
-  function titleFor(stage){
-    if (stage==="start") return `StartScene (${player})`;
-    if (stage==="trailer") return `Trailer (${player})`;
-    if (stage==="select") return `LevelSelect (${player})`;
-    if (stage==="level") return `Level1 (${player})`;
-    return `(${player})`;
-  }
-
-  function bgFor(stage){
-    if (player==="P2") return IMG.BG_P2;
-    return IMG.BG_P1;
-  }
-
   function isWaiting(){
-    const act = (lastState.active||"").trim().toUpperCase();
+    const act = (lastState.active || "").trim().toUpperCase();
     if (!act) return false;
     return act !== player;
   }
 
-  function btnImg(imgSrc, label, onClick, wide=false){
-    const b = document.createElement("div");
-    b.className = "imgBtn" + (wide ? " wide" : "");
-    b.innerHTML = `<img src="${imgSrc}" alt=""><div>${label}</div>`;
+  function bgForMain(stage){
+    if (stage === "level" && selectedSlot !== null) return IMG.BG_SLING;
+    return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
+  }
+
+  function updateTopVisibility(stage){
+    const topShell = $("topShell");
+
+    // Solo visible en StartScene / Trailer
+    if (stage === "start" || stage === "trailer"){
+      topShell.classList.remove("hidden");
+    } else {
+      topShell.classList.add("hidden");
+    }
+  }
+
+  function applyTopSelection(){
+    $("p1Btn").classList.toggle("active", player === "P1");
+    $("p2Btn").classList.toggle("active", player === "P2");
+    $("stageText").textContent = normalizeStage(lastState.stage);
+    $("activeText").textContent = lastState.active || "-";
+    $("netText").textContent = netOk ? "ok" : "offline";
+  }
+
+  function clearLayer(){
+    const layer = $("layer");
+    while (layer.firstChild) layer.removeChild(layer.firstChild);
+    return layer;
+  }
+
+  function makeImageButton(src, onClick, className="heroBtn"){
+    const b = document.createElement("button");
+    b.className = className;
+    b.innerHTML = `<img src="${src}" alt="">`;
     b.onclick = onClick;
     return b;
   }
 
-  function panelStart(stage){
-    const root = document.createElement("div");
-    root.className = "controls";
+  function renderStart(stage){
+    const layer = clearLayer();
 
-    root.appendChild(btnImg(IMG.PLAY, "PLAY", ()=> apiSend(`${player}_PLAY`)));
-    root.appendChild(btnImg(IMG.TRAILER, "TRAILER", ()=> apiSend(`${player}_TRAILER`)));
+    const title = document.createElement("h1");
+    title.className = "title";
+    title.textContent = player === "P1" ? "Player 1" : "Player 2";
+    layer.appendChild(title);
 
-    if (stage==="trailer"){
-      root.appendChild(btnImg(IMG.RESTART, "STOP TRAILER", ()=> apiSend(`${player}_STOPTRAILER`), true));
+    const subtle = document.createElement("div");
+    subtle.className = "subtle";
+    subtle.textContent = stage === "trailer" ? "Trailer" : "Start";
+    layer.appendChild(subtle);
+
+    const actions = document.createElement("div");
+    actions.className = "heroActions";
+
+    actions.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_PLAY`)));
+    actions.appendChild(makeImageButton(IMG.TRAILER, ()=> apiSend(`${player}_TRAILER`)));
+
+    if (stage === "trailer"){
+      const stop = makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_STOPTRAILER`));
+      stop.classList.add("wide");
+      actions.appendChild(stop);
     }
 
-    root.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`), true));
-    return root;
+    const exit = makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`));
+    exit.classList.add("wide");
+    actions.appendChild(exit);
+
+    layer.appendChild(actions);
   }
 
-  function panelSelect(){
-    const root = document.createElement("div");
-    root.className = "controls";
+  function renderSelect(){
+    const layer = clearLayer();
 
-    root.appendChild(btnImg(IMG.LEFT, "LEFT", ()=> apiSend(`${player}_LEFT`)));
-    root.appendChild(btnImg(IMG.RIGHT, "RIGHT", ()=> apiSend(`${player}_RIGHT`)));
+    const title = document.createElement("h1");
+    title.className = "title";
+    title.textContent = "Choose";
+    layer.appendChild(title);
 
-    root.appendChild(btnImg(IMG.PLAY, "PLAY", ()=> apiSend(`${player}_PLAY`), true));
-    root.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
-    root.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
+    const grid = document.createElement("div");
+    grid.className = "charGrid";
 
-    return root;
+    const chars = [
+      { img: IMG.OVEJITA, slot: 0 },
+      { img: IMG.PATITO, slot: 1 },
+      { img: IMG.CARPINCHITA, slot: 2 },
+      { img: IMG.RITA, slot: 3 },
+      { img: IMG.VAQUITA_PELUDA, slot: 4, wide: true }
+    ];
+
+    chars.forEach(c=>{
+      const btn = makeImageButton(c.img, async ()=>{
+        selectedSlot = c.slot;
+        shotFired = false;
+        await apiSend(`${player}_SLOT${c.slot}`);
+        render();
+      }, "charBtn");
+      if (c.wide) btn.classList.add("wide");
+      grid.appendChild(btn);
+    });
+
+    layer.appendChild(grid);
   }
 
-  function panelLevel(){
-    const root = document.createElement("div");
-    root.style.position="relative";
-    root.style.display="flex";
-    root.style.flexDirection="column";
-    root.style.gap="12px";
-    root.style.height="100%";
+  function renderWaiting(){
+    const layer = clearLayer();
 
-    const slots = document.createElement("div");
-    slots.className = "row5";
+    const wrap = document.createElement("div");
+    wrap.className = "waiting";
 
-    slots.appendChild(btnImg(IMG.OVEJITA, "OVEJITA", ()=> apiSend(`${player}_SLOT0`)));
-    slots.appendChild(btnImg(IMG.PATITO, "PATITO", ()=> apiSend(`${player}_SLOT1`)));
-    slots.appendChild(btnImg(IMG.CARPINCHITA, "CARPINCHITA", ()=> apiSend(`${player}_SLOT2`)));
-    slots.appendChild(btnImg(IMG.RITA, "RITA", ()=> apiSend(`${player}_SLOT3`)));
-    slots.appendChild(btnImg(IMG.VAQUITA_PELUDA, "VAQUITA PELUDA", ()=> apiSend(`${player}_SLOT4`), true));
+    const top = document.createElement("div");
+    top.className = "waitingTop";
 
-    root.appendChild(slots);
+    const left = makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn");
+    const pause = makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "iconBtn");
 
-    const sling = document.createElement("div");
-    sling.className = "slingArea";
-    sling.innerHTML = `
-      <div>
-        <div style="font-size:16px;font-weight:1000;">SLINGSHOT</div>
-        <div class="tag">Arrastrá para apuntar. Al soltar, dispara.</div>
-      </div>
-      <div class="hint">Se envía AIM limitado + FIRE final. Mucho más fluido.</div>
-    `;
+    const title = document.createElement("h1");
+    title.className = "title";
+    title.style.margin = "0 auto";
+    title.textContent = player === "P1" ? "Player 1" : "Player 2";
+
+    top.appendChild(left);
+    top.appendChild(title);
+    top.appendChild(pause);
+
+    wrap.appendChild(top);
+
+    const panel = document.createElement("div");
+    panel.className = "waitingPanel";
+
+    const bg = document.createElement("img");
+    bg.className = "bg";
+    bg.src = IMG.BG_WAIT;
+    panel.appendChild(bg);
+
+    const wt = document.createElement("div");
+    wt.className = "waitingTitle";
+    wt.textContent = "WAITING...";
+    panel.appendChild(wt);
+
+    const grid = document.createElement("div");
+    grid.className = "waitingGrid";
+
+    [IMG.WAIT1, IMG.WAIT2, IMG.WAIT3, IMG.WAIT4].forEach(src=>{
+      const c = document.createElement("div");
+      c.className = "bubbleCard";
+      c.innerHTML = `<img src="${src}" alt="">`;
+      grid.appendChild(c);
+    });
+
+    panel.appendChild(grid);
+    wrap.appendChild(panel);
+    layer.appendChild(wrap);
+  }
+
+  function renderAimStage(){
+    const layer = clearLayer();
+
+    const aimWrap = document.createElement("div");
+    aimWrap.className = "aimMode";
+
+    const header = document.createElement("div");
+    header.className = "aimHeader";
+
+    const homeBtn = makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "iconBtn");
+    const hatBtn = makeImageButton(IMG.HAT, ()=> apiSend(`${player}_HAT`), "iconBtn");
+    const restartBtn = makeImageButton(IMG.RESTART, ()=> {
+      selectedSlot = null;
+      shotFired = false;
+      apiSend(`${player}_RESTART`);
+    }, "iconBtn");
+
+    header.appendChild(homeBtn);
+    header.appendChild(hatBtn);
+    header.appendChild(restartBtn);
+
+    aimWrap.appendChild(header);
+
+    const aimCanvas = document.createElement("div");
+    aimCanvas.className = "aimCanvas";
+
+    const aimBg = document.createElement("img");
+    aimBg.className = "aimBg";
+    aimBg.src = IMG.BG_SLING;
+    aimCanvas.appendChild(aimBg);
+
+    const badge = document.createElement("div");
+    badge.className = "aimBadge";
+    badge.textContent = shotFired ? "POWER" : "SLINGSHOT";
+    aimCanvas.appendChild(badge);
 
     let dragging = false;
     let rect = null;
@@ -438,17 +785,15 @@
       return { x: t.clientX, y: t.clientY };
     }
 
-    function normFromPoint(x,y){
-      if (!rect) rect = sling.getBoundingClientRect();
+    function normFromPoint(x, y){
+      if (!rect) rect = aimCanvas.getBoundingClientRect();
 
       const cx = rect.left + rect.width * 0.5;
-      const cy = rect.top + rect.height * 0.5;
+      const cy = rect.top + rect.height * 0.62;
 
-      const dx = (x - cx) / (rect.width * 0.5);
-      const dy = (y - cy) / (rect.height * 0.5);
+      const dx = (x - cx) / (rect.width * 0.52);
+      const dy = (y - cy) / (rect.height * 0.68);
 
-      // Ya lo mandamos del lado "hacia atrás":
-      // izquierda = negativo, arriba = negativo
       const cdx = Math.max(-1, Math.min(0, dx));
       const cdy = Math.max(-1, Math.min(0, dy));
 
@@ -465,8 +810,7 @@
 
       while (aimDirty) {
         aimDirty = false;
-        const cmd = `${player}_AIM ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`;
-        await apiSend(cmd);
+        await apiSend(`${player}_AIM ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
       }
 
       aimSending = false;
@@ -485,151 +829,136 @@
       }
     }
 
-    async function sendFire(){
+    async function fireNow(){
+      await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
+      shotFired = true;
+      render();
     }
 
-    sling.addEventListener("touchstart", (ev)=>{
-      ev.preventDefault();
-      dragging = true;
-      rect = sling.getBoundingClientRect();
+    if (!shotFired){
+      aimCanvas.addEventListener("touchstart", (ev)=>{
+        ev.preventDefault();
+        dragging = true;
+        rect = aimCanvas.getBoundingClientRect();
+        const {x,y} = getXY(ev);
+        const p = normFromPoint(x,y);
+        queueAim(p.dx, p.dy);
+      }, { passive:false });
 
-      const {x,y} = getXY(ev);
-      const p = normFromPoint(x,y);
-      queueAim(p.dx, p.dy);
-    }, { passive:false });
+      aimCanvas.addEventListener("touchmove", (ev)=>{
+        if (!dragging) return;
+        ev.preventDefault();
+        const {x,y} = getXY(ev);
+        const p = normFromPoint(x,y);
+        queueAim(p.dx, p.dy);
+      }, { passive:false });
 
-    sling.addEventListener("touchmove", (ev)=>{
-      if (!dragging) return;
-      ev.preventDefault();
+      aimCanvas.addEventListener("touchend", async (ev)=>{
+        if (!dragging) return;
+        ev.preventDefault();
+        dragging = false;
+        await fireNow();
+      }, { passive:false });
 
-      const {x,y} = getXY(ev);
-      const p = normFromPoint(x,y);
-      queueAim(p.dx, p.dy);
-    }, { passive:false });
+      aimCanvas.addEventListener("mousedown", (ev)=>{
+        dragging = true;
+        rect = aimCanvas.getBoundingClientRect();
+        const p = normFromPoint(ev.clientX, ev.clientY);
+        queueAim(p.dx, p.dy);
+      });
 
-    sling.addEventListener("touchend", async (ev)=>{
-      if (!dragging) return;
-      ev.preventDefault();
-      dragging = false;
-      await flushAimLoop();
-      await sendFire();
-    }, { passive:false });
+      window.addEventListener("mousemove", (ev)=>{
+        if (!dragging) return;
+        const p = normFromPoint(ev.clientX, ev.clientY);
+        queueAim(p.dx, p.dy);
+      });
 
-    sling.addEventListener("mousedown", (ev)=>{
-      dragging = true;
-      rect = sling.getBoundingClientRect();
-      const p = normFromPoint(ev.clientX, ev.clientY);
-      queueAim(p.dx, p.dy);
-    });
+      window.addEventListener("mouseup", async ()=>{
+        if (!dragging) return;
+        dragging = false;
+        await fireNow();
+      });
+    }
 
-    window.addEventListener("mousemove", (ev)=>{
-      if (!dragging) return;
-      const p = normFromPoint(ev.clientX, ev.clientY);
-      queueAim(p.dx, p.dy);
-    });
+    aimWrap.appendChild(aimCanvas);
 
-    window.addEventListener("mouseup", async ()=>{
-      if (!dragging) return;
-      dragging = false;
-      await flushAimLoop();
-      await sendFire();
-    });
+    if (shotFired){
+      const powerDock = document.createElement("div");
+      powerDock.className = "powerDock";
 
-    root.appendChild(sling);
+      const powerBtn = document.createElement("button");
+      powerBtn.className = "powerOnly";
+      powerBtn.innerHTML = `<img src="${IMG.POWER}" alt="">`;
+      powerBtn.onclick = ()=> apiSend(`${player}_POWER`);
 
-    const row = document.createElement("div");
-    row.className = "row3";
+      powerDock.appendChild(powerBtn);
+      aimWrap.appendChild(powerDock);
+    }
 
-    row.appendChild(btnImg(IMG.HAT, "PODER ARGENTINO", ()=> apiSend(`${player}_HAT`)));
-    row.appendChild(btnImg(IMG.PLAY, "POWER (2do toque)", ()=> apiSend(`${player}_POWER`)));
-    row.appendChild(btnImg(IMG.RESTART, "RESTART", ()=> apiSend(`${player}_RESTART`)));
-
-    root.appendChild(row);
-
-    const nav = document.createElement("div");
-    nav.className = "controls";
-    nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
-    nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
-    root.appendChild(nav);
-
-    return root;
+    layer.appendChild(aimWrap);
   }
 
-  function render(){
-    $("stageText").textContent = normalizeStage(lastState.stage);
-    $("activeText").textContent = (lastState.active || "-");
-    $("netText").textContent = netOk ? "ok" : "offline";
-
-    const stage = normalizeStage(lastState.stage);
-    $("panelTitle").textContent = titleFor(stage);
-    $("bgImg").src = bgFor(stage);
-
-    const body = $("panelBody");
-    [...body.children].forEach(ch=>{
-      if (ch.id !== "bgImg") body.removeChild(ch);
-    });
-
+  function renderLevel(){
     if (isWaiting()){
-      const wait = document.createElement("div");
-      wait.style.position="absolute";
-      wait.style.inset="0";
-      wait.style.display="flex";
-      wait.style.alignItems="center";
-      wait.style.justifyContent="center";
-      wait.style.flexDirection="column";
-      wait.style.gap="10px";
-      wait.style.padding="18px";
-      wait.style.zIndex="10";
-      wait.style.background="rgba(0,0,0,.08)";
-
-      const img = document.createElement("img");
-      img.src = IMG.BG_WAIT;
-      img.style.width="100%";
-      img.style.height="100%";
-      img.style.objectFit="cover";
-      img.style.borderRadius="18px";
-      img.style.border="1px solid rgba(0,0,0,.12)";
-      img.style.boxShadow="0 12px 28px rgba(0,0,0,.18)";
-      wait.appendChild(img);
-
-      const txt = document.createElement("div");
-      txt.textContent = "WAITING...";
-      txt.style.position="absolute";
-      txt.style.bottom="22px";
-      txt.style.left="0";
-      txt.style.right="0";
-      txt.style.textAlign="center";
-      txt.style.fontWeight="1000";
-      txt.style.fontSize="22px";
-      wait.appendChild(txt);
-
-      body.appendChild(wait);
+      renderWaiting();
       return;
     }
 
-    let controls = null;
-    if (stage === "start" || stage === "trailer"){
-      controls = panelStart(stage);
-    } else if (stage === "select"){
-      controls = panelSelect();
-    } else if (stage === "level"){
-      controls = panelLevel();
-    } else {
-      controls = panelStart(stage);
+    if (selectedSlot === null){
+      renderSelect();
+      return;
     }
 
-    body.appendChild(controls);
+    renderAimStage();
+  }
+
+  function render(){
+    const stage = normalizeStage(lastState.stage);
+
+    applyTopSelection();
+    updateTopVisibility(stage);
+
+    $("screenBg").src = bgForMain(stage);
+
+    if (stage === "start" || stage === "trailer"){
+      selectedSlot = null;
+      shotFired = false;
+      renderStart(stage);
+      return;
+    }
+
+    if (stage === "select"){
+      selectedSlot = null;
+      shotFired = false;
+      renderSelect();
+      return;
+    }
+
+    if (stage === "level"){
+      renderLevel();
+      return;
+    }
+
+    renderStart(stage);
   }
 
   async function tick(){
     await apiGetState();
+
+    const act = (lastState.active || "").trim().toUpperCase();
+    if (act && act !== player){
+      // si ahora está jugando el otro, volver a waiting/panel pasivo
+      shotFired = false;
+    }
+
     render();
   }
 
+  loadPersisted();
   render();
   tick();
-  setInterval(tick, 650);
+  setInterval(tick, 450);
 </script>
 </body>
 </html>
