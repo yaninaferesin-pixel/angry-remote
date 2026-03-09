@@ -17,9 +17,59 @@ const cmdQueueByCode = new Map(); // code -> [cmd strings]
 function normCode(code) {
   return (code || "").trim().toUpperCase();
 }
+
 function ensureQueue(code) {
   if (!cmdQueueByCode.has(code)) cmdQueueByCode.set(code, []);
   return cmdQueueByCode.get(code);
+}
+
+function isCoalescableCommand(cmd) {
+  return (
+    cmd.startsWith("P1_AIM ") ||
+    cmd.startsWith("P2_AIM ") ||
+    cmd.startsWith("P1_DRAG ") ||
+    cmd.startsWith("P2_DRAG ")
+  );
+}
+
+function getCommandChannel(cmd) {
+  if (cmd.startsWith("P1_AIM ") || cmd.startsWith("P1_DRAG ")) return "P1_AIMLIKE";
+  if (cmd.startsWith("P2_AIM ") || cmd.startsWith("P2_DRAG ")) return "P2_AIMLIKE";
+  return "";
+}
+
+function enqueueCommand(code, cmd) {
+  const q = ensureQueue(code);
+
+  // Para AIM/DRAG, no apilamos infinitos: reemplazamos el último del mismo canal.
+  if (isCoalescableCommand(cmd)) {
+    const channel = getCommandChannel(cmd);
+
+    for (let i = q.length - 1; i >= 0; i--) {
+      const existing = q[i];
+      if (getCommandChannel(existing) === channel) {
+        q[i] = cmd;
+        return;
+      }
+
+      // Si ya apareció un FIRE/DRAG_END más nuevo, no seguir tocando atrás.
+      if (
+        existing.startsWith("P1_FIRE") ||
+        existing.startsWith("P2_FIRE") ||
+        existing.startsWith("P1_DRAG_END") ||
+        existing.startsWith("P2_DRAG_END")
+      ) {
+        break;
+      }
+    }
+  }
+
+  q.push(cmd);
+
+  // Evita colas absurdamente largas
+  if (q.length > 120) {
+    q.splice(0, q.length - 120);
+  }
 }
 
 // -------- Health --------
@@ -49,11 +99,11 @@ app.get("/api/state", (req, res) => {
 app.post("/api/send", (req, res) => {
   const code = normCode(req.body?.code);
   const cmd = (req.body?.cmd || "").trim();
+
   if (!code) return res.status(400).json({ ok: false, error: "missing code" });
   if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
 
-  const q = ensureQueue(code);
-  q.push(cmd);
+  enqueueCommand(code, cmd);
   return res.json({ ok: true });
 });
 
