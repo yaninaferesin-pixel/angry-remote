@@ -480,6 +480,14 @@
   let selectedSlot = null;
   let shotFired = false;
 
+  const slots = [
+    { img: "/style/OVEJITA.png?v=4", used:false },
+    { img: "/style/PATITO.png?v=4", used:false },
+    { img: "/style/CARPINCHITA.png?v=4", used:false },
+    { img: "/style/RITA.png?v=4", used:false },
+    { img: "/style/VAQUITA PELUDA.png?v=4", used:false }
+  ];
+
   const IMG = {
     BG_WAIT: "/style/BG ESPERA.png?v=4",
     BG_P1: "/style/BG P1.png?v=4",
@@ -753,9 +761,15 @@
     const hatBtn = document.createElement("button");
     hatBtn.className = "specialPower";
     hatBtn.innerHTML = `<img src="${IMG.HAT}" alt="">`;
-    bindPress(hatBtn, ()=> apiSend(`${player}_HAT`));
-    specialTop.appendChild(hatBtn);
 
+    bindPress(hatBtn, async ()=>{
+      selectedSlot = "hat";
+      shotFired = false;
+      await apiSend(`${player}_HAT`);
+      render();
+    });
+
+    specialTop.appendChild(hatBtn);
     wrap.appendChild(specialTop);
 
     const chars = document.createElement("div");
@@ -772,8 +786,8 @@
       btn.className = "charBtn";
       btn.innerHTML = `<img src="${c.img}" alt="">`;
       bindPress(btn, async ()=>{
-        shotFired = false;
         selectedSlot = c.slot;
+        shotFired = false;
         await apiSend(`${player}_SLOT${c.slot}`);
         render();
       });
@@ -888,7 +902,6 @@
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
       shotFired = true;
-      dbg("POWER STAGE READY");
       render();
     }
 
@@ -1027,6 +1040,8 @@
 
   function renderLevel(){
     if (!isCurrentPlayerActive()){
+      selectedSlot = null;
+      shotFired = false;
       renderWaiting();
       return;
     }
@@ -1038,6 +1053,11 @@
 
     if (!shotFired){
       renderAimStage();
+      return;
+    }
+
+    if (selectedSlot === "hat"){
+      renderWaiting();
       return;
     }
 
@@ -1066,10 +1086,17 @@
     }
 
     if (stage === "level"){
+      if (!isCurrentPlayerActive()){
+        selectedSlot = null;
+        shotFired = false;
+      }
+
       renderLevel();
       return;
     }
 
+    selectedSlot = null;
+    shotFired = false;
     renderStart(stage);
   }
 
