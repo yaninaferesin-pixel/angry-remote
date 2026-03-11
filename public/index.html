@@ -407,7 +407,7 @@
       min-height:70vh;
     }
 
-    .waitingGrid{
+    .lindaGrid{
       flex:1;
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -417,17 +417,44 @@
       padding:10px 12px 4px;
     }
 
-    .waitCard{
-      display:flex;
-      align-items:center;
-      justify-content:center;
+    .lindaBtn{
+      border:none;
+      background:transparent;
+      padding:0;
+      cursor:pointer;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.10));
+      touch-action:manipulation;
     }
 
-    .waitCard img{
+    .lindaBtn img{
       width:100%;
       max-width:170px;
       object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .lindaM1Wrap{
+      display:flex;
+      justify-content:center;
+      padding:10px 0 20px;
+    }
+
+    .lindaM1{
+      border:none;
+      background:transparent;
+      padding:0;
+      cursor:pointer;
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.10));
+      touch-action:manipulation;
+    }
+
+    .lindaM1 img{
+      width:min(58vw, 220px);
+      height:auto;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
     }
 
     @media (max-width:440px){
@@ -480,45 +507,37 @@
   let selectedSlot = null;
   let shotFired = false;
 
-  const slots = [
-    { img: "/style/OVEJITA.png?v=4", used:false },
-    { img: "/style/PATITO.png?v=4", used:false },
-    { img: "/style/CARPINCHITA.png?v=4", used:false },
-    { img: "/style/RITA.png?v=4", used:false },
-    { img: "/style/VAQUITA PELUDA.png?v=4", used:false }
-  ];
-
   const IMG = {
-    BG_WAIT: "/style/BG ESPERA.png?v=4",
-    BG_P1: "/style/BG P1.png?v=4",
-    BG_P2: "/style/BG P2.png?v=4",
-    SLINGSHOT: "/style/SLINGSHOT.png?v=4",
+    BG_WAIT: "/style/BG ESPERA.png?v=5",
+    BG_P1: "/style/BG P1.png?v=5",
+    BG_P2: "/style/BG P2.png?v=5",
+    SLINGSHOT: "/style/SLINGSHOT.png?v=5",
 
-    PLAY: "/style/PLAY.png?v=4",
-    TRAILER: "/style/TRAILER.png?v=4",
-    RESTART: "/style/RESTART.png?v=4",
-    EXIT: "/style/EXIT.png?v=4",
-    HOME: "/style/HOME.png?v=4",
-    LEFT: "/style/LEFT.png?v=4",
-    RIGHT: "/style/RIGHT.png?v=4",
+    PLAY: "/style/PLAY.png?v=5",
+    TRAILER: "/style/TRAILER.png?v=5",
+    RESTART: "/style/RESTART.png?v=5",
+    EXIT: "/style/EXIT.png?v=5",
+    HOME: "/style/HOME.png?v=5",
+    LEFT: "/style/LEFT.png?v=5",
+    RIGHT: "/style/RIGHT.png?v=5",
 
-    OVEJITA: "/style/OVEJITA.png?v=4",
-    PATITO: "/style/PATITO.png?v=4",
-    CARPINCHITA: "/style/CARPINCHITA.png?v=4",
-    RITA: "/style/RITA.png?v=4",
-    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=4",
-    HAT: "/style/poder argentino.png?v=4",
+    OVEJITA: "/style/OVEJITA.png?v=5",
+    PATITO: "/style/PATITO.png?v=5",
+    CARPINCHITA: "/style/CARPINCHITA.png?v=5",
+    RITA: "/style/RITA.png?v=5",
+    VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=5",
+    HAT: "/style/poder argentino.png?v=5",
 
-    ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=4",
-    ANGRY_PATITO: "/style/ANGRY PATITO.png?v=4",
-    ANGRY_CARPINCHITA: "/style/ANGRY CARPINCHITA.png?v=4",
-    ANGRY_RITA: "/style/ANGRY RITA.png?v=4",
-    ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png?v=4",
+    ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=5",
+    ANGRY_PATITO: "/style/ANGRY PATITO.png?v=5",
+    ANGRY_CARPINCHITA: "/style/ANGRY CARPINCHITA.png?v=5",
+    ANGRY_RITA: "/style/ANGRY RITA.png?v=5",
+    ANGRY_VAQUITA_PELUDA: "/style/ANGRY VAQUITA PELUDA.png?v=5",
 
-    LINDA1: "/style/LINDA 1.png?v=4",
-    LINDA2: "/style/LINDA 2.png?v=4",
-    LINDA3: "/style/LINDA 3.png?v=4",
-    LINDA4: "/style/LINDA 4.png?v=4"
+    LINDA1: "/style/LINDA 1.png?v=5",
+    LINDA2: "/style/LINDA 2.png?v=5",
+    LINDA3: "/style/LINDA 3.png?v=5",
+    LINDA4: "/style/LINDA 4.png?v=5",
   };
 
   function dbg(...args){
@@ -831,10 +850,6 @@
 
     const aimBg = document.createElement("img");
     aimBg.src = IMG.SLINGSHOT;
-    aimBg.onerror = () => {
-      console.error("No cargó SLINGSHOT:", aimBg.src);
-      aimBg.src = "/style/SLINGSHOT.png?v=fallback";
-    };
     aimCanvas.appendChild(aimBg);
 
     const badge = document.createElement("div");
@@ -867,10 +882,10 @@
       const dx = (x - starX) / (rect.width * 0.22);
       const dy = (y - starY) / (rect.height * 0.22);
 
-      const cdx = Math.max(-1, Math.min(1, dx));
-      const cdy = Math.max(-1, Math.min(1, dy));
-
-      return { dx: cdx, dy: cdy };
+      return {
+        dx: Math.max(-1, Math.min(1, dx)),
+        dy: Math.max(-1, Math.min(1, dy)),
+      };
     }
 
     async function flushAimLoop(){
@@ -989,7 +1004,6 @@
     btn.innerHTML = `<img src="${getAngryImageForSlot(selectedSlot)}" alt="">`;
 
     bindPress(btn, async ()=>{
-      dbg("POWER TAP", player, selectedSlot);
       await apiSend(`${player}_POWER`);
     });
 
@@ -999,21 +1013,7 @@
 
   function renderWaiting(){
     const layer = clearLayer();
-
-    const top = document.createElement("div");
-    top.className = "topIcons";
-
-    const left = document.createElement("div");
-    left.className = "iconRow";
-    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
-    top.appendChild(left);
-
-    const right = document.createElement("div");
-    right.className = "iconRow";
-    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
-    top.appendChild(right);
-
-    layer.appendChild(top);
+    $("screenBg").src = IMG.BG_WAIT;
 
     const wrap = document.createElement("div");
     wrap.className = "waitingWrap";
@@ -1022,18 +1022,41 @@
     stage.className = "waitingStage";
 
     const grid = document.createElement("div");
-    grid.className = "waitingGrid";
+    grid.className = "lindaGrid";
 
-    [IMG.LINDA1, IMG.LINDA2, IMG.LINDA3, IMG.LINDA4].forEach(src=>{
-      const c = document.createElement("div");
-      c.className = "waitCard";
-      c.innerHTML = `<img src="${src}" alt="">`;
-      grid.appendChild(c);
+    const lindaButtons = [
+      { src: IMG.LINDA1, cmd: `${player}_LINDA_0` },
+      { src: IMG.LINDA2, cmd: `${player}_LINDA_1` },
+      { src: IMG.LINDA3, cmd: `${player}_LINDA_2` },
+      { src: IMG.LINDA4, cmd: `${player}_LINDA_3` },
+    ];
+
+    lindaButtons.forEach(item=>{
+      const b = document.createElement("button");
+      b.className = "lindaBtn";
+      b.innerHTML = `<img src="${item.src}" alt="">`;
+      bindPress(b, async ()=>{
+        await apiSend(item.cmd);
+      });
+      grid.appendChild(b);
     });
 
     stage.appendChild(grid);
-    wrap.appendChild(stage);
 
+    const m1Wrap = document.createElement("div");
+    m1Wrap.className = "lindaM1Wrap";
+
+    const m1 = document.createElement("button");
+    m1.className = "lindaM1";
+    m1.innerHTML = `<img src="${IMG.LINDA1}" alt="">`;
+    bindPress(m1, async ()=>{
+      await apiSend(`${player}_LINDA_M1`);
+    });
+
+    m1Wrap.appendChild(m1);
+    stage.appendChild(m1Wrap);
+
+    wrap.appendChild(stage);
     layer.appendChild(wrap);
     addFooter(layer, "WAITING");
   }
@@ -1045,6 +1068,8 @@
       renderWaiting();
       return;
     }
+
+    $("screenBg").src = bgForMain();
 
     if (selectedSlot === null){
       renderCharacterSelectInLevel();
@@ -1069,9 +1094,9 @@
 
     applyTopSelection();
     updateTopVisibility(stage);
-    $("screenBg").src = bgForMain();
 
     if (stage === "start" || stage === "trailer"){
+      $("screenBg").src = bgForMain();
       selectedSlot = null;
       shotFired = false;
       renderStart(stage);
@@ -1079,6 +1104,7 @@
     }
 
     if (stage === "select"){
+      $("screenBg").src = bgForMain();
       selectedSlot = null;
       shotFired = false;
       renderLevelSelect();
@@ -1095,6 +1121,7 @@
       return;
     }
 
+    $("screenBg").src = bgForMain();
     selectedSlot = null;
     shotFired = false;
     renderStart(stage);
