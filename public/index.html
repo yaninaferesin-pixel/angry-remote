@@ -1047,7 +1047,10 @@
     m1Wrap.className = "lindaM1Wrap";
 
     const m1 = document.createElement("button");
-     });
+    m1.className = "lindaM1";
+    bindPress(m1, async ()=>{
+      await apiSend(`${player}_LINDA_M1`);
+    });
 
     m1Wrap.appendChild(m1);
     stage.appendChild(m1Wrap);
