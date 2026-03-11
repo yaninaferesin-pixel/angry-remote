@@ -479,7 +479,12 @@
 
   let player = "P1";
   let code = "CULA";
-  let lastState = { stage:"start", active:"", ts:0 };
+  let lastState = {
+    stage: "start",
+    active: "",
+    ts: 0,
+    playersCount: null
+  };
   let netOk = false;
 
   let selectedSlot = null;
@@ -487,6 +492,9 @@
   let localPhase = "select"; // select | aim | power | resolving
   let consumedSlots = new Set();
   let resolveTimer = null;
+
+  let seenActivePlayers = new Set();
+  let persistedLoaded = false;
 
   const IMG = {
     BG_WAIT: "/style/BG ESPERA.png?v=5",
@@ -533,22 +541,66 @@
     return "";
   }
 
+  function saveLocalLevelState(){
+    try{
+      localStorage.setItem("angry_player", player);
+      localStorage.setItem("angry_code", code);
+      localStorage.setItem("angry_selectedSlot", selectedSlot === null ? "" : String(selectedSlot));
+      localStorage.setItem("angry_shotFired", shotFired ? "1" : "0");
+      localStorage.setItem("angry_localPhase", localPhase);
+      localStorage.setItem("angry_consumedSlots", JSON.stringify(Array.from(consumedSlots)));
+      localStorage.setItem("angry_seenPlayers", JSON.stringify(Array.from(seenActivePlayers)));
+    }catch(e){}
+  }
+
   function loadPersisted(){
     player = getPlayerFromUrl() || localStorage.getItem("angry_player") || "P1";
     code = (new URL(location.href)).searchParams.get("code") || localStorage.getItem("angry_code") || "CULA";
     $("codeInput").value = code;
+
+    try{
+      const storedSelected = localStorage.getItem("angry_selectedSlot");
+      selectedSlot = storedSelected === null || storedSelected === "" ? null : (storedSelected === "hat" ? "hat" : Number(storedSelected));
+
+      shotFired = localStorage.getItem("angry_shotFired") === "1";
+
+      const storedPhase = localStorage.getItem("angry_localPhase");
+      if (storedPhase === "select" || storedPhase === "aim" || storedPhase === "power" || storedPhase === "resolving"){
+        localPhase = storedPhase;
+      }
+
+      const storedConsumed = JSON.parse(localStorage.getItem("angry_consumedSlots") || "[]");
+      consumedSlots = new Set(Array.isArray(storedConsumed) ? storedConsumed : []);
+
+      const storedSeen = JSON.parse(localStorage.getItem("angry_seenPlayers") || "[]");
+      seenActivePlayers = new Set(Array.isArray(storedSeen) ? storedSeen : []);
+    }catch(e){
+      selectedSlot = null;
+      shotFired = false;
+      localPhase = "select";
+      consumedSlots = new Set();
+      seenActivePlayers = new Set();
+    }
+
+    persistedLoaded = true;
   }
 
   function resetLevelLocalState(clearConsumed = false){
     selectedSlot = null;
     shotFired = false;
     localPhase = "select";
+
     if (resolveTimer){
       clearTimeout(resolveTimer);
       resolveTimer = null;
     }
-    if (clearConsumed)
+
+    if (clearConsumed){
       consumedSlots = new Set();
+      seenActivePlayers = new Set();
+    }
+
+    saveLocalLevelState();
   }
 
   function setPlayer(p){
@@ -567,13 +619,40 @@
     render();
   };
 
+  function extractPlayersCount(j){
+    if (!j || typeof j !== "object") return null;
+
+    if (typeof j.playersCount === "number") return j.playersCount;
+    if (typeof j.playerCount === "number") return j.playerCount;
+    if (typeof j.connectedPlayers === "number") return j.connectedPlayers;
+    if (typeof j.onlinePlayers === "number") return j.onlinePlayers;
+    if (Array.isArray(j.players)) return j.players.length;
+    if (Array.isArray(j.connected)) return j.connected.length;
+    if (Array.isArray(j.online)) return j.online.length;
+
+    return null;
+  }
+
   async function apiGetState(){
     try{
       const r = await fetch(`/api/state?code=${encodeURIComponent(code)}`, { cache:"no-store" });
       const j = await r.json();
+
       if (j && j.ok){
-        lastState = { stage: j.stage || "start", active: j.active || "", ts: j.ts || 0 };
+        lastState = {
+          stage: j.stage || "start",
+          active: j.active || "",
+          ts: j.ts || 0,
+          playersCount: extractPlayersCount(j)
+        };
+
+        const act = (lastState.active || "").trim().toUpperCase();
+        if (act === "P1" || act === "P2"){
+          seenActivePlayers.add(act);
+        }
+
         netOk = true;
+        saveLocalLevelState();
       } else {
         netOk = false;
       }
@@ -635,8 +714,15 @@
   }
 
   function hasTwoPlayers(){
-    const act = (lastState.active || "").trim().toUpperCase();
-    return act === "P1" || act === "P2";
+    if (typeof lastState.playersCount === "number"){
+      return lastState.playersCount >= 2;
+    }
+
+    if (seenActivePlayers.has("P1") && seenActivePlayers.has("P2")){
+      return true;
+    }
+
+    return false;
   }
 
   function bgForMain(){
@@ -697,8 +783,10 @@
   }
 
   function markConsumed(slot){
-    if (typeof slot === "number")
+    if (typeof slot === "number"){
       consumedSlots.add(slot);
+      saveLocalLevelState();
+    }
   }
 
   function isConsumed(slot){
@@ -707,15 +795,23 @@
 
   function enterResolveThenAdvance(delayMs){
     localPhase = "resolving";
+    saveLocalLevelState();
     render();
 
     if (resolveTimer) clearTimeout(resolveTimer);
+
     resolveTimer = setTimeout(()=>{
+      resolveTimer = null;
+
       if (hasTwoPlayers()){
         localPhase = "resolving";
       } else {
-        resetLevelLocalState(false);
+        selectedSlot = null;
+        shotFired = false;
+        localPhase = "select";
       }
+
+      saveLocalLevelState();
       render();
     }, delayMs);
   }
@@ -817,6 +913,7 @@
       selectedSlot = "hat";
       shotFired = false;
       localPhase = "aim";
+      saveLocalLevelState();
       await apiSend(`${player}_HAT`);
       render();
     });
@@ -843,6 +940,7 @@
         selectedSlot = c.slot;
         shotFired = false;
         localPhase = "aim";
+        saveLocalLevelState();
         await apiSend(`${player}_SLOT${c.slot}`);
         render();
       });
@@ -950,14 +1048,18 @@
     async function fireNow(){
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
+
       shotFired = true;
-      if (typeof selectedSlot === "number")
+
+      if (typeof selectedSlot === "number"){
         markConsumed(selectedSlot);
+      }
 
       if (selectedSlot === "hat"){
         enterResolveThenAdvance(1400);
       } else {
         localPhase = "power";
+        saveLocalLevelState();
         render();
       }
     }
@@ -1143,6 +1245,7 @@
       selectedSlot = null;
       shotFired = false;
       localPhase = "resolving";
+      saveLocalLevelState();
       renderWaiting();
       return;
     }
@@ -1151,6 +1254,7 @@
 
     if (selectedSlot === null || localPhase === "select"){
       localPhase = "select";
+      saveLocalLevelState();
       renderCharacterSelectInLevel();
       return;
     }
@@ -1167,7 +1271,10 @@
 
     if (localPhase === "resolving"){
       if (!hasTwoPlayers()){
-        resetLevelLocalState(false);
+        selectedSlot = null;
+        shotFired = false;
+        localPhase = "select";
+        saveLocalLevelState();
         renderCharacterSelectInLevel();
         return;
       }
@@ -1204,6 +1311,7 @@
         selectedSlot = null;
         shotFired = false;
         localPhase = "resolving";
+        saveLocalLevelState();
       }
       renderLevel();
       return;
@@ -1226,6 +1334,11 @@
   }
 
   loadPersisted();
+
+  if (!persistedLoaded){
+    resetLevelLocalState(false);
+  }
+
   render();
   tick();
   setInterval(tick, 350);
