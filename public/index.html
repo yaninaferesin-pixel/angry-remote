@@ -4,48 +4,35 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Angry Remote</title>
-
   <style>
     :root{
-      --vio-0:#f7ecff;
-      --vio-1:#e8d0ff;
-      --vio-2:#cfa1ff;
-      --vio-3:#a55dff;
-      --vio-4:#7d29ea;
-      --vio-5:#5213b8;
+      /* violetas */
+      --vio-0:#f2e6ff;
+      --vio-1:#dcbcff;
+      --vio-2:#b986ff;
+      --vio-3:#8a49ff;
+      --vio-4:#5a1fd6;
 
-      --ink:#241239;
-      --card:rgba(255,255,255,.62);
-      --stroke:rgba(70,20,120,.18);
-      --shadow:0 14px 28px rgba(30,0,60,.18);
-      --radius:24px;
-      --safe-bottom:max(18px, env(safe-area-inset-bottom));
+      --ink:#102018;
+      --card: rgba(255,255,255,.62);
+      --stroke: rgba(30,60,40,.18);
+      --shadow: 0 12px 28px rgba(0,0,0,.18);
+      --radius: 22px;
     }
 
-    *{ box-sizing:border-box; }
-
-    html, body{
-      margin:0;
-      min-height:100%;
-      background:linear-gradient(180deg, var(--vio-0), var(--vio-2), var(--vio-4));
-      color:var(--ink);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      -webkit-tap-highlight-color:transparent;
-      overscroll-behavior:none;
-    }
-
+    *{box-sizing:border-box;font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
     body{
+      margin:0;
+      color:var(--ink);
+      background: linear-gradient(180deg, var(--vio-0), var(--vio-1), var(--vio-2), var(--vio-3));
+      min-height:100vh;
       display:flex;
       justify-content:center;
     }
 
     .wrap{
-      width:min(540px, 100%);
-      min-height:100vh;
-      padding:12px 12px var(--safe-bottom);
-      display:flex;
-      flex-direction:column;
-      gap:12px;
+      width:min(520px, 100%);
+      padding:14px 12px 18px;
     }
 
     .topbar{
@@ -53,41 +40,11 @@
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
-      padding:12px;
-      border-radius:20px;
-      background:var(--card);
+      padding:10px;
+      border-radius: 18px;
+      background: var(--card);
       border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
-      backdrop-filter: blur(8px);
-    }
-
-    .btn{
-      cursor:pointer;
-      border:none;
-      border-radius:999px;
-      padding:10px 14px;
-      font-weight:900;
-      color:#2a1142;
-      background:linear-gradient(180deg, #f9f0ff, #c98cff);
-      border:2px solid rgba(90,31,214,.20);
-      box-shadow:0 8px 14px rgba(0,0,0,.12);
-      transition:transform .06s ease;
-      user-select:none;
-    }
-    .btn:active{ transform:scale(.98); }
-
-    .btnGhost{
-      background:rgba(255,255,255,.56);
-      border:1px solid var(--stroke);
-      box-shadow:none;
-      color:var(--ink);
-      font-weight:800;
-    }
-
-    .playerBtn.active{
-      background:linear-gradient(180deg, #f6eaff, #b76cff);
-      color:#2b0f42;
-      border-color:rgba(90,31,214,.30);
+      box-shadow: var(--shadow);
     }
 
     .pill{
@@ -96,72 +53,81 @@
       gap:8px;
       padding:10px 12px;
       border-radius:999px;
-      background:rgba(255,255,255,.54);
+      background: rgba(255,255,255,.55);
       border:1px solid var(--stroke);
+      font-weight:700;
+    }
+
+    .btn{
+      cursor:pointer;
+      border:none;
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      color:#1a1226;
+      background: linear-gradient(180deg, var(--vio-0), var(--vio-2));
+      border: 2px solid rgba(90,31,214,.25);
+      box-shadow: 0 10px 18px rgba(0,0,0,.14);
+      transition: transform .06s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: scale(.98); }
+
+    .btn-ghost{
+      background: rgba(255,255,255,.55);
+      border:1px solid var(--stroke);
+      box-shadow:none;
       font-weight:800;
-      flex-wrap:wrap;
     }
 
     input{
       border-radius:14px;
       border:1px solid var(--stroke);
       padding:10px 12px;
-      font-weight:900;
-      background:rgba(255,255,255,.72);
-      outline:none;
-      min-width:120px;
-      text-transform:uppercase;
-      letter-spacing:.6px;
-      color:var(--ink);
-    }
-
-    .statusRow{
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
-      gap:10px;
-      width:100%;
-    }
-
-    .statusBox{
-      min-height:46px;
-      padding:10px 12px;
-      border-radius:16px;
-      background:rgba(255,255,255,.54);
-      border:1px solid var(--stroke);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
       font-weight:800;
-      box-shadow:0 6px 12px rgba(0,0,0,.08);
+      background: rgba(255,255,255,.65);
+      outline:none;
+      min-width: 120px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    .stageLine{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+    }
+    .stageBox{
+      flex:1;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.55);
+      border:1px solid var(--stroke);
+      font-weight:800;
     }
 
     .panel{
-      position:relative;
-      flex:1;
-      min-height:78vh;
-      border-radius:var(--radius);
+      margin-top:14px;
+      border-radius: var(--radius);
       overflow:hidden;
       border:1px solid var(--stroke);
-      box-shadow:var(--shadow);
-      background:rgba(255,255,255,.22);
-      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.35);
     }
 
     .panelHeader{
-      position:relative;
-      z-index:3;
       padding:14px 16px;
-      font-size:22px;
-      font-weight:1000;
-      background:rgba(255,255,255,.34);
+      font-size: 22px;
+      font-weight: 1000;
+      background: rgba(255,255,255,.40);
       border-bottom:1px solid var(--stroke);
+      backdrop-filter: blur(6px);
     }
 
     .panelBody{
       position:relative;
-      min-height:calc(78vh - 58px);
       padding:14px;
+      min-height: 520px;
       display:flex;
       flex-direction:column;
       gap:12px;
@@ -172,40 +138,23 @@
       inset:0;
       width:100%;
       height:100%;
-      object-fit:cover;
-      opacity:.96;
+      object-fit: cover;
+      opacity: .95;
       pointer-events:none;
-      user-select:none;
-    }
-
-    .content{
-      position:relative;
-      z-index:2;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      min-height:100%;
     }
 
     .controls{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
+      position:relative;
       margin-top:auto;
-    }
-
-    .row3{
       display:grid;
-      grid-template-columns:1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap:12px;
     }
-
-    .wide{ grid-column:1 / -1; }
 
     .imgBtn{
-      background:rgba(255,255,255,.60);
+      background: rgba(255,255,255,.58);
       border:1px solid var(--stroke);
-      border-radius:18px;
+      border-radius: 18px;
       padding:12px;
       display:flex;
       align-items:center;
@@ -213,36 +162,33 @@
       gap:10px;
       font-weight:1000;
       cursor:pointer;
-      box-shadow:0 10px 18px rgba(0,0,0,.10);
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
       user-select:none;
-      text-align:center;
-      min-height:84px;
     }
-    .imgBtn:active{ transform:scale(.99); }
+    .imgBtn:active{ transform: scale(.99); }
 
     .imgBtn img{
-      max-height:56px;
-      max-width:100%;
+      height: 54px;
       width:auto;
-      image-rendering:auto;
+      image-rendering: auto;
     }
+
+    .wide{ grid-column: 1 / -1; }
 
     .slingArea{
       position:relative;
-      border-radius:18px;
-      background:rgba(255,255,255,.58);
+      border-radius: 18px;
+      background: rgba(255,255,255,.55);
       border:1px solid var(--stroke);
-      box-shadow:0 10px 18px rgba(0,0,0,.10);
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
       padding:16px;
-      min-height:180px;
+      min-height: 160px;
       display:flex;
       align-items:center;
       justify-content:center;
       text-align:center;
       font-weight:900;
-      overflow:hidden;
     }
-
     .hint{
       position:absolute;
       bottom:10px;
@@ -253,85 +199,31 @@
       font-weight:800;
     }
 
-    .phaseTag{
-      padding:10px 12px;
-      border-radius:14px;
-      background:rgba(255,255,255,.54);
-      border:1px solid var(--stroke);
-      font-weight:900;
-      text-align:center;
-    }
-
-    .waitingWrap{
-      position:absolute;
-      inset:0;
-      z-index:10;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      gap:12px;
-      background:rgba(44,8,84,.18);
-      padding:16px;
-    }
-
-    .waitingCard{
-      width:100%;
-      max-width:440px;
-      border-radius:20px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.45);
-      box-shadow:0 14px 24px rgba(0,0,0,.18);
-      background:rgba(255,255,255,.14);
-      backdrop-filter: blur(6px);
-    }
-
-    .waitingCard img{
-      width:100%;
-      display:block;
-      object-fit:cover;
-    }
-
-    .waitingText{
-      font-size:24px;
-      font-weight:1000;
-      color:white;
-      text-shadow:0 3px 10px rgba(0,0,0,.3);
-      text-align:center;
-    }
-
-    .finalCard{
-      margin-top:auto;
-      display:flex;
-      flex-direction:column;
+    .row3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
       gap:12px;
     }
 
-    .finalTitle{
-      padding:14px;
-      border-radius:18px;
-      background:rgba(255,255,255,.60);
-      border:1px solid var(--stroke);
-      text-align:center;
-      font-size:24px;
-      font-weight:1000;
-      box-shadow:0 10px 18px rgba(0,0,0,.10);
+    .row5{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
     }
+    .row5 .wide{grid-column:1/-1}
 
-    .smallTag{
-      font-size:12px;
-      opacity:.82;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.4px;
+    .tag{
+      font-size: 12px;
+      font-weight: 900;
+      opacity:.85;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="topbar">
-      <button id="p1Btn" class="btn btnGhost playerBtn">P1</button>
-      <button id="p2Btn" class="btn btnGhost playerBtn">P2</button>
+      <button id="p1Btn" class="btn btn-ghost">P1</button>
+      <button id="p2Btn" class="btn btn-ghost">P2</button>
 
       <div class="pill">
         <span>SESSION</span>
@@ -339,18 +231,17 @@
         <button id="applyBtn" class="btn">APLICAR</button>
       </div>
 
-      <div class="statusRow">
-        <div class="statusBox">stage: <span id="stageText">-</span></div>
-        <div class="statusBox">active: <span id="activeText">-</span></div>
-        <div class="statusBox">net: <span id="netText">...</span></div>
+      <div class="stageLine" style="width:100%">
+        <div class="stageBox">stage: <span id="stageText">-</span></div>
+        <div class="stageBox">active: <span id="activeText">-</span></div>
+        <div class="stageBox">net: <span id="netText">...</span></div>
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="mainPanel">
       <div class="panelHeader" id="panelTitle">...</div>
       <div class="panelBody" id="panelBody">
         <img id="bgImg" class="bgImg" alt="" />
-        <div class="content" id="content"></div>
       </div>
     </div>
   </div>
@@ -368,15 +259,16 @@
 
   let player = getPlayerFromUrl() || localStorage.getItem("angry_player") || "P1";
   let code = (new URL(location.href)).searchParams.get("code") || localStorage.getItem("angry_code") || "CULA";
-
   $("codeInput").value = code;
 
-  function setPlayer(p){
-    player = p;
-    localStorage.setItem("angry_player", player);
-    resetLocalLevelUi();
-    render();
-  }
+  let lastState = { stage:"start", active:"", ts:0 };
+  let netOk = false;
+
+  let selectedSlot = null;
+  let shotFired = false;
+  let consumedSlots = new Set();
+  let levelPhase = "select"; // select | aim | power | resolving
+  let resolveTimer = null;
 
   $("p1Btn").onclick = ()=> setPlayer("P1");
   $("p2Btn").onclick = ()=> setPlayer("P2");
@@ -385,23 +277,32 @@
     code = ($("codeInput").value || "").trim().toUpperCase();
     if (!code) code = "CULA";
     localStorage.setItem("angry_code", code);
-    resetLocalLevelUi();
     render();
   };
 
-  let lastState = { stage:"start", active:"", ts:0 };
-  let netOk = false;
+  function setPlayer(p){
+    player = p;
+    localStorage.setItem("angry_player", player);
+    resetLevelFlow();
+    render();
+  }
+
+  function resetLevelFlow(){
+    selectedSlot = null;
+    shotFired = false;
+    levelPhase = "select";
+    if (resolveTimer){
+      clearTimeout(resolveTimer);
+      resolveTimer = null;
+    }
+  }
 
   async function apiGetState(){
     try{
       const r = await fetch(`/api/state?code=${encodeURIComponent(code)}`, { cache:"no-store" });
       const j = await r.json();
       if (j && j.ok){
-        lastState = {
-          stage: j.stage || "start",
-          active: j.active || "",
-          ts: j.ts || 0
-        };
+        lastState = { stage: j.stage || "start", active: j.active || "", ts: j.ts || 0 };
         netOk = true;
       } else {
         netOk = false;
@@ -427,16 +328,16 @@
   const STYLE = "/style";
   const IMG = {
     BG_WAIT: `${STYLE}/BG ESPERA.png`,
-    BG_P1: `${STYLE}/BG P1.png`,
-    BG_P2: `${STYLE}/BG P2.png`,
+    BG_P1:   `${STYLE}/BG P1.png`,
+    BG_P2:   `${STYLE}/BG P2.png`,
 
-    PLAY: `${STYLE}/PLAY.png`,
+    PLAY:    `${STYLE}/PLAY.png`,
     TRAILER: `${STYLE}/TRAILER.png`,
     RESTART: `${STYLE}/RESTART.png`,
-    EXIT: `${STYLE}/EXIT.png`,
-    HOME: `${STYLE}/HOME.png`,
-    LEFT: `${STYLE}/LEFT.png`,
-    RIGHT: `${STYLE}/RIGHT.png`,
+    EXIT:    `${STYLE}/EXIT.png`,
+    HOME:    `${STYLE}/HOME.png`,
+    LEFT:    `${STYLE}/LEFT.png`,
+    RIGHT:   `${STYLE}/RIGHT.png`,
 
     OVEJITA: `${STYLE}/OVEJITA.png`,
     PATITO: `${STYLE}/PATITO.png`,
@@ -446,106 +347,67 @@
     HAT: `${STYLE}/poder argentino.png`,
   };
 
-  function normalizeStage(raw){
-    const s = (raw || "").toLowerCase().trim();
-
-    if (s.includes("win") || s.includes("victory") || s.includes("result") || s.includes("final") || s.includes("end"))
-      return "end";
-    if (s.includes("trailer"))
-      return "trailer";
-    if (s.includes("select"))
-      return "select";
-    if (s.includes("level"))
-      return "level";
-    if (s.includes("start"))
-      return "start";
-
+  function normalizeStage(s){
+    s = (s||"").toLowerCase().trim();
+    if (s.includes("trailer")) return "trailer";
+    if (s.includes("select")) return "select";
+    if (s.includes("level")) return "level";
+    if (s.includes("start")) return "start";
+    if (s.includes("win") || s.includes("victory") || s.includes("result") || s.includes("final") || s.includes("end")) return "end";
     return "start";
   }
 
   function titleFor(stage){
-    if (stage === "start") return `StartScene (${player})`;
-    if (stage === "trailer") return `Trailer (${player})`;
-    if (stage === "select") return `Level Select (${player})`;
-    if (stage === "level") return `Level (${player})`;
-    if (stage === "end") return `Fin de partida (${player})`;
+    if (stage==="start") return `StartScene (${player})`;
+    if (stage==="trailer") return `Trailer (${player})`;
+    if (stage==="select") return `LevelSelect (${player})`;
+    if (stage==="level") return `Level1 (${player})`;
+    if (stage==="end") return `Fin de Partida (${player})`;
     return `(${player})`;
   }
 
   function bgFor(stage){
-    if (stage === "end") return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
-    return player === "P2" ? IMG.BG_P2 : IMG.BG_P1;
+    if (player==="P2") return IMG.BG_P2;
+    return IMG.BG_P1;
   }
 
   function activePlayer(){
     return (lastState.active || "").trim().toUpperCase();
   }
 
-  function isTwoPlayersConnected(){
+  function twoPlayersConnected(){
     const act = activePlayer();
     return act === "P1" || act === "P2";
   }
 
   function isWaiting(){
-    if (normalizeStage(lastState.stage) !== "level") return false;
-    if (!isTwoPlayersConnected()) return false;
+    const stage = normalizeStage(lastState.stage);
+    if (stage !== "level") return false;
+    if (!twoPlayersConnected()) return false;
     const act = activePlayer();
     if (!act) return false;
     return act !== player;
-  }
-
-  const consumedSlots = new Set();
-  let selectedSlot = null;
-  let localLevelPhase = "select"; // select | sling | power | resolving
-  let resolveTimer = null;
-
-  function resetLocalLevelUi(){
-    selectedSlot = null;
-    localLevelPhase = "select";
-    if (resolveTimer){
-      clearTimeout(resolveTimer);
-      resolveTimer = null;
-    }
-  }
-
-  function markSlotConsumed(slot){
-    consumedSlots.add(Number(slot));
   }
 
   function isSlotAvailable(slot){
     return !consumedSlots.has(Number(slot));
   }
 
-  function syncLocalPhaseWithStage(){
+  function syncLevelPhase(){
     const stage = normalizeStage(lastState.stage);
-
     if (stage !== "level"){
-      resetLocalLevelUi();
+      resetLevelFlow();
       return;
     }
 
     if (isWaiting()){
-      localLevelPhase = "resolving";
+      levelPhase = "resolving";
       return;
     }
 
     if (selectedSlot == null){
-      localLevelPhase = "select";
-      return;
+      levelPhase = "select";
     }
-
-    if (localLevelPhase === "resolving"){
-      return;
-    }
-  }
-
-  function setPlayerButtons(){
-    $("p1Btn").classList.toggle("active", player === "P1");
-    $("p2Btn").classList.toggle("active", player === "P2");
-  }
-
-  function clearContent(){
-    $("content").innerHTML = "";
   }
 
   function btnImg(imgSrc, label, onClick, wide=false){
@@ -554,13 +416,6 @@
     b.innerHTML = `<img src="${imgSrc}" alt=""><div>${label}</div>`;
     b.onclick = onClick;
     return b;
-  }
-
-  function addPhaseTag(text){
-    const el = document.createElement("div");
-    el.className = "phaseTag";
-    el.textContent = text;
-    $("content").appendChild(el);
   }
 
   function panelStart(stage){
@@ -592,54 +447,68 @@
     return root;
   }
 
-  function renderCharacterSelectInLevel(){
-    addPhaseTag("Seleccioná un animal disponible");
+  function renderLevelCharacterSelect(){
+    const root = document.createElement("div");
+    root.style.display="flex";
+    root.style.flexDirection="column";
+    root.style.gap="12px";
+    root.style.height="100%";
 
-    const grid = document.createElement("div");
-    grid.className = "controls";
+    const slots = document.createElement("div");
+    slots.className = "row5";
 
-    [
-      { img: IMG.OVEJITA, slot: 0, label: "OVEJITA" },
-      { img: IMG.PATITO, slot: 1, label: "PATITO" },
-      { img: IMG.CARPINCHITA, slot: 2, label: "CARPINCHITA" },
-      { img: IMG.RITA, slot: 3, label: "RITA" },
-      { img: IMG.VAQUITA_PELUDA, slot: 4, label: "VAQUITA PELUDA" }
-    ]
-    .filter(c => isSlotAvailable(c.slot))
-    .forEach(c=>{
-      const wide = c.slot === 4;
-      grid.appendChild(
-        btnImg(c.img, c.label, async ()=>{
-          selectedSlot = c.slot;
-          localLevelPhase = "sling";
-          await apiSend(`${player}_SLOT${c.slot}`);
-          render();
-        }, wide)
-      );
+    const chars = [
+      { img: IMG.OVEJITA, slot: 0, label:"OVEJITA" },
+      { img: IMG.PATITO, slot: 1, label:"PATITO" },
+      { img: IMG.CARPINCHITA, slot: 2, label:"CARPINCHITA" },
+      { img: IMG.RITA, slot: 3, label:"RITA" },
+      { img: IMG.VAQUITA_PELUDA, slot: 4, label:"VAQUITA PELUDA", wide:true }
+    ];
+
+    chars.filter(c => isSlotAvailable(c.slot)).forEach(c=>{
+      slots.appendChild(btnImg(c.img, c.label, async ()=>{
+        selectedSlot = c.slot;
+        shotFired = false;
+        levelPhase = "aim";
+        await apiSend(`${player}_SLOT${c.slot}`);
+        render();
+      }, !!c.wide));
     });
 
-    if (!grid.children.length){
-      const empty = document.createElement("div");
-      empty.className = "finalTitle";
-      empty.textContent = "No quedan animales disponibles";
-      $("content").appendChild(empty);
-      return;
+    if (!slots.children.length){
+      slots.appendChild(btnImg(IMG.RESTART, "NO QUEDAN ANIMALES", ()=>{}, true));
     }
 
-    $("content").appendChild(grid);
+    root.appendChild(slots);
+
+    const nav = document.createElement("div");
+    nav.className = "controls";
+    nav.appendChild(btnImg(IMG.HAT, "PODER ARGENTINO", async ()=>{
+      await apiSend(`${player}_HAT`);
+    }));
+    nav.appendChild(btnImg(IMG.RESTART, "RESTART", ()=> apiSend(`${player}_RESTART`)));
+    nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
+    nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
+    root.appendChild(nav);
+
+    return root;
   }
 
-  function renderSlingshotPanel(){
-    addPhaseTag(`Animal seleccionado: slot ${selectedSlot}`);
+  function renderLevelAim(){
+    const root = document.createElement("div");
+    root.style.display="flex";
+    root.style.flexDirection="column";
+    root.style.gap="12px";
+    root.style.height="100%";
 
     const sling = document.createElement("div");
     sling.className = "slingArea";
     sling.innerHTML = `
       <div>
-        <div style="font-size:18px;font-weight:1000;">SLINGSHOT</div>
-        <div class="smallTag">Arrastrá y soltá desde el teléfono</div>
+        <div style="font-size:16px;font-weight:1000;">SLINGSHOT</div>
+        <div class="tag">Arrastrá acá para lanzar (desde el teléfono)</div>
       </div>
-      <div class="hint">Drag remoto normalizado [-1..1]</div>
+      <div class="hint">Tip: arrastrá hacia atrás (dx/dy en [-1..1]).</div>
     `;
 
     let dragging = false;
@@ -647,15 +516,15 @@
 
     function getXY(ev){
       const t = ev.touches ? ev.touches[0] : ev;
-      return { x: t.clientX, y: t.clientY };
+      return {x:t.clientX, y:t.clientY};
     }
 
-    function normFromPoint(x, y){
+    function normFromPoint(x,y){
       if (!rect) rect = sling.getBoundingClientRect();
-      const cx = rect.left + rect.width * 0.5;
-      const cy = rect.top + rect.height * 0.5;
-      const dx = (x - cx) / (rect.width * 0.5);
-      const dy = (y - cy) / (rect.height * 0.5);
+      const cx = rect.left + rect.width*0.5;
+      const cy = rect.top + rect.height*0.5;
+      const dx = (x - cx) / (rect.width*0.5);
+      const dy = (y - cy) / (rect.height*0.5);
       return {
         dx: Math.max(-1, Math.min(1, dx)),
         dy: Math.max(-1, Math.min(1, dy))
@@ -663,7 +532,7 @@
     }
 
     function sendDrag(cmd, dx, dy){
-      const f = (n)=> (Math.round(n * 1000) / 1000).toString();
+      const f = (n)=> (Math.round(n*1000)/1000).toString();
       if (cmd === "DRAG_END"){
         apiSend(`${player}_DRAG_END`);
       } else {
@@ -671,21 +540,23 @@
       }
     }
 
-    function finishFireFlow(){
-      markSlotConsumed(selectedSlot);
-      localLevelPhase = "power";
+    function resolveAfterShot(){
+      shotFired = true;
+      consumedSlots.add(Number(selectedSlot));
+      levelPhase = "power";
       render();
 
       if (resolveTimer) clearTimeout(resolveTimer);
       resolveTimer = setTimeout(()=>{
-        if (isTwoPlayersConnected()){
-          localLevelPhase = "resolving";
+        if (twoPlayersConnected()){
+          levelPhase = "resolving";
         } else {
           selectedSlot = null;
-          localLevelPhase = "select";
+          shotFired = false;
+          levelPhase = "select";
         }
         render();
-      }, 2200);
+      }, 1800);
     }
 
     sling.addEventListener("touchstart", (ev)=>{
@@ -705,12 +576,12 @@
       sendDrag("DRAG", dx, dy);
     }, {passive:false});
 
-    sling.addEventListener("touchend", async (ev)=>{
+    sling.addEventListener("touchend", (ev)=>{
       if (!dragging) return;
       ev.preventDefault();
       dragging = false;
       sendDrag("DRAG_END");
-      finishFireFlow();
+      resolveAfterShot();
     }, {passive:false});
 
     sling.addEventListener("mousedown", (ev)=>{
@@ -730,158 +601,179 @@
       if (!dragging) return;
       dragging = false;
       sendDrag("DRAG_END");
-      finishFireFlow();
+      resolveAfterShot();
     });
 
-    $("content").appendChild(sling);
+    root.appendChild(sling);
 
     const nav = document.createElement("div");
     nav.className = "controls";
+    nav.appendChild(btnImg(IMG.RESTART, "RESTART", async ()=>{
+      selectedSlot = null;
+      shotFired = false;
+      levelPhase = "select";
+      await apiSend(`${player}_RESTART`);
+      render();
+    }));
+    nav.appendChild(btnImg(IMG.HAT, "PODER ARGENTINO", ()=> apiSend(`${player}_HAT`)));
     nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
     nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
-    $("content").appendChild(nav);
+    root.appendChild(nav);
+
+    return root;
   }
 
-  function renderPowerPanel(){
-    addPhaseTag("Poder / acciones después del lanzamiento");
+  function renderLevelPower(){
+    const root = document.createElement("div");
+    root.style.display="flex";
+    root.style.flexDirection="column";
+    root.style.gap="12px";
+    root.style.height="100%";
 
     const row = document.createElement("div");
     row.className = "row3";
-
     row.appendChild(btnImg(IMG.HAT, "PODER ARGENTINO", ()=> apiSend(`${player}_HAT`)));
-    row.appendChild(btnImg(IMG.PLAY, "POWER", async ()=>{
+    row.appendChild(btnImg(IMG.PLAY, "POWER (2do toque)", async ()=>{
       await apiSend(`${player}_POWER`);
       if (resolveTimer) clearTimeout(resolveTimer);
       resolveTimer = setTimeout(()=>{
-        if (isTwoPlayersConnected()){
-          localLevelPhase = "resolving";
+        if (twoPlayersConnected()){
+          levelPhase = "resolving";
         } else {
           selectedSlot = null;
-          localLevelPhase = "select";
+          shotFired = false;
+          levelPhase = "select";
         }
         render();
-      }, 1300);
+      }, 1200);
     }));
     row.appendChild(btnImg(IMG.RESTART, "RESTART", ()=> apiSend(`${player}_RESTART`)));
 
-    $("content").appendChild(row);
+    root.appendChild(row);
 
     const nav = document.createElement("div");
     nav.className = "controls";
     nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
     nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
-    $("content").appendChild(nav);
+    root.appendChild(nav);
+
+    return root;
   }
 
-  function renderFinalPanel(){
-    const card = document.createElement("div");
-    card.className = "finalCard";
+  function renderLevelResolving(){
+    const root = document.createElement("div");
+    root.style.display="flex";
+    root.style.flexDirection="column";
+    root.style.gap="12px";
+    root.style.height="100%";
 
-    const title = document.createElement("div");
-    title.className = "finalTitle";
-    title.textContent = "Fin de partida";
-    card.appendChild(title);
+    root.appendChild(btnImg(IMG.PLAY, "RESOLVIENDO TURNO...", ()=>{}, true));
 
-    const controls = document.createElement("div");
-    controls.className = "controls";
+    const nav = document.createElement("div");
+    nav.className = "controls";
+    nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
+    nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
+    root.appendChild(nav);
 
-    controls.appendChild(btnImg(IMG.PLAY, "NEXT LEVEL", ()=> apiSend(`${player}_NEXTLEVEL`), true));
-    controls.appendChild(btnImg(IMG.RESTART, "RESTART", ()=> apiSend(`${player}_RESTART`)));
-    controls.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
-    controls.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`), true));
-
-    card.appendChild(controls);
-    $("content").appendChild(card);
+    return root;
   }
 
-  function renderWaitingOverlay(){
-    const wait = document.createElement("div");
-    wait.className = "waitingWrap";
+  function panelLevel(){
+    syncLevelPhase();
 
-    const card = document.createElement("div");
-    card.className = "waitingCard";
-    card.innerHTML = `<img src="${IMG.BG_WAIT}" alt="">`;
-    wait.appendChild(card);
-
-    const txt = document.createElement("div");
-    txt.className = "waitingText";
-    txt.textContent = "WAITING...";
-    wait.appendChild(txt);
-
-    $("panelBody").appendChild(wait);
+    if (levelPhase === "select" || selectedSlot == null) return renderLevelCharacterSelect();
+    if (levelPhase === "aim") return renderLevelAim();
+    if (levelPhase === "power") return renderLevelPower();
+    return renderLevelResolving();
   }
 
-  function renderLevel(){
-    syncLocalPhaseWithStage();
+  function panelEnd(){
+    const root = document.createElement("div");
+    root.style.display="flex";
+    root.style.flexDirection="column";
+    root.style.gap="12px";
+    root.style.height="100%";
 
-    if (selectedSlot == null || localLevelPhase === "select"){
-      localLevelPhase = "select";
-      renderCharacterSelectInLevel();
-      return;
-    }
+    root.appendChild(btnImg(IMG.PLAY, "NEXT LEVEL", ()=> apiSend(`${player}_NEXTLEVEL`), true));
+    root.appendChild(btnImg(IMG.RESTART, "RESTART", ()=> apiSend(`${player}_RESTART`)));
+    root.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
+    root.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`), true));
 
-    if (localLevelPhase === "sling"){
-      renderSlingshotPanel();
-      return;
-    }
-
-    if (localLevelPhase === "power"){
-      renderPowerPanel();
-      return;
-    }
-
-    if (localLevelPhase === "resolving"){
-      addPhaseTag("Resolviendo turno...");
-      const nav = document.createElement("div");
-      nav.className = "controls";
-      nav.appendChild(btnImg(IMG.HOME, "HOME", ()=> apiSend(`${player}_HOME`)));
-      nav.appendChild(btnImg(IMG.EXIT, "EXIT", ()=> apiSend(`${player}_EXIT`)));
-      $("content").appendChild(nav);
-      return;
-    }
-
-    renderCharacterSelectInLevel();
+    return root;
   }
 
   function render(){
-    setPlayerButtons();
+    $("stageText").textContent = normalizeStage(lastState.stage);
+    $("activeText").textContent = (lastState.active || "-");
+    $("netText").textContent = netOk ? "ok" : "offline";
+
+    $("p1Btn").classList.toggle("btn", true);
+    $("p2Btn").classList.toggle("btn", true);
+    $("p1Btn").classList.toggle("btn-ghost", player !== "P1");
+    $("p2Btn").classList.toggle("btn-ghost", player !== "P2");
 
     const stage = normalizeStage(lastState.stage);
-    $("stageText").textContent = stage;
-    $("activeText").textContent = activePlayer() || "-";
-    $("netText").textContent = netOk ? "ok" : "offline";
     $("panelTitle").textContent = titleFor(stage);
     $("bgImg").src = bgFor(stage);
 
-    clearContent();
+    const body = $("panelBody");
+    [...body.children].forEach(ch=>{
+      if (ch.id !== "bgImg") body.removeChild(ch);
+    });
 
-    if (stage === "level" && isWaiting()){
-      renderWaitingOverlay();
+    if (isWaiting()){
+      const wait = document.createElement("div");
+      wait.style.position="absolute";
+      wait.style.inset="0";
+      wait.style.display="flex";
+      wait.style.alignItems="center";
+      wait.style.justifyContent="center";
+      wait.style.flexDirection="column";
+      wait.style.gap="10px";
+      wait.style.padding="18px";
+      wait.style.zIndex="10";
+      wait.style.background="rgba(0,0,0,.08)";
+
+      const img = document.createElement("img");
+      img.src = IMG.BG_WAIT;
+      img.style.width="100%";
+      img.style.height="100%";
+      img.style.objectFit="cover";
+      img.style.borderRadius="18px";
+      img.style.border="1px solid rgba(0,0,0,.12)";
+      img.style.boxShadow="0 12px 28px rgba(0,0,0,.18)";
+      wait.appendChild(img);
+
+      const txt = document.createElement("div");
+      txt.textContent = "WAITING...";
+      txt.style.position="absolute";
+      txt.style.bottom="22px";
+      txt.style.left="0";
+      txt.style.right="0";
+      txt.style.textAlign="center";
+      txt.style.fontWeight="1000";
+      txt.style.fontSize="22px";
+      wait.appendChild(txt);
+
+      body.appendChild(wait);
       return;
     }
 
+    let controls = null;
     if (stage === "start" || stage === "trailer"){
-      $("content").appendChild(panelStart(stage));
-      return;
+      controls = panelStart(stage);
+    } else if (stage === "select"){
+      resetLevelFlow();
+      controls = panelSelect();
+    } else if (stage === "level"){
+      controls = panelLevel();
+    } else if (stage === "end"){
+      controls = panelEnd();
+    } else {
+      controls = panelStart(stage);
     }
 
-    if (stage === "select"){
-      resetLocalLevelUi();
-      $("content").appendChild(panelSelect());
-      return;
-    }
-
-    if (stage === "level"){
-      renderLevel();
-      return;
-    }
-
-    if (stage === "end"){
-      renderFinalPanel();
-      return;
-    }
-
-    $("content").appendChild(panelStart("start"));
+    body.appendChild(controls);
   }
 
   async function tick(){
@@ -891,7 +783,7 @@
 
   render();
   tick();
-  setInterval(tick, 500);
+  setInterval(tick, 650);
 </script>
 </body>
 </html>
