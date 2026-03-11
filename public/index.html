@@ -1040,6 +1040,21 @@
       });
       grid.appendChild(b);
     });
+
+    stage.appendChild(grid);
+
+    const m1Wrap = document.createElement("div");
+    m1Wrap.className = "lindaM1Wrap";
+
+    const m1 = document.createElement("button");
+     });
+
+    m1Wrap.appendChild(m1);
+    stage.appendChild(m1Wrap);
+
+    wrap.appendChild(stage);
+    layer.appendChild(wrap);
+    addFooter(layer, "WAITING");
   }
 
   function renderLevel(){
