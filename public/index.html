@@ -358,13 +358,32 @@
       z-index:3;
     }
 
-    .aimGuideCanvas{
+    .aimGuideLayer{
       position:absolute;
       inset:0;
-      width:100%;
-      height:100%;
       z-index:4;
       pointer-events:none;
+    }
+
+    .aimGuideLine{
+      position:absolute;
+      left:0;
+      top:0;
+      height:0;
+      border-top:3px dashed rgba(53,16,107,.95);
+      transform-origin:0 0;
+      opacity:.95;
+      display:none;
+    }
+
+    .aimGuideDot{
+      position:absolute;
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:rgba(53,16,107,.98);
+      transform:translate(-50%, -50%);
+      display:none;
     }
 
     .powerScreen{
@@ -507,7 +526,6 @@
   let seenActivePlayers = new Set();
   let persistedLoaded = false;
 
-  // Más movilidad en teléfono
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
@@ -1010,9 +1028,18 @@
     aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
-    const guideCanvas = document.createElement("canvas");
-    guideCanvas.className = "aimGuideCanvas";
-    aimCanvas.appendChild(guideCanvas);
+    const guideLayer = document.createElement("div");
+    guideLayer.className = "aimGuideLayer";
+
+    const guideLine = document.createElement("div");
+    guideLine.className = "aimGuideLine";
+
+    const guideDot = document.createElement("div");
+    guideDot.className = "aimGuideDot";
+
+    guideLayer.appendChild(guideLine);
+    guideLayer.appendChild(guideDot);
+    aimCanvas.appendChild(guideLayer);
 
     const badge = document.createElement("div");
     badge.className = "aimHint";
@@ -1026,53 +1053,6 @@
     let aimSending = false;
     let rafPending = false;
 
-    function resizeGuideCanvas(){
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const r = aimCanvas.getBoundingClientRect();
-      guideCanvas.width = Math.round(r.width * dpr);
-      guideCanvas.height = Math.round(r.height * dpr);
-      guideCanvas.style.width = `${r.width}px`;
-      guideCanvas.style.height = `${r.height}px`;
-
-      const ctx = guideCanvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    function clearGuide(){
-      const ctx = guideCanvas.getContext("2d");
-      const r = aimCanvas.getBoundingClientRect();
-      ctx.clearRect(0, 0, r.width, r.height);
-    }
-
-    function drawGuide(x, y){
-      if (!rect) rect = aimCanvas.getBoundingClientRect();
-
-      const ctx = guideCanvas.getContext("2d");
-      clearGuide();
-
-      const starX = rect.width * AIM_CFG.starX;
-      const starY = rect.height * AIM_CFG.starY;
-      const px = x - rect.left;
-      const py = y - rect.top;
-
-      ctx.save();
-      ctx.strokeStyle = "rgba(53,16,107,0.95)";
-      ctx.lineWidth = 3;
-      ctx.setLineDash([2, 10]);
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(starX, starY);
-      ctx.lineTo(px, py);
-      ctx.stroke();
-
-      ctx.setLineDash([]);
-      ctx.fillStyle = "rgba(53,16,107,0.95)";
-      ctx.beginPath();
-      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
     function getXY(ev){
       const t = ev.touches ? ev.touches[0] : ev;
       return { x: t.clientX, y: t.clientY };
@@ -1080,6 +1060,48 @@
 
     function fmt(n){
       return (Math.round(n * 1000) / 1000).toString();
+    }
+
+    function getStarPoint(){
+      if (!rect) rect = aimCanvas.getBoundingClientRect();
+
+      return {
+        x: rect.left + rect.width * AIM_CFG.starX,
+        y: rect.top + rect.height * AIM_CFG.starY
+      };
+    }
+
+    function showGuide(x, y){
+      if (!rect) rect = aimCanvas.getBoundingClientRect();
+
+      const star = getStarPoint();
+
+      const localStarX = star.x - rect.left;
+      const localStarY = star.y - rect.top;
+      const localX = x - rect.left;
+      const localY = y - rect.top;
+
+      const dx = localX - localStarX;
+      const dy = localY - localStarY;
+
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      guideLine.style.display = "block";
+      guideDot.style.display = "block";
+
+      guideLine.style.left = `${localStarX}px`;
+      guideLine.style.top = `${localStarY}px`;
+      guideLine.style.width = `${len}px`;
+      guideLine.style.transform = `rotate(${angle}deg)`;
+
+      guideDot.style.left = `${localX}px`;
+      guideDot.style.top = `${localY}px`;
+    }
+
+    function hideGuide(){
+      guideLine.style.display = "none";
+      guideDot.style.display = "none";
     }
 
     function normFromPoint(x, y){
@@ -1125,7 +1147,7 @@
     async function fireNow(){
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
-      clearGuide();
+      hideGuide();
 
       shotFired = true;
 
@@ -1144,26 +1166,26 @@
       }
     }
 
-    resizeGuideCanvas();
-    window.addEventListener("resize", resizeGuideCanvas);
-
     aimCanvas.addEventListener("touchstart", (ev)=>{
       ev.preventDefault();
       dragging = true;
       rect = aimCanvas.getBoundingClientRect();
-      resizeGuideCanvas();
+
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
-      drawGuide(x, y);
+
+      showGuide(x, y);
       queueAim(p.dx, p.dy);
     }, { passive:false });
 
     aimCanvas.addEventListener("touchmove", (ev)=>{
       if (!dragging) return;
       ev.preventDefault();
+
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
-      drawGuide(x, y);
+
+      showGuide(x, y);
       queueAim(p.dx, p.dy);
     }, { passive:false });
 
@@ -1177,16 +1199,19 @@
     aimCanvas.addEventListener("mousedown", (ev)=>{
       dragging = true;
       rect = aimCanvas.getBoundingClientRect();
-      resizeGuideCanvas();
+
       const p = normFromPoint(ev.clientX, ev.clientY);
-      drawGuide(ev.clientX, ev.clientY);
+
+      showGuide(ev.clientX, ev.clientY);
       queueAim(p.dx, p.dy);
     });
 
     window.addEventListener("mousemove", (ev)=>{
       if (!dragging) return;
+
       const p = normFromPoint(ev.clientX, ev.clientY);
-      drawGuide(ev.clientX, ev.clientY);
+
+      showGuide(ev.clientX, ev.clientY);
       queueAim(p.dx, p.dy);
     });
 
