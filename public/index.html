@@ -18,6 +18,7 @@
       --vio-2:#cd86ff;
       --vio-3:#b253ff;
       --vio-4:#5a1fd6;
+      --vio-dark:#30105e;
       --ink:#142016;
       --shadow:0 12px 26px rgba(0,0,0,.14);
       --stroke:rgba(30,60,40,.12);
@@ -306,6 +307,7 @@
       cursor:pointer;
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
       touch-action:manipulation;
+      transition: opacity .2s ease;
     }
 
     .specialPower img{
@@ -354,6 +356,30 @@
       box-shadow:var(--shadow);
       font-size:18px;
       z-index:3;
+    }
+
+    .aimGuide{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:2;
+      pointer-events:none;
+      overflow:visible;
+    }
+
+    .aimGuideLine{
+      stroke: rgba(48, 16, 94, 0.78);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-dasharray: 1.2 10;
+      filter: drop-shadow(0 0 2px rgba(48,16,94,.18));
+      opacity: .82;
+    }
+
+    .aimGuideDot{
+      fill: rgba(48, 16, 94, 0.92);
+      opacity: .75;
     }
 
     .powerScreen{
@@ -516,6 +542,7 @@
     RITA: "/style/RITA.png?v=5",
     VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=5",
     HAT: "/style/poder argentino.png?v=5",
+    HAT_USED: "/style/poder argentino usado.png?v=1",
 
     ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=5",
     ANGRY_PATITO: "/style/ANGRY PATITO.png?v=5",
@@ -907,16 +934,23 @@
 
     const hatBtn = document.createElement("button");
     hatBtn.className = "specialPower";
-    hatBtn.innerHTML = `<img src="${IMG.HAT}" alt="">`;
 
-    bindPress(hatBtn, async ()=>{
-      selectedSlot = "hat";
-      shotFired = false;
-      localPhase = "aim";
-      saveLocalLevelState();
-      await apiSend(`${player}_HAT`);
-      render();
-    });
+    const hatUsed = consumedSlots.has("hat");
+    hatBtn.innerHTML = `<img src="${hatUsed ? IMG.HAT_USED : IMG.HAT}" alt="">`;
+
+    if (hatUsed){
+      hatBtn.style.opacity = "0.45";
+      hatBtn.style.pointerEvents = "none";
+    } else {
+      bindPress(hatBtn, async ()=>{
+        selectedSlot = "hat";
+        shotFired = false;
+        localPhase = "aim";
+        saveLocalLevelState();
+        await apiSend(`${player}_HAT`);
+        render();
+      });
+    }
 
     specialTop.appendChild(hatBtn);
     wrap.appendChild(specialTop);
@@ -984,6 +1018,29 @@
     aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
+    const guideSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    guideSvg.setAttribute("class", "aimGuide");
+    guideSvg.setAttribute("viewBox", "0 0 100 100");
+    guideSvg.setAttribute("preserveAspectRatio", "none");
+
+    const guideLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    guideLine.setAttribute("class", "aimGuideLine");
+    guideLine.setAttribute("x1", "50");
+    guideLine.setAttribute("y1", "26");
+    guideLine.setAttribute("x2", "50");
+    guideLine.setAttribute("y2", "26");
+
+    const guideDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    guideDot.setAttribute("class", "aimGuideDot");
+    guideDot.setAttribute("cx", "50");
+    guideDot.setAttribute("cy", "26");
+    guideDot.setAttribute("r", "1.2");
+
+    guideSvg.appendChild(guideLine);
+    guideSvg.appendChild(guideDot);
+    guideSvg.style.display = "none";
+    aimCanvas.appendChild(guideSvg);
+
     const badge = document.createElement("div");
     badge.className = "aimHint";
     badge.textContent = "SLINGSHOT";
@@ -1003,6 +1060,37 @@
 
     function fmt(n){
       return (Math.round(n * 1000) / 1000).toString();
+    }
+
+    function getStarPoint(){
+      if (!rect) rect = aimCanvas.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width * 0.505,
+        y: rect.top + rect.height * 0.255
+      };
+    }
+
+    function updateGuideScreen(x, y){
+      if (!rect) rect = aimCanvas.getBoundingClientRect();
+      const star = getStarPoint();
+
+      const x1 = ((star.x - rect.left) / rect.width) * 100;
+      const y1 = ((star.y - rect.top) / rect.height) * 100;
+      const x2 = ((x - rect.left) / rect.width) * 100;
+      const y2 = ((y - rect.top) / rect.height) * 100;
+
+      guideLine.setAttribute("x1", x1.toFixed(3));
+      guideLine.setAttribute("y1", y1.toFixed(3));
+      guideLine.setAttribute("x2", x2.toFixed(3));
+      guideLine.setAttribute("y2", y2.toFixed(3));
+      guideDot.setAttribute("cx", x2.toFixed(3));
+      guideDot.setAttribute("cy", y2.toFixed(3));
+
+      guideSvg.style.display = "block";
+    }
+
+    function hideGuide(){
+      guideSvg.style.display = "none";
     }
 
     function normFromPoint(x, y){
@@ -1048,6 +1136,7 @@
     async function fireNow(){
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
+      hideGuide();
 
       shotFired = true;
 
@@ -1056,6 +1145,8 @@
       }
 
       if (selectedSlot === "hat"){
+        consumedSlots.add("hat");
+        saveLocalLevelState();
         enterResolveThenAdvance(1400);
       } else {
         localPhase = "power";
@@ -1070,6 +1161,7 @@
       rect = aimCanvas.getBoundingClientRect();
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
+      updateGuideScreen(x, y);
       queueAim(p.dx, p.dy);
     }, { passive:false });
 
@@ -1078,6 +1170,7 @@
       ev.preventDefault();
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
+      updateGuideScreen(x, y);
       queueAim(p.dx, p.dy);
     }, { passive:false });
 
@@ -1092,12 +1185,14 @@
       dragging = true;
       rect = aimCanvas.getBoundingClientRect();
       const p = normFromPoint(ev.clientX, ev.clientY);
+      updateGuideScreen(ev.clientX, ev.clientY);
       queueAim(p.dx, p.dy);
     });
 
     window.addEventListener("mousemove", (ev)=>{
       if (!dragging) return;
       const p = normFromPoint(ev.clientX, ev.clientY);
+      updateGuideScreen(ev.clientX, ev.clientY);
       queueAim(p.dx, p.dy);
     });
 
