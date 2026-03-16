@@ -307,7 +307,6 @@
       cursor:pointer;
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
       touch-action:manipulation;
-      transition: opacity .2s ease;
     }
 
     .specialPower img{
@@ -315,6 +314,7 @@
       height:88px;
       object-fit:contain;
       pointer-events:none;
+      user-select:none;
     }
 
     .aimMode{
@@ -358,34 +358,13 @@
       z-index:3;
     }
 
-    .aimGuideWrap{
+    .aimGuideCanvas{
       position:absolute;
       inset:0;
+      width:100%;
+      height:100%;
       z-index:4;
       pointer-events:none;
-    }
-
-    .aimGuideLineDom{
-      position:absolute;
-      left:0;
-      top:0;
-      height:0;
-      border-top:2px dashed rgba(53,16,107,.88);
-      transform-origin:0 0;
-      filter: drop-shadow(0 0 1px rgba(53,16,107,.18));
-      opacity:.88;
-      display:none;
-    }
-
-    .aimGuideDotDom{
-      position:absolute;
-      width:8px;
-      height:8px;
-      border-radius:50%;
-      background:rgba(53,16,107,.92);
-      box-shadow:0 0 0 2px rgba(53,16,107,.12);
-      transform:translate(-50%, -50%);
-      display:none;
     }
 
     .powerScreen{
@@ -521,18 +500,19 @@
 
   let selectedSlot = null;
   let shotFired = false;
-  let localPhase = "select"; // select | aim | power | resolving
+  let localPhase = "select";
   let consumedSlots = new Set();
   let resolveTimer = null;
 
   let seenActivePlayers = new Set();
   let persistedLoaded = false;
 
+  // Más movilidad en teléfono
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
-    rangeX: 0.14,
-    rangeY: 0.14
+    rangeX: 0.10,
+    rangeY: 0.10
   };
 
   const IMG = {
@@ -555,7 +535,7 @@
     RITA: "/style/RITA.png?v=5",
     VAQUITA_PELUDA: "/style/VAQUITA PELUDA.png?v=5",
     HAT: "/style/poder argentino.png?v=5",
-    HAT_USED: "/style/poder argentino usado.png?v=1",
+    HAT_USED: "/style/poder argentino usado.png?v=2",
 
     ANGRY_OVEJITA: "/style/ANGRY OVEJITA.png?v=5",
     ANGRY_PATITO: "/style/ANGRY PATITO.png?v=5",
@@ -952,7 +932,6 @@
     hatBtn.innerHTML = `<img src="${hatUsed ? IMG.HAT_USED : IMG.HAT}" alt="">`;
 
     if (hatUsed){
-      hatBtn.style.opacity = "0.45";
       hatBtn.style.pointerEvents = "none";
     } else {
       bindPress(hatBtn, async ()=>{
@@ -1031,18 +1010,9 @@
     aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
-    const guideWrap = document.createElement("div");
-    guideWrap.className = "aimGuideWrap";
-
-    const guideLine = document.createElement("div");
-    guideLine.className = "aimGuideLineDom";
-
-    const guideDot = document.createElement("div");
-    guideDot.className = "aimGuideDotDom";
-
-    guideWrap.appendChild(guideLine);
-    guideWrap.appendChild(guideDot);
-    aimCanvas.appendChild(guideWrap);
+    const guideCanvas = document.createElement("canvas");
+    guideCanvas.className = "aimGuideCanvas";
+    aimCanvas.appendChild(guideCanvas);
 
     const badge = document.createElement("div");
     badge.className = "aimHint";
@@ -1056,6 +1026,53 @@
     let aimSending = false;
     let rafPending = false;
 
+    function resizeGuideCanvas(){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const r = aimCanvas.getBoundingClientRect();
+      guideCanvas.width = Math.round(r.width * dpr);
+      guideCanvas.height = Math.round(r.height * dpr);
+      guideCanvas.style.width = `${r.width}px`;
+      guideCanvas.style.height = `${r.height}px`;
+
+      const ctx = guideCanvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function clearGuide(){
+      const ctx = guideCanvas.getContext("2d");
+      const r = aimCanvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, r.width, r.height);
+    }
+
+    function drawGuide(x, y){
+      if (!rect) rect = aimCanvas.getBoundingClientRect();
+
+      const ctx = guideCanvas.getContext("2d");
+      clearGuide();
+
+      const starX = rect.width * AIM_CFG.starX;
+      const starY = rect.height * AIM_CFG.starY;
+      const px = x - rect.left;
+      const py = y - rect.top;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(53,16,107,0.95)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([2, 10]);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(starX, starY);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(53,16,107,0.95)";
+      ctx.beginPath();
+      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     function getXY(ev){
       const t = ev.touches ? ev.touches[0] : ev;
       return { x: t.clientX, y: t.clientY };
@@ -1063,39 +1080,6 @@
 
     function fmt(n){
       return (Math.round(n * 1000) / 1000).toString();
-    }
-
-    function getStarPoint(){
-      if (!rect) rect = aimCanvas.getBoundingClientRect();
-      return {
-        x: rect.left + rect.width * AIM_CFG.starX,
-        y: rect.top + rect.height * AIM_CFG.starY
-      };
-    }
-
-    function updateGuideScreen(x, y){
-      if (!rect) rect = aimCanvas.getBoundingClientRect();
-
-      const star = getStarPoint();
-      const dx = x - star.x;
-      const dy = y - star.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-
-      guideLine.style.display = "block";
-      guideDot.style.display = "block";
-
-      guideLine.style.left = `${star.x - rect.left}px`;
-      guideLine.style.top = `${star.y - rect.top}px`;
-      guideLine.style.width = `${len}px`;
-      guideLine.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
-
-      guideDot.style.left = `${x - rect.left}px`;
-      guideDot.style.top = `${y - rect.top}px`;
-    }
-
-    function hideGuide(){
-      guideLine.style.display = "none";
-      guideDot.style.display = "none";
     }
 
     function normFromPoint(x, y){
@@ -1141,7 +1125,7 @@
     async function fireNow(){
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
-      hideGuide();
+      clearGuide();
 
       shotFired = true;
 
@@ -1160,13 +1144,17 @@
       }
     }
 
+    resizeGuideCanvas();
+    window.addEventListener("resize", resizeGuideCanvas);
+
     aimCanvas.addEventListener("touchstart", (ev)=>{
       ev.preventDefault();
       dragging = true;
       rect = aimCanvas.getBoundingClientRect();
+      resizeGuideCanvas();
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
-      updateGuideScreen(x, y);
+      drawGuide(x, y);
       queueAim(p.dx, p.dy);
     }, { passive:false });
 
@@ -1175,7 +1163,7 @@
       ev.preventDefault();
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
-      updateGuideScreen(x, y);
+      drawGuide(x, y);
       queueAim(p.dx, p.dy);
     }, { passive:false });
 
@@ -1189,15 +1177,16 @@
     aimCanvas.addEventListener("mousedown", (ev)=>{
       dragging = true;
       rect = aimCanvas.getBoundingClientRect();
+      resizeGuideCanvas();
       const p = normFromPoint(ev.clientX, ev.clientY);
-      updateGuideScreen(ev.clientX, ev.clientY);
+      drawGuide(ev.clientX, ev.clientY);
       queueAim(p.dx, p.dy);
     });
 
     window.addEventListener("mousemove", (ev)=>{
       if (!dragging) return;
       const p = normFromPoint(ev.clientX, ev.clientY);
-      updateGuideScreen(ev.clientX, ev.clientY);
+      drawGuide(ev.clientX, ev.clientY);
       queueAim(p.dx, p.dy);
     });
 
