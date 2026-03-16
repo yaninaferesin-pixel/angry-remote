@@ -358,32 +358,26 @@
       z-index:3;
     }
 
-    .aimGuideLayer{
+    .aimGuideSvg{
       position:absolute;
       inset:0;
+      width:100%;
+      height:100%;
       z-index:4;
       pointer-events:none;
+      overflow:visible;
     }
 
-    .aimGuideLine{
-      position:absolute;
-      left:0;
-      top:0;
-      height:0;
-      border-top:3px dashed rgba(53,16,107,.95);
-      transform-origin:0 0;
+    .aimGuideSvg line{
+      stroke: rgba(53,16,107,.95);
+      stroke-width: 3;
+      stroke-dasharray: 3 10;
+      stroke-linecap: round;
       opacity:.95;
-      display:none;
     }
 
-    .aimGuideDot{
-      position:absolute;
-      width:10px;
-      height:10px;
-      border-radius:50%;
-      background:rgba(53,16,107,.98);
-      transform:translate(-50%, -50%);
-      display:none;
+    .aimGuideSvg circle{
+      fill: rgba(53,16,107,.98);
     }
 
     .powerScreen{
@@ -529,8 +523,8 @@
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
-    rangeX: 0.10,
-    rangeY: 0.10
+    rangeX: 0.08,
+    rangeY: 0.08
   };
 
   const IMG = {
@@ -1028,18 +1022,26 @@
     aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
-    const guideLayer = document.createElement("div");
-    guideLayer.className = "aimGuideLayer";
+    const guideSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    guideSvg.setAttribute("class", "aimGuideSvg");
+    guideSvg.setAttribute("preserveAspectRatio", "none");
 
-    const guideLine = document.createElement("div");
-    guideLine.className = "aimGuideLine";
+    const guideLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    guideLine.setAttribute("x1", "0");
+    guideLine.setAttribute("y1", "0");
+    guideLine.setAttribute("x2", "0");
+    guideLine.setAttribute("y2", "0");
+    guideLine.style.display = "none";
 
-    const guideDot = document.createElement("div");
-    guideDot.className = "aimGuideDot";
+    const guideDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    guideDot.setAttribute("cx", "0");
+    guideDot.setAttribute("cy", "0");
+    guideDot.setAttribute("r", "5");
+    guideDot.style.display = "none";
 
-    guideLayer.appendChild(guideLine);
-    guideLayer.appendChild(guideDot);
-    aimCanvas.appendChild(guideLayer);
+    guideSvg.appendChild(guideLine);
+    guideSvg.appendChild(guideDot);
+    aimCanvas.appendChild(guideSvg);
 
     const badge = document.createElement("div");
     badge.className = "aimHint";
@@ -1062,41 +1064,37 @@
       return (Math.round(n * 1000) / 1000).toString();
     }
 
+    function refreshRect(){
+      rect = aimCanvas.getBoundingClientRect();
+      guideSvg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+    }
+
     function getStarPoint(){
-      if (!rect) rect = aimCanvas.getBoundingClientRect();
+      if (!rect) refreshRect();
 
       return {
-        x: rect.left + rect.width * AIM_CFG.starX,
-        y: rect.top + rect.height * AIM_CFG.starY
+        x: rect.width * AIM_CFG.starX,
+        y: rect.height * AIM_CFG.starY
       };
     }
 
-    function showGuide(x, y){
-      if (!rect) rect = aimCanvas.getBoundingClientRect();
+    function showGuide(screenX, screenY){
+      if (!rect) refreshRect();
 
+      const localX = screenX - rect.left;
+      const localY = screenY - rect.top;
       const star = getStarPoint();
 
-      const localStarX = star.x - rect.left;
-      const localStarY = star.y - rect.top;
-      const localX = x - rect.left;
-      const localY = y - rect.top;
+      guideLine.setAttribute("x1", star.x.toFixed(2));
+      guideLine.setAttribute("y1", star.y.toFixed(2));
+      guideLine.setAttribute("x2", localX.toFixed(2));
+      guideLine.setAttribute("y2", localY.toFixed(2));
 
-      const dx = localX - localStarX;
-      const dy = localY - localStarY;
-
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      guideDot.setAttribute("cx", localX.toFixed(2));
+      guideDot.setAttribute("cy", localY.toFixed(2));
 
       guideLine.style.display = "block";
       guideDot.style.display = "block";
-
-      guideLine.style.left = `${localStarX}px`;
-      guideLine.style.top = `${localStarY}px`;
-      guideLine.style.width = `${len}px`;
-      guideLine.style.transform = `rotate(${angle}deg)`;
-
-      guideDot.style.left = `${localX}px`;
-      guideDot.style.top = `${localY}px`;
     }
 
     function hideGuide(){
@@ -1104,14 +1102,14 @@
       guideDot.style.display = "none";
     }
 
-    function normFromPoint(x, y){
-      if (!rect) rect = aimCanvas.getBoundingClientRect();
+    function normFromPoint(screenX, screenY){
+      if (!rect) refreshRect();
 
       const starX = rect.left + rect.width * AIM_CFG.starX;
       const starY = rect.top + rect.height * AIM_CFG.starY;
 
-      const dx = (x - starX) / (rect.width * AIM_CFG.rangeX);
-      const dy = (y - starY) / (rect.height * AIM_CFG.rangeY);
+      const dx = (screenX - starX) / (rect.width * AIM_CFG.rangeX);
+      const dy = (screenY - starY) / (rect.height * AIM_CFG.rangeY);
 
       return {
         dx: Math.max(-1, Math.min(1, dx)),
@@ -1166,10 +1164,13 @@
       }
     }
 
+    refreshRect();
+    window.addEventListener("resize", refreshRect);
+
     aimCanvas.addEventListener("touchstart", (ev)=>{
       ev.preventDefault();
       dragging = true;
-      rect = aimCanvas.getBoundingClientRect();
+      refreshRect();
 
       const {x,y} = getXY(ev);
       const p = normFromPoint(x,y);
@@ -1198,7 +1199,7 @@
 
     aimCanvas.addEventListener("mousedown", (ev)=>{
       dragging = true;
-      rect = aimCanvas.getBoundingClientRect();
+      refreshRect();
 
       const p = normFromPoint(ev.clientX, ev.clientY);
 
