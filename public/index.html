@@ -18,7 +18,7 @@
       --vio-2:#cd86ff;
       --vio-3:#b253ff;
       --vio-4:#5a1fd6;
-      --vio-dark:#35106b;
+      --vio-dark:#3c0f6e;
       --ink:#142016;
       --shadow:0 12px 26px rgba(0,0,0,.14);
       --stroke:rgba(30,60,40,.12);
@@ -330,7 +330,7 @@
       min-height:70vh;
       touch-action:none;
       background:transparent;
-      overflow:hidden;
+      overflow:visible;
       border-radius:28px;
     }
 
@@ -343,6 +343,7 @@
       object-position:center center;
       pointer-events:none;
       user-select:none;
+      z-index:1;
     }
 
     .aimHint{
@@ -355,29 +356,37 @@
       border:1px solid var(--stroke);
       box-shadow:var(--shadow);
       font-size:18px;
-      z-index:3;
+      z-index:5;
     }
 
-    .aimGuideSvg{
+    .aimGuideWrap{
       position:absolute;
       inset:0;
-      width:100%;
-      height:100%;
-      z-index:4;
+      z-index:50;
       pointer-events:none;
       overflow:visible;
     }
 
-    .aimGuideSvg line{
-      stroke: rgba(53,16,107,.95);
-      stroke-width: 3;
-      stroke-dasharray: 3 10;
-      stroke-linecap: round;
-      opacity:.95;
+    .aimGuideSvg{
+      position:absolute;
+      left:0;
+      top:0;
+      width:100%;
+      height:100%;
+      overflow:visible;
     }
 
-    .aimGuideSvg circle{
-      fill: rgba(53,16,107,.98);
+    .aimGuideLine{
+      stroke:var(--vio-dark);
+      stroke-width:4;
+      stroke-dasharray:6 8;
+      stroke-linecap:round;
+      opacity:.9;
+    }
+
+    .aimGuideDot{
+      fill:var(--vio-dark);
+      opacity:.98;
     }
 
     .powerScreen{
@@ -1022,11 +1031,17 @@
     aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
+    const guideWrap = document.createElement("div");
+    guideWrap.className = "aimGuideWrap";
+
     const guideSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     guideSvg.setAttribute("class", "aimGuideSvg");
+    guideSvg.setAttribute("width", "100%");
+    guideSvg.setAttribute("height", "100%");
     guideSvg.setAttribute("preserveAspectRatio", "none");
 
     const guideLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    guideLine.setAttribute("class", "aimGuideLine");
     guideLine.setAttribute("x1", "0");
     guideLine.setAttribute("y1", "0");
     guideLine.setAttribute("x2", "0");
@@ -1034,14 +1049,16 @@
     guideLine.style.display = "none";
 
     const guideDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    guideDot.setAttribute("class", "aimGuideDot");
     guideDot.setAttribute("cx", "0");
     guideDot.setAttribute("cy", "0");
-    guideDot.setAttribute("r", "5");
+    guideDot.setAttribute("r", "6");
     guideDot.style.display = "none";
 
     guideSvg.appendChild(guideLine);
     guideSvg.appendChild(guideDot);
-    aimCanvas.appendChild(guideSvg);
+    guideWrap.appendChild(guideSvg);
+    aimCanvas.appendChild(guideWrap);
 
     const badge = document.createElement("div");
     badge.className = "aimHint";
@@ -1085,13 +1102,13 @@
       const localY = screenY - rect.top;
       const star = getStarPoint();
 
-      guideLine.setAttribute("x1", star.x.toFixed(2));
-      guideLine.setAttribute("y1", star.y.toFixed(2));
-      guideLine.setAttribute("x2", localX.toFixed(2));
-      guideLine.setAttribute("y2", localY.toFixed(2));
+      guideLine.setAttribute("x1", star.x);
+      guideLine.setAttribute("y1", star.y);
+      guideLine.setAttribute("x2", localX);
+      guideLine.setAttribute("y2", localY);
 
-      guideDot.setAttribute("cx", localX.toFixed(2));
-      guideDot.setAttribute("cy", localY.toFixed(2));
+      guideDot.setAttribute("cx", localX);
+      guideDot.setAttribute("cy", localY);
 
       guideLine.style.display = "block";
       guideDot.style.display = "block";
