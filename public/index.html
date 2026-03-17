@@ -378,15 +378,15 @@
 
     .aimGuideLine{
       stroke:var(--vio-dark);
-      stroke-width:4;
-      stroke-dasharray:6 8;
+      stroke-width:5;
+      stroke-dasharray:7 8;
       stroke-linecap:round;
-      opacity:.9;
+      opacity:1;
     }
 
     .aimGuideDot{
       fill:var(--vio-dark);
-      opacity:.98;
+      opacity:1;
     }
 
     .powerScreen{
@@ -1065,7 +1065,7 @@
     guideDot.setAttribute("class", "aimGuideDot");
     guideDot.setAttribute("cx", "0");
     guideDot.setAttribute("cy", "0");
-    guideDot.setAttribute("r", "6");
+    guideDot.setAttribute("r", "7");
     guideDot.style.display = "none";
 
     guideSvg.appendChild(guideLine);
@@ -1084,10 +1084,16 @@
     let aimDirty = false;
     let aimSending = false;
     let rafPending = false;
+    let activeTouchId = null;
 
-    function getXY(ev){
-      const t = ev.touches ? ev.touches[0] : ev;
-      return { x: t.clientX, y: t.clientY };
+    function getTouchById(ev, id){
+      if (id == null) return ev.touches && ev.touches[0] ? ev.touches[0] : null;
+      const list = ev.touches || ev.changedTouches;
+      if (!list) return null;
+      for (let i = 0; i < list.length; i++){
+        if (list[i].identifier === id) return list[i];
+      }
+      return null;
     }
 
     function fmt(n){
@@ -1115,13 +1121,13 @@
       const localY = screenY - rect.top;
       const star = getStarPoint();
 
-      guideLine.setAttribute("x1", star.x);
-      guideLine.setAttribute("y1", star.y);
-      guideLine.setAttribute("x2", localX);
-      guideLine.setAttribute("y2", localY);
+      guideLine.setAttribute("x1", String(star.x));
+      guideLine.setAttribute("y1", String(star.y));
+      guideLine.setAttribute("x2", String(localX));
+      guideLine.setAttribute("y2", String(localY));
 
-      guideDot.setAttribute("cx", localX);
-      guideDot.setAttribute("cy", localY);
+      guideDot.setAttribute("cx", String(localX));
+      guideDot.setAttribute("cy", String(localY));
 
       guideLine.style.display = "block";
       guideDot.style.display = "block";
@@ -1195,62 +1201,77 @@
       }
     }
 
+    function startDrag(screenX, screenY){
+      dragging = true;
+      refreshRect();
+
+      const p = normFromPoint(screenX, screenY);
+      showGuide(screenX, screenY);
+      queueAim(p.dx, p.dy);
+    }
+
+    function moveDrag(screenX, screenY){
+      if (!dragging) return;
+
+      const p = normFromPoint(screenX, screenY);
+      showGuide(screenX, screenY);
+      queueAim(p.dx, p.dy);
+    }
+
+    async function endDrag(){
+      if (!dragging) return;
+      dragging = false;
+      activeTouchId = null;
+      await fireNow();
+    }
+
     refreshRect();
     window.addEventListener("resize", refreshRect);
 
     aimCanvas.addEventListener("touchstart", (ev)=>{
       ev.preventDefault();
-      dragging = true;
-      refreshRect();
-
-      const {x,y} = getXY(ev);
-      const p = normFromPoint(x,y);
-
-      showGuide(x, y);
-      queueAim(p.dx, p.dy);
+      const t = ev.changedTouches && ev.changedTouches[0];
+      if (!t) return;
+      activeTouchId = t.identifier;
+      startDrag(t.clientX, t.clientY);
     }, { passive:false });
 
-    aimCanvas.addEventListener("touchmove", (ev)=>{
+    window.addEventListener("touchmove", (ev)=>{
       if (!dragging) return;
+      const t = getTouchById(ev, activeTouchId);
+      if (!t) return;
       ev.preventDefault();
-
-      const {x,y} = getXY(ev);
-      const p = normFromPoint(x,y);
-
-      showGuide(x, y);
-      queueAim(p.dx, p.dy);
+      moveDrag(t.clientX, t.clientY);
     }, { passive:false });
 
-    aimCanvas.addEventListener("touchend", async (ev)=>{
+    window.addEventListener("touchend", async (ev)=>{
       if (!dragging) return;
-      ev.preventDefault();
-      dragging = false;
-      await fireNow();
+      const t = getTouchById(ev, activeTouchId);
+      if (!t && activeTouchId != null){
+        for (let i = 0; i < ev.changedTouches.length; i++){
+          if (ev.changedTouches[i].identifier === activeTouchId){
+            ev.preventDefault();
+            await endDrag();
+            return;
+          }
+        }
+      } else if (t){
+        ev.preventDefault();
+        await endDrag();
+      }
     }, { passive:false });
 
     aimCanvas.addEventListener("mousedown", (ev)=>{
-      dragging = true;
-      refreshRect();
-
-      const p = normFromPoint(ev.clientX, ev.clientY);
-
-      showGuide(ev.clientX, ev.clientY);
-      queueAim(p.dx, p.dy);
+      startDrag(ev.clientX, ev.clientY);
     });
 
     window.addEventListener("mousemove", (ev)=>{
       if (!dragging) return;
-
-      const p = normFromPoint(ev.clientX, ev.clientY);
-
-      showGuide(ev.clientX, ev.clientY);
-      queueAim(p.dx, p.dy);
+      moveDrag(ev.clientX, ev.clientY);
     });
 
     window.addEventListener("mouseup", async ()=>{
-      if (!dragging) return;
-      dragging = false;
-      await fireNow();
+      await endDrag();
     });
 
     aimWrap.appendChild(aimCanvas);
