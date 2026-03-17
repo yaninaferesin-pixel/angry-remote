@@ -525,15 +525,18 @@
   let localPhase = "select";
   let consumedSlots = new Set();
   let resolveTimer = null;
+  let powerGraceUntil = 0;
 
   let seenActivePlayers = new Set();
   let persistedLoaded = false;
 
+  const POWER_GRACE_MS = 7000;
+
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
-    rangeX: 0.08,
-    rangeY: 0.08
+    rangeX: 0.03,
+    rangeY: 0.03
   };
 
   const IMG = {
@@ -591,6 +594,7 @@
       localStorage.setItem("angry_localPhase", localPhase);
       localStorage.setItem("angry_consumedSlots", JSON.stringify(Array.from(consumedSlots)));
       localStorage.setItem("angry_seenPlayers", JSON.stringify(Array.from(seenActivePlayers)));
+      localStorage.setItem("angry_powerGraceUntil", String(powerGraceUntil || 0));
     }catch(e){}
   }
 
@@ -615,12 +619,15 @@
 
       const storedSeen = JSON.parse(localStorage.getItem("angry_seenPlayers") || "[]");
       seenActivePlayers = new Set(Array.isArray(storedSeen) ? storedSeen : []);
+
+      powerGraceUntil = parseInt(localStorage.getItem("angry_powerGraceUntil") || "0", 10) || 0;
     }catch(e){
       selectedSlot = null;
       shotFired = false;
       localPhase = "select";
       consumedSlots = new Set();
       seenActivePlayers = new Set();
+      powerGraceUntil = 0;
     }
 
     persistedLoaded = true;
@@ -630,6 +637,7 @@
     selectedSlot = null;
     shotFired = false;
     localPhase = "select";
+    powerGraceUntil = 0;
 
     if (resolveTimer){
       clearTimeout(resolveTimer);
@@ -728,7 +736,7 @@
       try{
         await fn();
       } finally {
-        setTimeout(() => { fired = false; }, 180);
+        setTimeout(() => { fired = false; }, 160);
       }
     };
 
@@ -764,6 +772,10 @@
     }
 
     return false;
+  }
+
+  function shouldKeepPowerVisibleDespiteTurnChange(){
+    return shotFired && selectedSlot !== null && selectedSlot !== "hat" && Date.now() < powerGraceUntil;
   }
 
   function bgForMain(){
@@ -850,6 +862,7 @@
         selectedSlot = null;
         shotFired = false;
         localPhase = "select";
+        powerGraceUntil = 0;
       }
 
       saveLocalLevelState();
@@ -1078,7 +1091,7 @@
     }
 
     function fmt(n){
-      return (Math.round(n * 1000) / 1000).toString();
+      return (Math.round(n * 10000) / 10000).toString();
     }
 
     function refreshRect(){
@@ -1165,6 +1178,7 @@
       hideGuide();
 
       shotFired = true;
+      powerGraceUntil = Date.now() + POWER_GRACE_MS;
 
       if (typeof selectedSlot === "number"){
         markConsumed(selectedSlot);
@@ -1278,6 +1292,7 @@
     btn.innerHTML = `<img src="${getAngryImageForSlot(selectedSlot)}" alt="">`;
 
     bindPress(btn, async ()=>{
+      powerGraceUntil = 0;
       await apiSend(`${player}_POWER`);
       enterResolveThenAdvance(1200);
     });
@@ -1289,6 +1304,25 @@
   function renderWaiting(){
     const layer = clearLayer();
     $("screenBg").src = IMG.BG_WAIT;
+
+    const top = document.createElement("div");
+    top.className = "topIcons";
+
+    const left = document.createElement("div");
+    left.className = "iconRow";
+    left.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
+    top.appendChild(left);
+
+    const right = document.createElement("div");
+    right.className = "iconRow";
+    right.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
+    right.appendChild(makeImageButton(IMG.RESTART, async ()=> {
+      resetLevelLocalState(true);
+      await apiSend(`${player}_RESTART`);
+    }, "icon"));
+    top.appendChild(right);
+
+    layer.appendChild(top);
 
     const wrap = document.createElement("div");
     wrap.className = "waitingWrap";
@@ -1373,7 +1407,10 @@
   }
 
   function renderLevel(){
-    if (!isCurrentPlayerActive()){
+    const active = isCurrentPlayerActive();
+    const keepPower = shouldKeepPowerVisibleDespiteTurnChange();
+
+    if (!active && !keepPower){
       selectedSlot = null;
       shotFired = false;
       localPhase = "resolving";
@@ -1396,7 +1433,7 @@
       return;
     }
 
-    if (localPhase === "power"){
+    if (localPhase === "power" || keepPower){
       renderPowerStage();
       return;
     }
@@ -1406,8 +1443,14 @@
         selectedSlot = null;
         shotFired = false;
         localPhase = "select";
+        powerGraceUntil = 0;
         saveLocalLevelState();
         renderCharacterSelectInLevel();
+        return;
+      }
+
+      if (Date.now() < powerGraceUntil){
+        renderPowerStage();
         return;
       }
 
@@ -1439,12 +1482,6 @@
     }
 
     if (stage === "level"){
-      if (!isCurrentPlayerActive()){
-        selectedSlot = null;
-        shotFired = false;
-        localPhase = "resolving";
-        saveLocalLevelState();
-      }
       renderLevel();
       return;
     }
@@ -1473,7 +1510,7 @@
 
   render();
   tick();
-  setInterval(tick, 350);
+  setInterval(tick, 250);
 </script>
 </body>
 </html>
