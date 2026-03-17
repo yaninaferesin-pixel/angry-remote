@@ -18,10 +18,12 @@
       --vio-2:#cd86ff;
       --vio-3:#b253ff;
       --vio-4:#5a1fd6;
+      --vio-dark:#3c0f6e;
       --ink:#142016;
       --shadow:0 12px 26px rgba(0,0,0,.14);
       --stroke:rgba(30,60,40,.12);
       --safe-bottom:max(16px, env(safe-area-inset-bottom));
+      --panel-bg:rgba(255,255,255,.74);
     }
 
     *{ box-sizing:border-box; }
@@ -34,6 +36,7 @@
       font-family:"MonsterChew", system-ui, sans-serif;
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior:none;
+      touch-action:manipulation;
     }
 
     body{
@@ -42,7 +45,7 @@
     }
 
     .app{
-      width:min(540px, 100%);
+      width:min(560px, 100%);
       min-height:100vh;
       padding:10px 10px var(--safe-bottom);
       display:flex;
@@ -150,7 +153,7 @@
     .screen{
       position:relative;
       flex:1;
-      min-height:76vh;
+      min-height:78vh;
       border-radius:28px;
       overflow:hidden;
       border:1px solid var(--stroke);
@@ -257,7 +260,7 @@
       flex:1;
       display:flex;
       flex-direction:column;
-      gap:18px;
+      gap:22px;
       justify-content:flex-start;
       padding-top:4px;
     }
@@ -266,7 +269,7 @@
       display:flex;
       justify-content:center;
       align-items:center;
-      min-height:84px;
+      min-height:110px;
     }
 
     .charArea{
@@ -292,8 +295,8 @@
     }
 
     .charBtn img{
-      max-width:142px;
-      max-height:122px;
+      max-width:150px;
+      max-height:130px;
       object-fit:contain;
       pointer-events:none;
       user-select:none;
@@ -304,13 +307,13 @@
       background:transparent;
       padding:0;
       cursor:pointer;
-      filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.18));
       touch-action:manipulation;
     }
 
     .specialPower img{
-      width:88px;
-      height:88px;
+      width:118px;
+      height:118px;
       object-fit:contain;
       pointer-events:none;
       user-select:none;
@@ -326,7 +329,7 @@
     .aimCanvas{
       position:relative;
       flex:1;
-      min-height:70vh;
+      min-height:74vh;
       touch-action:none;
       background:transparent;
       overflow:hidden;
@@ -364,8 +367,8 @@
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:24px;
-      min-height:68vh;
+      gap:28px;
+      min-height:70vh;
     }
 
     .powerBig{
@@ -378,7 +381,7 @@
     }
 
     .powerBig img{
-      width:min(72vw, 280px);
+      width:min(82vw, 340px);
       height:auto;
       object-fit:contain;
       pointer-events:none;
@@ -437,14 +440,92 @@
       user-select:none;
     }
 
+    .resultWrap{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      padding:18px 8px 10px;
+      min-height:72vh;
+    }
+
+    .resultTitle{
+      font-size:52px;
+      line-height:.9;
+      color:#fff;
+      text-shadow:
+        0 4px 0 rgba(0,0,0,.12),
+        0 10px 20px rgba(0,0,0,.22);
+      text-align:center;
+      margin-top:8px;
+    }
+
+    .starsWrap{
+      flex:1;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      min-height:190px;
+      flex-wrap:wrap;
+    }
+
+    .starImg{
+      width:min(22vw, 110px);
+      height:min(22vw, 110px);
+      object-fit:contain;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.18));
+    }
+
+    .looseGraphic{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:100%;
+      min-height:220px;
+    }
+
+    .looseGraphic img{
+      width:min(62vw, 260px);
+      height:auto;
+      object-fit:contain;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.18));
+    }
+
+    .resultButtons{
+      width:100%;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap:16px;
+      flex-wrap:wrap;
+      min-height:110px;
+    }
+
+    .resultBtnMain img{
+      width:110px !important;
+      height:110px !important;
+    }
+
+    .resultBtnSide img{
+      width:78px !important;
+      height:78px !important;
+    }
+
     @media (max-width:440px){
       .footerTitle{ font-size:42px; }
       .imgOnlyBtn.icon img{ width:66px; height:66px; }
       .imgOnlyBtn.medium img{ height:82px; }
       .imgOnlyBtn.small img{ height:66px; }
-      .charBtn img{ max-width:122px; max-height:106px; }
-      .specialPower img{ width:78px; height:78px; }
-      .powerBig img{ width:min(76vw, 250px); }
+      .charBtn img{ max-width:128px; max-height:110px; }
+      .specialPower img{ width:102px; height:102px; }
+      .powerBig img{ width:min(82vw, 290px); }
+      .resultTitle{ font-size:44px; }
+      .starImg{ width:min(24vw, 92px); height:min(24vw, 92px); }
     }
   </style>
 </head>
@@ -485,7 +566,9 @@
     stage: "start",
     active: "",
     ts: 0,
-    playersCount: null
+    playersCount: null,
+    result: "",
+    stars: 0
   };
   let netOk = false;
 
@@ -500,18 +583,20 @@
   let lastRenderedStage = "";
   let lastRenderedActive = "";
   let lastRenderedPhase = "";
+  let lastRenderedResult = "";
+  let lastRenderedStars = -1;
 
   let seenActivePlayers = new Set();
   let persistedLoaded = false;
 
   const POWER_GRACE_MS = 7000;
 
-  // MÁS FLUIDO / MÁS ÁNGULO
+  // Área mucho más cómoda para mover el dedo
   const AIM_CFG = {
-    starX: 0.505,
-    starY: 0.255,
-    rangeX: 0.035,
-    rangeY: 0.035
+    starX: 0.50,
+    starY: 0.35,
+    rangeX: 0.12,
+    rangeY: 0.18
   };
 
   const IMG = {
@@ -546,6 +631,11 @@
     LINDA2: "/style/LINDA 2.png?v=5",
     LINDA3: "/style/LINDA 3.png?v=5",
     LINDA4: "/style/LINDA 4.png?v=5",
+
+    // Ajustá estos nombres si en tu repo están distintos
+    ESTRELINDA_ON: "/style/estrelinda.png?v=1",
+    ESTRELINDA_OFF: "/style/estrelinda apagada.png?v=1",
+    LOOSE_GRAPHIC: "/style/loose.png?v=1"
   };
 
   function dbg(...args){
@@ -585,7 +675,7 @@
       shotFired = localStorage.getItem("angry_shotFired") === "1";
 
       const storedPhase = localStorage.getItem("angry_localPhase");
-      if (storedPhase === "select" || storedPhase === "aim" || storedPhase === "power" || storedPhase === "resolving"){
+      if (storedPhase === "select" || storedPhase === "aim" || storedPhase === "power" || storedPhase === "resolving" || storedPhase === "result"){
         localPhase = storedPhase;
       }
 
@@ -668,7 +758,9 @@
           stage: j.stage || "start",
           active: j.active || "",
           ts: j.ts || 0,
-          playersCount: extractPlayersCount(j)
+          playersCount: extractPlayersCount(j),
+          result: (j.result || "").toUpperCase(),
+          stars: typeof j.stars === "number" ? j.stars : 0
         };
 
         const act = (lastState.active || "").trim().toUpperCase();
@@ -712,7 +804,7 @@
       try{
         await fn();
       } finally {
-        setTimeout(() => { fired = false; }, 160);
+        setTimeout(() => { fired = false; }, 120);
       }
     };
 
@@ -742,12 +834,7 @@
     if (typeof lastState.playersCount === "number"){
       return lastState.playersCount >= 2;
     }
-
-    if (seenActivePlayers.has("P1") && seenActivePlayers.has("P2")){
-      return true;
-    }
-
-    return false;
+    return seenActivePlayers.has("P1") && seenActivePlayers.has("P2");
   }
 
   function shouldKeepPowerVisibleDespiteTurnChange(){
@@ -1271,7 +1358,88 @@
     addFooter(layer, "WAITING");
   }
 
+  function renderStars(count){
+    const safeCount = Math.max(0, Math.min(3, count || 0));
+    let html = "";
+
+    for (let i = 0; i < 3; i++){
+      const src = i < safeCount ? IMG.ESTRELINDA_ON : IMG.ESTRELINDA_OFF;
+      html += `<img class="starImg" src="${src}" alt="star">`;
+    }
+
+    return html;
+  }
+
+  function renderWinResult(){
+    const layer = clearLayer();
+    $("screenBg").src = bgForMain();
+
+    const wrap = document.createElement("div");
+    wrap.className = "resultWrap";
+
+    const title = document.createElement("div");
+    title.className = "resultTitle";
+    title.textContent = "WIN";
+    wrap.appendChild(title);
+
+    const stars = document.createElement("div");
+    stars.className = "starsWrap";
+    stars.innerHTML = renderStars(lastState.stars);
+    wrap.appendChild(stars);
+
+    const buttons = document.createElement("div");
+    buttons.className = "resultButtons";
+
+    buttons.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon resultBtnSide"));
+    buttons.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_NEXTLEVEL`), "icon resultBtnMain"));
+    buttons.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "icon resultBtnSide"));
+
+    wrap.appendChild(buttons);
+    layer.appendChild(wrap);
+  }
+
+  function renderLooseResult(){
+    const layer = clearLayer();
+    $("screenBg").src = bgForMain();
+
+    const wrap = document.createElement("div");
+    wrap.className = "resultWrap";
+
+    const title = document.createElement("div");
+    title.className = "resultTitle";
+    title.textContent = "LOOSE";
+    wrap.appendChild(title);
+
+    const graphic = document.createElement("div");
+    graphic.className = "looseGraphic";
+    graphic.innerHTML = `<img src="${IMG.LOOSE_GRAPHIC}" alt="loose">`;
+    wrap.appendChild(graphic);
+
+    const buttons = document.createElement("div");
+    buttons.className = "resultButtons";
+
+    buttons.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon resultBtnSide"));
+    buttons.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "icon resultBtnMain"));
+    buttons.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon resultBtnSide"));
+
+    wrap.appendChild(buttons);
+    layer.appendChild(wrap);
+  }
+
   function renderEndStage(){
+    const result = (lastState.result || "").toUpperCase();
+
+    if (result === "WIN"){
+      renderWinResult();
+      return;
+    }
+
+    if (result === "LOOSE" || result === "LOSE"){
+      renderLooseResult();
+      return;
+    }
+
+    // fallback por si Unity todavía no manda result
     const layer = clearLayer();
 
     const top = document.createElement("div");
@@ -1303,16 +1471,8 @@
     navRow.style.width = "100%";
     navRow.style.flexWrap = "wrap";
 
-    navRow.appendChild(makeImageButton(IMG.PLAY, async ()=> {
-      resetLevelLocalState(true);
-      await apiSend(`${player}_NEXTLEVEL`);
-    }, "icon"));
-
-    navRow.appendChild(makeImageButton(IMG.RESTART, async ()=> {
-      resetLevelLocalState(true);
-      await apiSend(`${player}_RESTART`);
-    }, "icon"));
-
+    navRow.appendChild(makeImageButton(IMG.PLAY, ()=> apiSend(`${player}_NEXTLEVEL`), "icon"));
+    navRow.appendChild(makeImageButton(IMG.RESTART, ()=> apiSend(`${player}_RESTART`), "icon"));
     navRow.appendChild(makeImageButton(IMG.HOME, ()=> apiSend(`${player}_HOME`), "icon"));
     navRow.appendChild(makeImageButton(IMG.EXIT, ()=> apiSend(`${player}_EXIT`), "icon"));
 
@@ -1378,6 +1538,8 @@
 
   function render(force = false){
     const stage = normalizeStage(lastState.stage);
+    const result = (lastState.result || "").toUpperCase();
+    const stars = lastState.stars || 0;
 
     applyTopSelection();
     updateTopVisibility(stage);
@@ -1391,7 +1553,9 @@
       if (
         stage === lastRenderedStage &&
         active === lastRenderedActive &&
-        localPhase === lastRenderedPhase
+        localPhase === lastRenderedPhase &&
+        result === lastRenderedResult &&
+        stars === lastRenderedStars
       ){
         return;
       }
@@ -1400,6 +1564,8 @@
     lastRenderedStage = stage;
     lastRenderedActive = (lastState.active || "").trim().toUpperCase();
     lastRenderedPhase = localPhase;
+    lastRenderedResult = result;
+    lastRenderedStars = stars;
 
     if (stage === "start" || stage === "trailer"){
       $("screenBg").src = bgForMain();
@@ -1421,7 +1587,8 @@
     }
 
     if (stage === "end"){
-      $("screenBg").src = bgForMain();
+      localPhase = "result";
+      isDraggingRemote = false;
       renderEndStage();
       return;
     }
