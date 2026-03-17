@@ -18,7 +18,6 @@
       --vio-2:#cd86ff;
       --vio-3:#b253ff;
       --vio-4:#5a1fd6;
-      --vio-dark:#3c0f6e;
       --ink:#142016;
       --shadow:0 12px 26px rgba(0,0,0,.14);
       --stroke:rgba(30,60,40,.12);
@@ -330,7 +329,7 @@
       min-height:70vh;
       touch-action:none;
       background:transparent;
-      overflow:visible;
+      overflow:hidden;
       border-radius:28px;
     }
 
@@ -357,36 +356,6 @@
       box-shadow:var(--shadow);
       font-size:18px;
       z-index:5;
-    }
-
-    .aimGuideWrap{
-      position:absolute;
-      inset:0;
-      z-index:50;
-      pointer-events:none;
-      overflow:visible;
-    }
-
-    .aimGuideSvg{
-      position:absolute;
-      left:0;
-      top:0;
-      width:100%;
-      height:100%;
-      overflow:visible;
-    }
-
-    .aimGuideLine{
-      stroke:var(--vio-dark);
-      stroke-width:5;
-      stroke-dasharray:7 8;
-      stroke-linecap:round;
-      opacity:1;
-    }
-
-    .aimGuideDot{
-      fill:var(--vio-dark);
-      opacity:1;
     }
 
     .powerScreen{
@@ -532,11 +501,12 @@
 
   const POWER_GRACE_MS = 7000;
 
+  // Más precisión, pero estable
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
-    rangeX: 0.03,
-    rangeY: 0.03
+    rangeX: 0.04,
+    rangeY: 0.04
   };
 
   const IMG = {
@@ -1044,35 +1014,6 @@
     aimBg.src = IMG.SLINGSHOT;
     aimCanvas.appendChild(aimBg);
 
-    const guideWrap = document.createElement("div");
-    guideWrap.className = "aimGuideWrap";
-
-    const guideSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    guideSvg.setAttribute("class", "aimGuideSvg");
-    guideSvg.setAttribute("width", "100%");
-    guideSvg.setAttribute("height", "100%");
-    guideSvg.setAttribute("preserveAspectRatio", "none");
-
-    const guideLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    guideLine.setAttribute("class", "aimGuideLine");
-    guideLine.setAttribute("x1", "0");
-    guideLine.setAttribute("y1", "0");
-    guideLine.setAttribute("x2", "0");
-    guideLine.setAttribute("y2", "0");
-    guideLine.style.display = "none";
-
-    const guideDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    guideDot.setAttribute("class", "aimGuideDot");
-    guideDot.setAttribute("cx", "0");
-    guideDot.setAttribute("cy", "0");
-    guideDot.setAttribute("r", "7");
-    guideDot.style.display = "none";
-
-    guideSvg.appendChild(guideLine);
-    guideSvg.appendChild(guideDot);
-    guideWrap.appendChild(guideSvg);
-    aimCanvas.appendChild(guideWrap);
-
     const badge = document.createElement("div");
     badge.className = "aimHint";
     badge.textContent = "SLINGSHOT";
@@ -1084,17 +1025,6 @@
     let aimDirty = false;
     let aimSending = false;
     let rafPending = false;
-    let activeTouchId = null;
-
-    function getTouchById(ev, id){
-      if (id == null) return ev.touches && ev.touches[0] ? ev.touches[0] : null;
-      const list = ev.touches || ev.changedTouches;
-      if (!list) return null;
-      for (let i = 0; i < list.length; i++){
-        if (list[i].identifier === id) return list[i];
-      }
-      return null;
-    }
 
     function fmt(n){
       return (Math.round(n * 10000) / 10000).toString();
@@ -1102,40 +1032,6 @@
 
     function refreshRect(){
       rect = aimCanvas.getBoundingClientRect();
-      guideSvg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
-    }
-
-    function getStarPoint(){
-      if (!rect) refreshRect();
-
-      return {
-        x: rect.width * AIM_CFG.starX,
-        y: rect.height * AIM_CFG.starY
-      };
-    }
-
-    function showGuide(screenX, screenY){
-      if (!rect) refreshRect();
-
-      const localX = screenX - rect.left;
-      const localY = screenY - rect.top;
-      const star = getStarPoint();
-
-      guideLine.setAttribute("x1", String(star.x));
-      guideLine.setAttribute("y1", String(star.y));
-      guideLine.setAttribute("x2", String(localX));
-      guideLine.setAttribute("y2", String(localY));
-
-      guideDot.setAttribute("cx", String(localX));
-      guideDot.setAttribute("cy", String(localY));
-
-      guideLine.style.display = "block";
-      guideDot.style.display = "block";
-    }
-
-    function hideGuide(){
-      guideLine.style.display = "none";
-      guideDot.style.display = "none";
     }
 
     function normFromPoint(screenX, screenY){
@@ -1181,7 +1077,6 @@
     async function fireNow(){
       await flushAimLoop();
       await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
-      hideGuide();
 
       shotFired = true;
       powerGraceUntil = Date.now() + POWER_GRACE_MS;
@@ -1206,7 +1101,6 @@
       refreshRect();
 
       const p = normFromPoint(screenX, screenY);
-      showGuide(screenX, screenY);
       queueAim(p.dx, p.dy);
     }
 
@@ -1214,14 +1108,12 @@
       if (!dragging) return;
 
       const p = normFromPoint(screenX, screenY);
-      showGuide(screenX, screenY);
       queueAim(p.dx, p.dy);
     }
 
     async function endDrag(){
       if (!dragging) return;
       dragging = false;
-      activeTouchId = null;
       await fireNow();
     }
 
@@ -1230,15 +1122,14 @@
 
     aimCanvas.addEventListener("touchstart", (ev)=>{
       ev.preventDefault();
-      const t = ev.changedTouches && ev.changedTouches[0];
+      const t = ev.touches && ev.touches[0];
       if (!t) return;
-      activeTouchId = t.identifier;
       startDrag(t.clientX, t.clientY);
     }, { passive:false });
 
     window.addEventListener("touchmove", (ev)=>{
       if (!dragging) return;
-      const t = getTouchById(ev, activeTouchId);
+      const t = ev.touches && ev.touches[0];
       if (!t) return;
       ev.preventDefault();
       moveDrag(t.clientX, t.clientY);
@@ -1246,19 +1137,8 @@
 
     window.addEventListener("touchend", async (ev)=>{
       if (!dragging) return;
-      const t = getTouchById(ev, activeTouchId);
-      if (!t && activeTouchId != null){
-        for (let i = 0; i < ev.changedTouches.length; i++){
-          if (ev.changedTouches[i].identifier === activeTouchId){
-            ev.preventDefault();
-            await endDrag();
-            return;
-          }
-        }
-      } else if (t){
-        ev.preventDefault();
-        await endDrag();
-      }
+      ev.preventDefault();
+      await endDrag();
     }, { passive:false });
 
     aimCanvas.addEventListener("mousedown", (ev)=>{
