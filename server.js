@@ -1,144 +1,224 @@
-import express from "express";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require("express");
+const path = require("path");
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// -------- In-memory state --------
-const stateByCode = new Map(); // code -> { stage, active, ts }
-const cmdQueueByCode = new Map(); // code -> [cmd strings]
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
-// -------- Helpers --------
-function normCode(code) {
-  return (code || "").trim().toUpperCase();
+const gameState = {
+  code: "CULA",
+  stage: "start",        // start | trailer | select | level | end
+  active: "",            // P1 | P2 | ""
+  ts: Date.now(),
+  playersCount: 0,
+  result: "",            // WIN | LOOSE | ""
+  stars: 0,              // 0..3
+  lastCommand: "",
+  seenPlayers: {
+    P1: false,
+    P2: false
+  }
+};
+
+function touchState() {
+  gameState.ts = Date.now();
 }
 
-function ensureQueue(code) {
-  if (!cmdQueueByCode.has(code)) cmdQueueByCode.set(code, []);
-  return cmdQueueByCode.get(code);
+function normalizeCmd(value) {
+  return String(value || "").trim().toUpperCase();
 }
 
-function isCoalescableCommand(cmd) {
-  return (
-    cmd.startsWith("P1_AIM ") ||
-    cmd.startsWith("P2_AIM ") ||
-    cmd.startsWith("P1_DRAG ") ||
-    cmd.startsWith("P2_DRAG ")
-  );
+function markPlayerSeenFromCmd(cmd) {
+  if (cmd.startsWith("P1_")) gameState.seenPlayers.P1 = true;
+  if (cmd.startsWith("P2_")) gameState.seenPlayers.P2 = true;
+
+  gameState.playersCount =
+    (gameState.seenPlayers.P1 ? 1 : 0) +
+    (gameState.seenPlayers.P2 ? 1 : 0);
 }
 
-function getCommandChannel(cmd) {
-  if (cmd.startsWith("P1_AIM ") || cmd.startsWith("P1_DRAG ")) return "P1_AIMLIKE";
-  if (cmd.startsWith("P2_AIM ") || cmd.startsWith("P2_DRAG ")) return "P2_AIMLIKE";
-  return "";
+function clearResultState() {
+  gameState.result = "";
+  gameState.stars = 0;
 }
 
-function enqueueCommand(code, cmd) {
-  const q = ensureQueue(code);
+function setStage(stage) {
+  gameState.stage = stage;
+  touchState();
+}
 
-  // Para AIM/DRAG, no apilamos infinitos: reemplazamos el último del mismo canal.
-  if (isCoalescableCommand(cmd)) {
-    const channel = getCommandChannel(cmd);
+function setActiveFromCmd(cmd) {
+  if (cmd.startsWith("P1_")) gameState.active = "P1";
+  else if (cmd.startsWith("P2_")) gameState.active = "P2";
+}
 
-    for (let i = q.length - 1; i >= 0; i--) {
-      const existing = q[i];
-      if (getCommandChannel(existing) === channel) {
-        q[i] = cmd;
-        return;
-      }
+function handleResultCommand(cmd) {
+  // RESULT_WIN_3
+  // RESULT_LOOSE_0
+  const parts = cmd.split("_");
+  const result = (parts[1] || "").toUpperCase();
+  const stars = parseInt(parts[2] || "0", 10) || 0;
 
-      // Si ya apareció un FIRE/DRAG_END más nuevo, no seguir tocando atrás.
-      if (
-        existing.startsWith("P1_FIRE") ||
-        existing.startsWith("P2_FIRE") ||
-        existing.startsWith("P1_DRAG_END") ||
-        existing.startsWith("P2_DRAG_END")
-      ) {
-        break;
-      }
+  gameState.stage = "end";
+  gameState.result = result === "LOSE" ? "LOOSE" : result;
+  gameState.stars = Math.max(0, Math.min(3, stars));
+  touchState();
+}
+
+function handleMetaCommand(cmd) {
+  switch (cmd) {
+    case "P1_PLAY":
+    case "P2_PLAY":
+      clearResultState();
+      setActiveFromCmd(cmd);
+      setStage("level");
+      return true;
+
+    case "P1_TRAILER":
+    case "P2_TRAILER":
+      clearResultState();
+      setActiveFromCmd(cmd);
+      setStage("trailer");
+      return true;
+
+    case "P1_HOME":
+    case "P2_HOME":
+      clearResultState();
+      gameState.active = "";
+      setStage("start");
+      return true;
+
+    case "P1_RESTART":
+    case "P2_RESTART":
+      clearResultState();
+      setActiveFromCmd(cmd);
+      setStage("level");
+      return true;
+
+    case "P1_EXIT":
+    case "P2_EXIT":
+      // el remoto solo registra el estado; Unity hace el quit real
+      touchState();
+      return true;
+
+    case "P1_NEXTLEVEL":
+    case "P2_NEXTLEVEL":
+      clearResultState();
+      setActiveFromCmd(cmd);
+      setStage("level");
+      return true;
+
+    case "P1_LEFT":
+    case "P2_LEFT":
+    case "P1_RIGHT":
+    case "P2_RIGHT":
+      clearResultState();
+      setActiveFromCmd(cmd);
+      setStage("select");
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+function handleGameplayCommand(cmd) {
+  // selección / drag / powers / linda
+  if (
+    cmd.includes("_SLOT") ||
+    cmd.includes("_HAT") ||
+    cmd.includes("_DRAG_BEGIN") ||
+    cmd.includes("_DRAG ") ||
+    cmd.endsWith("_DRAG") ||
+    cmd.includes("_DRAG_END") ||
+    cmd.includes("_AIM") ||
+    cmd.includes("_FIRE") ||
+    cmd.includes("_POWER") ||
+    cmd.includes("_LINDA_") ||
+    cmd.includes("_LINDA_M1")
+  ) {
+    setActiveFromCmd(cmd);
+
+    // si todavía no estamos en end, mantenemos level
+    if (gameState.stage !== "end") {
+      setStage("level");
+    } else {
+      touchState();
     }
+
+    return true;
   }
 
-  q.push(cmd);
-
-  // Evita colas absurdamente largas
-  if (q.length > 120) {
-    q.splice(0, q.length - 120);
-  }
+  return false;
 }
-
-// -------- Health --------
-app.get("/ping", (req, res) => res.status(200).send("ok"));
-
-// -------- API: state --------
-app.post("/api/state", (req, res) => {
-  const code = normCode(req.body?.code);
-  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
-
-  const stage = (req.body?.stage || "").trim();
-  const active = (req.body?.active || "").trim();
-
-  stateByCode.set(code, { stage, active, ts: Date.now() });
-  return res.json({ ok: true });
-});
 
 app.get("/api/state", (req, res) => {
-  const code = normCode(req.query?.code);
-  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
+  const code = String(req.query.code || "").trim().toUpperCase();
 
-  const st = stateByCode.get(code) || { stage: "start", active: "", ts: 0 };
-  return res.json({ ok: true, ...st });
+  if (code && code !== gameState.code) {
+    return res.json({
+      ok: true,
+      stage: "start",
+      active: "",
+      ts: Date.now(),
+      playersCount: 0,
+      result: "",
+      stars: 0
+    });
+  }
+
+  return res.json({
+    ok: true,
+    stage: gameState.stage,
+    active: gameState.active,
+    ts: gameState.ts,
+    playersCount: gameState.playersCount,
+    result: gameState.result,
+    stars: gameState.stars,
+    lastCommand: gameState.lastCommand
+  });
 });
 
-// -------- API: send command --------
 app.post("/api/send", (req, res) => {
-  const code = normCode(req.body?.code);
-  const cmd = (req.body?.cmd || "").trim();
+  const rawCmd = req.body && req.body.cmd ? req.body.cmd : "";
+  const rawCode = req.body && req.body.code ? req.body.code : gameState.code;
 
-  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
-  if (!cmd) return res.status(400).json({ ok: false, error: "missing cmd" });
+  const cmd = normalizeCmd(rawCmd);
+  const code = String(rawCode || "").trim().toUpperCase();
 
-  enqueueCommand(code, cmd);
-  return res.json({ ok: true });
+  if (!cmd) {
+    return res.status(400).json({ ok: false, error: "Missing cmd" });
+  }
+
+  gameState.code = code || gameState.code;
+  gameState.lastCommand = cmd;
+
+  markPlayerSeenFromCmd(cmd);
+
+  if (cmd.startsWith("RESULT_")) {
+    handleResultCommand(cmd);
+    return res.json({ ok: true, state: gameState });
+  }
+
+  if (handleMetaCommand(cmd)) {
+    return res.json({ ok: true, state: gameState });
+  }
+
+  if (handleGameplayCommand(cmd)) {
+    return res.json({ ok: true, state: gameState });
+  }
+
+  touchState();
+  return res.json({ ok: true, state: gameState });
 });
 
-// alias /api/cmd -> /api/send
-app.post("/api/cmd", (req, res) => {
-  req.url = "/api/send";
-  app._router.handle(req, res);
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// -------- API: poll (Unity) --------
-app.get("/api/poll", (req, res) => {
-  const code = normCode(req.query?.code);
-  if (!code) return res.status(400).json({ ok: false, error: "missing code" });
-
-  const q = ensureQueue(code);
-  const cmd = q.length > 0 ? q.shift() : "";
-  return res.json({ ok: true, cmd });
-});
-
-// -------- Static: serve index --------
-const publicDir = path.join(__dirname, "public");
-const rootIndex = path.join(__dirname, "index.html");
-const publicIndex = path.join(publicDir, "index.html");
-
-if (fs.existsSync(publicDir)) {
-  app.use(express.static(publicDir));
-}
-
-app.get("/", (req, res) => {
-  if (fs.existsSync(publicIndex)) return res.sendFile(publicIndex);
-  if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
-  return res.status(404).send("index.html not found");
-});
-
-const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("Remote server running on port", PORT);
+  console.log(`Angry Remote escuchando en http://localhost:${PORT}`);
 });
