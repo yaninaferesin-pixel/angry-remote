@@ -496,7 +496,6 @@
   let resolveTimer = null;
   let powerGraceUntil = 0;
 
-  // BLOQUEO DE RERENDER DURANTE EL DRAG
   let isDraggingRemote = false;
   let lastRenderedStage = "";
   let lastRenderedActive = "";
@@ -507,12 +506,12 @@
 
   const POWER_GRACE_MS = 7000;
 
-  // Preciso pero estable
+  // MÁS FLUIDO / MÁS ÁNGULO
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
-    rangeX: 0.035,
-    rangeY: 0.035
+    rangeX: 0.02,
+    rangeY: 0.02
   };
 
   const IMG = {
@@ -1061,7 +1060,7 @@
 
       while (aimDirty) {
         aimDirty = false;
-        await apiSend(`${player}_AIM ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
+        await apiSend(`${player}_DRAG ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
       }
 
       aimSending = false;
@@ -1082,7 +1081,7 @@
 
     async function fireNow(){
       await flushAimLoop();
-      await apiSend(`${player}_FIRE ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
+      await apiSend(`${player}_DRAG_END ${fmt(lastAim.dx)} ${fmt(lastAim.dy)}`);
 
       shotFired = true;
       powerGraceUntil = Date.now() + POWER_GRACE_MS;
@@ -1103,11 +1102,14 @@
       }
     }
 
-    function startDrag(screenX, screenY){
+    async function startDrag(screenX, screenY){
       isDraggingRemote = true;
       refreshRect();
 
       const p = normFromPoint(screenX, screenY);
+      lastAim = p;
+
+      await apiSend(`${player}_DRAG_BEGIN ${fmt(p.dx)} ${fmt(p.dy)}`);
       queueAim(p.dx, p.dy);
     }
 
@@ -1126,11 +1128,11 @@
     refreshRect();
     window.addEventListener("resize", refreshRect);
 
-    aimCanvas.addEventListener("touchstart", (ev)=>{
+    aimCanvas.addEventListener("touchstart", async (ev)=>{
       ev.preventDefault();
       const t = ev.touches && ev.touches[0];
       if (!t) return;
-      startDrag(t.clientX, t.clientY);
+      await startDrag(t.clientX, t.clientY);
     }, { passive:false });
 
     window.addEventListener("touchmove", (ev)=>{
@@ -1152,8 +1154,8 @@
       await endDrag();
     }, { passive:false });
 
-    aimCanvas.addEventListener("mousedown", (ev)=>{
-      startDrag(ev.clientX, ev.clientY);
+    aimCanvas.addEventListener("mousedown", async (ev)=>{
+      await startDrag(ev.clientX, ev.clientY);
     });
 
     window.addEventListener("mousemove", (ev)=>{
@@ -1380,7 +1382,6 @@
     applyTopSelection();
     updateTopVisibility(stage);
 
-    // NO re-renderizar toda la UI mientras se arrastra
     if (!force && isDraggingRemote && stage === "level" && localPhase === "aim"){
       return;
     }
