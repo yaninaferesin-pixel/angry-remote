@@ -496,17 +496,23 @@
   let resolveTimer = null;
   let powerGraceUntil = 0;
 
+  // BLOQUEO DE RERENDER DURANTE EL DRAG
+  let isDraggingRemote = false;
+  let lastRenderedStage = "";
+  let lastRenderedActive = "";
+  let lastRenderedPhase = "";
+
   let seenActivePlayers = new Set();
   let persistedLoaded = false;
 
   const POWER_GRACE_MS = 7000;
 
-  // Más precisión, pero estable
+  // Preciso pero estable
   const AIM_CFG = {
     starX: 0.505,
     starY: 0.255,
-    rangeX: 0.04,
-    rangeY: 0.04
+    rangeX: 0.035,
+    rangeY: 0.035
   };
 
   const IMG = {
@@ -608,6 +614,7 @@
     shotFired = false;
     localPhase = "select";
     powerGraceUntil = 0;
+    isDraggingRemote = false;
 
     if (resolveTimer){
       clearTimeout(resolveTimer);
@@ -626,7 +633,7 @@
     player = p;
     localStorage.setItem("angry_player", player);
     resetLevelLocalState(false);
-    render();
+    render(true);
   }
 
   $("p1Btn").onclick = ()=> setPlayer("P1");
@@ -635,7 +642,7 @@
   $("applyBtn").onclick = ()=>{
     code = ($("codeInput").value || "").trim().toUpperCase() || "CULA";
     localStorage.setItem("angry_code", code);
-    render();
+    render(true);
   };
 
   function extractPlayersCount(j){
@@ -819,7 +826,7 @@
   function enterResolveThenAdvance(delayMs){
     localPhase = "resolving";
     saveLocalLevelState();
-    render();
+    render(true);
 
     if (resolveTimer) clearTimeout(resolveTimer);
 
@@ -836,7 +843,7 @@
       }
 
       saveLocalLevelState();
-      render();
+      render(true);
     }, delayMs);
   }
 
@@ -943,8 +950,8 @@
         shotFired = false;
         localPhase = "aim";
         saveLocalLevelState();
+        render(true);
         await apiSend(`${player}_HAT`);
-        render();
       });
     }
 
@@ -971,8 +978,8 @@
         shotFired = false;
         localPhase = "aim";
         saveLocalLevelState();
+        render(true);
         await apiSend(`${player}_SLOT${c.slot}`);
-        render();
       });
       chars.appendChild(btn);
     });
@@ -1019,7 +1026,6 @@
     badge.textContent = "SLINGSHOT";
     aimCanvas.appendChild(badge);
 
-    let dragging = false;
     let rect = null;
     let lastAim = { dx: 0, dy: 0 };
     let aimDirty = false;
@@ -1080,6 +1086,7 @@
 
       shotFired = true;
       powerGraceUntil = Date.now() + POWER_GRACE_MS;
+      isDraggingRemote = false;
 
       if (typeof selectedSlot === "number"){
         markConsumed(selectedSlot);
@@ -1092,12 +1099,12 @@
       } else {
         localPhase = "power";
         saveLocalLevelState();
-        render();
+        render(true);
       }
     }
 
     function startDrag(screenX, screenY){
-      dragging = true;
+      isDraggingRemote = true;
       refreshRect();
 
       const p = normFromPoint(screenX, screenY);
@@ -1105,15 +1112,14 @@
     }
 
     function moveDrag(screenX, screenY){
-      if (!dragging) return;
+      if (!isDraggingRemote) return;
 
       const p = normFromPoint(screenX, screenY);
       queueAim(p.dx, p.dy);
     }
 
     async function endDrag(){
-      if (!dragging) return;
-      dragging = false;
+      if (!isDraggingRemote) return;
       await fireNow();
     }
 
@@ -1128,7 +1134,7 @@
     }, { passive:false });
 
     window.addEventListener("touchmove", (ev)=>{
-      if (!dragging) return;
+      if (!isDraggingRemote) return;
       const t = ev.touches && ev.touches[0];
       if (!t) return;
       ev.preventDefault();
@@ -1136,8 +1142,13 @@
     }, { passive:false });
 
     window.addEventListener("touchend", async (ev)=>{
-      if (!dragging) return;
+      if (!isDraggingRemote) return;
       ev.preventDefault();
+      await endDrag();
+    }, { passive:false });
+
+    window.addEventListener("touchcancel", async ()=>{
+      if (!isDraggingRemote) return;
       await endDrag();
     }, { passive:false });
 
@@ -1146,11 +1157,12 @@
     });
 
     window.addEventListener("mousemove", (ev)=>{
-      if (!dragging) return;
+      if (!isDraggingRemote) return;
       moveDrag(ev.clientX, ev.clientY);
     });
 
     window.addEventListener("mouseup", async ()=>{
+      if (!isDraggingRemote) return;
       await endDrag();
     });
 
@@ -1362,11 +1374,31 @@
     renderCharacterSelectInLevel();
   }
 
-  function render(){
+  function render(force = false){
     const stage = normalizeStage(lastState.stage);
 
     applyTopSelection();
     updateTopVisibility(stage);
+
+    // NO re-renderizar toda la UI mientras se arrastra
+    if (!force && isDraggingRemote && stage === "level" && localPhase === "aim"){
+      return;
+    }
+
+    if (!force){
+      const active = (lastState.active || "").trim().toUpperCase();
+      if (
+        stage === lastRenderedStage &&
+        active === lastRenderedActive &&
+        localPhase === lastRenderedPhase
+      ){
+        return;
+      }
+    }
+
+    lastRenderedStage = stage;
+    lastRenderedActive = (lastState.active || "").trim().toUpperCase();
+    lastRenderedPhase = localPhase;
 
     if (stage === "start" || stage === "trailer"){
       $("screenBg").src = bgForMain();
@@ -1400,7 +1432,14 @@
 
   async function tick(){
     await apiGetState();
-    render();
+
+    if (isDraggingRemote && normalizeStage(lastState.stage) === "level" && localPhase === "aim"){
+      applyTopSelection();
+      updateTopVisibility("level");
+      return;
+    }
+
+    render(false);
   }
 
   loadPersisted();
@@ -1409,7 +1448,7 @@
     resetLevelLocalState(false);
   }
 
-  render();
+  render(true);
   tick();
   setInterval(tick, 250);
 </script>
